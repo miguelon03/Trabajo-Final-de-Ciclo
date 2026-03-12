@@ -1,0 +1,146 @@
+ESTRUCTURA DE LA BASE DE DATOS:
+
+TABLA USUARIOS --> Representa a clientes y administradores
+    Campos esenciales:
+
+        - id : INT, PK, AI, NOT NULL
+        - nombre: VARCHAR(255), NOT NULL
+        - email : VARCHAR(255), UNIQUE, NOT NULL
+        - password_hash: VARCHAR (255), NOT NULL
+        - rol: ENUM ('admin', 'cliente'), NOT NULL
+        - fecha_registro: TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+        - ultimo_login: TIMESTAMP, NULL (opcional)
+        - ¿?slug (probablemente no sea necesario, solo si hay perfiles públicos, en principio no)
+
+    Relaciones:
+        - 1 usuario -> puede tener N PEDIDOS
+        - 1 usuario -> puede tener N DEVOLUCIONES
+    
+    Importante: 
+
+        - email es UNIQUE -> 1 email por cuenta
+        - el slug es opcional y seguramente no se use porque llevaría mucho tiempo
+        - no se relaciona directamente con productos ni lineas de pedido
+
+TABLA PRODUCTOS --> Representa todo el listado de productos de la marca
+    Campos esenciales:
+        - id: INT, PK, AI, NOT NULL
+        - nombre: VARCHAR(255), NOT NULL
+        - slug: VARCHAR(255), UNIQUE, NOT NULL
+        - descripcion: TEXT, NULL
+        - precio: DECIMAL (10,2), NOT NULL
+        - imagen (o grupo de imágenes, hay que pensarlo)
+        - fecha_creación: TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+    Relaciones:
+        - 1 producto -> N lineas de pedido 
+        - 1 producto -> n DEVOLUCIONES
+
+    Importante: 
+
+        - el "slug" debe ser UNIQUE
+        - el precio aquí es el precio actual, NO EL HISTÓRICO
+        - el precio histórico se guarda en líneas de pedido
+
+TABLA OPINIONES --> Representa cada opinión de un usuario sobre un producto
+    Campos esenciales:
+        - id: INT, PK, AI, NOT NULL
+        - producto_id: INT, FK -> productos(id), NOT NULL
+        - usuario_id: INT, FK -> usuarios(id), NOT NULL
+        - puntuacion: TINYINT, NOT NULL
+        - comentario: TEXT, NOT NULL
+        - fecha: TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+        - estado: ENUM('pendiente', 'aprobada', 'rechazada'), DEFAULT 'pendiente', NOT NULL
+    
+    Relaciones: 
+        - 1 usuario -> puede dejar N OPINIONES
+        - 1 producto -> puede tener N OPINIONES
+        - 1 opinión -> pertenece a un único usuario y un único producto
+
+    Importante:
+
+        - la puntuacion se guarda como un TINYINT (entre 1 y 5)
+        - el campo estado permite moderación básica del admin
+        - no añadimos imágenes subidas por el usuario por ahora
+        - comentario es obligatorio para no permitir opiniones vacías
+        - la combinación usuario-producto no debe ser UNIQUE, porque un usuario puede dejar varias opiniones sobre un producto.
+
+
+TABLA PEDIDOS --> Representa un listado de pedidos realizados por los clientes
+    Campos esenciales: 
+        - id: INT, PK, AI, NOT NULL
+        - id_usuario: INT, FK -> usuarios(id), NOT NULL
+        - slug: VARCHAR(255), UNIQUE, NOT NULL
+        - fecha: TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+        - importe total: DECIMAL (10,2), NOT NULL
+        - estado: ENUM('pendiente','pagado', 'enviado', 'cancelado'), NOT NULL
+    Relaciones:
+        - 1 pedido -> pertenece a un usuario
+        - 1 pedido -> puede tener N lineas de pedido
+        - 1 pedido -> puede tener N DEVOLUCIONES
+
+    Importante: 
+
+        - el slug debe ser no adivinable y único(tipo PED-898273HJ)
+        - el importe_total se guarda para mantener el histórico
+        - el estado debe ser un ENUM para evitar valores incorrectos
+
+TABLA LINEAS_PEDIDO <<<--- SÚPER IMPORTANTE ---> Representa CADA PRODUCTO dentro de un pedido:
+
+    Campos esenciales:
+
+        - id: INT, PK, AI, NOT NULL
+        - pedido_id: INT, FK -> pedidos(id), NOT NULL
+        - producto_id: INT, FK -> productos(id), NOT NULL
+        - cantidad: INT, NOT NULL
+        - precio_unitario: DECIMAL(10,2), NOT NULL
+        - subtotal: DECIMAL(10,2), NOT NULL
+    
+    Relaciones:
+
+        - N líneas -> 1 pedido
+        - N líneas -> 1 producto
+    
+    Importante:
+
+    - "precio_unitario" -> es el precio del producto EN EL MOMENTO DE LA COMPRA
+    - subtotal = cantidad * precio_unitario
+    - esta tabla es clave para devoluciones correctas
+
+TABLA DEVOLUCIONES --> Representa las devoluciones realizadas
+
+    Campos esenciales:
+
+    - id: INT, PK, AI, NOT NULL
+    - linea_pedido_id: INT, FK -> lineas_pedido(id), NOT NULL
+    - usuario_id: INT, FK -> usuarios(id), NOT NULL
+    - slug: VARCHAR(255), UNIQUE, NOT NULL
+    - cantidad_devuelta: INT, NOT NULL
+    - motivo: TEXT, NOT NULL
+    - estado: ENUM('pendiente', 'aceptada', 'rechazada'), DEFAULT 'pendiente', NOT NULL
+    - fecha: TIMESTAMP, DEFAULT CURRENT_TIMESTAMP
+
+    Relaciones:
+
+    - 1 devolución -> 1 línea de pedido
+    - 1 devolución -> 1 usuario
+    - (indirectamente) 1 devolución -> 1 pedido
+    - (indirectamente) 1 devolución -> 1 producto_id
+
+    Importante:
+
+    - relacionar con lineas_pedido es lo mejor
+    - permite devoluciones parciales (devolver 1 sudadera si se han comprado 2)
+    - el slug debe ser no adivinable y único (tipo DEV-898273HJ)
+
+
+NOTAS:
+
+    - LINK A PIZARRA DE CANVA:
+    https://www.canva.com/design/DAHDvUWbWhY/bdowMdArLst7rRxmm_KMRQ/edit?utm_content=DAHDvUWbWhY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
+    
+    - Valorar cuándo vamos a usar DELETE ON CASCADE para que no se rompa todo
+
+
+
