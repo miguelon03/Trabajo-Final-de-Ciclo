@@ -1,0 +1,66 @@
+Nuestra página web.
+
+Se trata de una página para vender ropa. Debe haber dos tipos de usuarios: clientes y administradores. 
+
+Todo aquel que acceda a la web (no admin) puede visualizar todo el contenido a la venta o informativo, pero para comprar se debe crear una cuenta, de modo que el sistema de compra, devoluciones o visualización de pedidos debe ser propio de "cliente". Por otro lado nos gustaría añadir un sistema de puntos, en lugar de cupones. De modo que por cada X dinero gastado se acumulen puntos para recibir descuentos o regalos. 
+
+El cliente (y el usuario no logueado) puede buscar ropa usando la lupa y el filtro.
+
+
+El administrador debe poder modificar a su gusto (me gustaría que de una forma muy limpia, profesional y smooth) los contenidos de la web. Tanto de los productos añadidos, productos nuevos, o noticias de la home. También debería poder modificar las imágenes del carrusel y los links a los que te lleva cada una. Por otro lado, el admin es el único que puede gestionar las devoluciones o pedidos (Aceptar, rechazar, informar de su estado...) 
+
+A nivel de usuario: 
+
+1. Primer contacto con la web
+Página de inicio con presentación de la marca, productos destacados y
+acceso rápido a categorías.
+Selector de idioma (español / inglés) disponible desde el primer momento.
+Menú de navegación claro y accesible para moverse por catálogo,
+categorías, perfil y carrito.
+2. Exploración del catálogo
+Catálogo de productos organizado por categorías.
+Filtros dinámicos por precio, talla, color y otros atributos relevantes.
+Buscador interno para localizar productos por nombre o características.
+Paginación o carga progresiva para mejorar la experiencia de navegación.
+3. Consulta de un producto concreto
+Ficha de producto con imágenes, descripción, tallas disponibles, precio y
+stock.
+Galería de imágenes con zoom o vista ampliada.
+Botón “Añadir al carrito” con notificación visual de confirmación.
+4. Gestión del carrito
+Carrito de compra accesible desde cualquier página.
+Modificar cantidades, eliminar productos o vaciar el carrito.
+Resumen de precios con subtotal y total.
+Aplicación de cupones o descuentos (si se implementa como funcionalidad
+opcional).
+5. Proceso de compra (simulado)
+Inicio de sesión o registro si el usuario no está autenticado.
+Formulario de datos del pedido (dirección simulada, método de envío
+ficticio).
+Confirmación del pedido con resumen final.
+Generación de un pedido simulado almacenado en la base de datos.
+6. Área personal del usuario
+Perfil de usuario con datos editables.
+Historial de pedidos, mostrando compras simuladas.
+Gestión de contraseña (cambio o recuperación).
+
+A nivel de admin:
+1. Acceso al panel de administración
+Inicio de sesión exclusivo para administradores.
+Dashboard inicial con visión general del catálogo y pedidos.
+2. Gestión del catálogo
+CRUD de productos: crear, editar, eliminar y listar productos.
+Gestión de categorías para organizar el catálogo.
+Control de stock, con actualización automática según pedidos simulados.
+3. Gestión de usuarios
+Listado de usuarios registrados.
+Edición o desactivación de cuentas si fuese necesario.
+4. Gestión de pedidos
+Listado de pedidos simulados.
+Consulta del detalle de cada pedido.
+5. Funcionalidades opcionales del panel
+Estadísticas básicas: productos más vistos, categorías más consultadas.
+Gestión de cupones o descuentos.
+Recomendaciones automáticas basadas en productos similares.
+
+
