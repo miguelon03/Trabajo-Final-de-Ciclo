@@ -13,6 +13,9 @@
  *  - conexion.php en la misma carpeta
  */
 
+
+// Falta por añadir la tabla "carrito" para guardar productos antes de finalizar el pedido, pero se puede añadir después sin problemas.
+
 require_once "conexion.php"; // Importamos la conexión PDO
 
 try {
@@ -104,6 +107,24 @@ try {
         )
     ");
     echo "✔ Tabla productos creada<br>";
+
+    /*
+    * TABLA: opiniones
+    */
+    $conexion->exec("
+    CREATE TABLE IF NOT EXISTS opiniones (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT NOT NULL,
+        producto_id INT NOT NULL,
+        puntuacion TINYINT NOT NULL CHECK (puntuacion BETWEEN 1 AND 5),
+        comentario TEXT NULL,
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (usuario_id, producto_id), -- 1 opinión por usuario por producto
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+        FOREIGN KEY (producto_id) REFERENCES productos(id)
+    )
+");
+    echo "✔ Tabla opiniones creada<br>";
 
     /*
      * TABLA: productos_categorias
@@ -285,9 +306,6 @@ try {
     ");
 
     echo "<br><strong>✔ Instalación completada. Usuario admin creado.</strong>";
-
 } catch (PDOException $e) {
     die("<br><br><strong>Error durante la instalación:</strong> " . $e->getMessage());
 }
-
-?>
