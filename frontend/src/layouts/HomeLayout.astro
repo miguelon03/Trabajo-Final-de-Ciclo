@@ -1,0 +1,47 @@
+---
+/* Importamos los componentes estructurales que forman la base de TODA la página principal
+
+- Header: Contiene el logo y posiblemente enlaces de navegación o información de contacto.
+- Navbar: Contiene enlaces de navegación principales para acceder a diferentes secciones del sitio.
+- Footer: Contiene información de derechos de autor, enlaces a políticas, etc.      
+
+*/
+
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Navbar from "../components/Navbar.astro";
+
+/* Props opcionales:
+
+- title: El título de la página, que se mostrará en la pestaña del navegador. Si no se proporciona, se usará "DripMode Hood" por defecto.
+- description: Una descripción breve de la página, que se incluirá como metaetiqueta
+
+*/
+const { title = "DripMode Hood", description = "" } = Astro.props;
+---
+
+
+<html lang="es">
+    <!-- Configuración del documento -->
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- Título dinámico -->
+        <title>{title}</title>
+        <!-- Meta descripción opcional -->
+        {description && <meta name="description" content={description} />}
+    </head>
+
+    <body>
+        <!-- Cabecera fija de la web -->
+        <Header />
+        <!-- NavBar de navegación principal -->
+        <Navbar />
+        <!-- Contenido específico de cada página que use este Layout -->
+        <main>
+            <slot />
+        </main>
+        <!-- Pie de página -->
+        <Footer />
+    </body>
+</html>
