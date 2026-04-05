@@ -1,3 +1,152 @@
-<footer>
-  <p>© {new Date().getFullYear()} DripMode Hood — Todos los derechos reservados</p>
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-column">
+      <p class="footer-title">LEGAL</p>
+      <a href="/condiciones">Condiciones de uso</a>
+      <a href="/privacidad">Política de privacidad</a>
+      <a href="/cookies">Política de cookies</a>
+    </div>
+
+    <div class="footer-column">
+      <p class="footer-title">SERVICIOS</p>
+      <a href="/ayuda-online">Ayuda Online</a>
+      <a href="/seguimiento">Localiza tu pedido</a>
+      <a href="/faq">FAQ</a>
+    </div>
+
+    <div class="footer-brand">
+      <span>DMH</span>
+    </div>
+
+    <div class="footer-column">
+      <p class="footer-title">CONTACTO</p>
+      <a href="mailto:hello@dripmode.es">hello@dripmode.es</a>
+      <span>+34 91 427 67 68</span>
+    </div>
+
+    <div class="footer-column">
+      <p class="footer-title">CONECTA</p>
+      <div class="social-links">
+        <a href="#" aria-label="Instagram">IG</a>
+        <a href="#" aria-label="Facebook">FB</a>
+        <a href="#" aria-label="TikTok">TT</a>
+        <a href="#" aria-label="Pinterest">PT</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-copy">
+    <p>© {new Date().getFullYear()} DripMode Hood — Todos los derechos reservados</p>
+  </div>
 </footer>
+
+<style>
+  .site-footer {
+    width: 100%;
+    padding: 3rem 3rem 2rem;
+    background: #0f0f0f;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .footer-grid {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .footer-column {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .footer-title {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 0.75rem;
+    color: #C8FF00;
+    font-weight: 700;
+  }
+
+  .footer-column a,
+  .footer-column span {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  .footer-column a:hover {
+    color: #ffffff;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footer-brand span {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #C8FF00;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+  }
+
+  .social-links {
+    display: flex;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .footer-copy {
+    width: 100%;
+    max-width: 1400px;
+    margin: 1.5rem auto 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 960px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .site-footer {
+      padding: 2rem 1.25rem 1.5rem;
+    }
+
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-copy {
+      margin-top: 1.25rem;
+    }
+  }
+</style>

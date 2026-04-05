@@ -1,0 +1,90 @@
+---
+---
+<section class="promo-banner">
+  <div class="promo-banner__inner">
+    <span class="promo-banner__eyebrow">Temporada SS26</span>
+    <h2>VER EL CATÁLOGO COMPLETO</h2>
+    <p>Más de 24 referencias disponibles ahora mismo.</p>
+    <a class="promo-banner__button" href="/categoria/catalogo">EXPLORAR</a>
+  </div>
+</section>
+
+<style>
+  .promo-banner {
+    width: 100%;
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: center;
+    background: #121212;
+  }
+
+  .promo-banner__inner {
+    width: 100%;
+    max-width: 1200px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.5rem;
+    padding: 2rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .promo-banner__eyebrow {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    color: #C8FF00;
+    font-size: 0.78rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .promo-banner h2 {
+    margin: 0;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .promo-banner p {
+    margin: 0.85rem 0 0;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 38rem;
+    font-size: 0.98rem;
+    line-height: 1.8;
+  }
+
+  .promo-banner__button {
+    white-space: nowrap;
+    min-width: 160px;
+    padding: 1rem 1.8rem;
+    border-radius: 999px;
+    background: #C8FF00;
+    color: #090909;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s ease, transform 0.2s ease;
+  }
+
+  .promo-banner__button:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 900px) {
+    .promo-banner__inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .promo-banner__button {
+      width: 100%;
+    }
+  }
+</style>

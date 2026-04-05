@@ -1,13 +1,14 @@
 ---
 // Importamos el layout para la página de inicio
 import HomeLayout from "../layouts/HomeLayout.astro";
+import Hero from "../components/Hero.astro";
+import PromoBanner from "../components/PromoBanner.astro";
+import ProductsSection from "../components/ProductsSection.astro";
 ---
-<!-- Usamos todo el Layout como contenedor. Todo lo que pongamos dentro de insertará en wl slot del HomeLayout -->
 <HomeLayout title="DMH - Home">
-    <!-- Contenido provisional de la home -->
-    <h1>Bienvenido a DripMode Hood</h1>
-    <p>Tu tienda de ropa urbana y streetwear de confianza.</p>
-    <p>Esta es la home sin aplicado de estios</p>
+    <Hero />
+    <PromoBanner />
+    <ProductsSection />
 </HomeLayout>
 
 
