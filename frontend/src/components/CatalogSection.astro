@@ -1,0 +1,609 @@
+---
+import products from "../data/products.json";
+---
+
+<section class="catalog">
+  <div class="catalog__container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Inicio</a>
+      <span>/</span>
+      <span>Catálogo</span>
+    </nav>
+
+    <div class="catalog__content">
+      <!-- Sidebar Filtros -->
+      <aside class="catalog__sidebar" id="sidebar">
+        <h2 class="sidebar-title">Filtros</h2>
+
+        <!-- Filtro Tipo de Prenda -->
+        <div class="filter-group">
+          <h3 class="filter-title">Tipo de Prenda</h3>
+          <div class="filter-options">
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="type" value="camiseta" />
+              <span>Camisetas</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="type" value="sudadera" />
+              <span>Sudaderas</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="type" value="pantalon" />
+              <span>Pantalones</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="type" value="chaqueta" />
+              <span>Chaquetas</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="type" value="accesorio" />
+              <span>Accesorios</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filtro Color -->
+        <div class="filter-group">
+          <h3 class="filter-title">Color</h3>
+          <div class="filter-options">
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="color" value="negro" />
+              <span>Negro</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="color" value="blanco" />
+              <span>Blanco</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="color" value="gris" />
+              <span>Gris</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filtro Precio -->
+        <div class="filter-group">
+          <h3 class="filter-title">Precio</h3>
+          <div class="filter-options">
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="price" value="0-25" />
+              <span>Menos de €25</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="price" value="25-50" />
+              <span>€25 - €50</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="price" value="50-P00" />
+              <span>€50 - €100</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-input" data-filter-type="price" value="100-10000" />
+              <span>Más de €100</span>
+            </label>
+          </div>
+        </div>
+
+        <button class="filter-reset" id="clearFilters">Limpiar Filtros</button>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="catalog__main">
+        <!-- Header con controles -->
+        <div class="catalog__header">
+          <div>
+            <h1 class="catalog__title">Catálogo Completo</h1>
+            <p class="catalog__count"><span id="productCount">{products.length}</span> productos</p>
+            <div class="page-indicator" id="pageIndicator">Página nº 1</div>
+          </div>
+          <div class="catalog__controls">
+            <button class="filter-toggle" type="button" id="toggleFilters">≡ Filtros</button>
+            <select class="sort-select" id="sortSelect" aria-label="Ordenar por">
+              <option value="newest">Más Nuevos</option>
+              <option value="price-asc">Precio: Menor a Mayor</option>
+              <option value="price-desc">Precio: Mayor a Menor</option>
+              <option value="name">Nombre A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grid de Productos -->
+        <div class="catalog__grid-wrapper">
+          <button class="pagination__side pagination__prev" id="prevPage" aria-label="Página anterior">←</button>
+
+          <div class="products-grid" id="productsGrid">
+            {products.map((product) => (
+              <article 
+                class="product-card" 
+                data-product-id={product.id}
+                data-type={product.type}
+                data-color={product.color}
+                data-price={product.price}
+                data-created-at={product.createdAt}
+              >
+                <div class="product-card__top">
+                  {product.badge && <span class="badge">{product.badge}</span>}
+                  <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
+                </div>
+                <div class="product-card__image" aria-hidden="true">{product.image}</div>
+                <div class="product-card__content">
+                  <h3>{product.title}</h3>
+                  <p class="product-category">{product.category}</p>
+                  <div class="product-card__footer">
+                    {product.originalPrice && (
+                      <span class="product-price-original">{product.originalPrice.toFixed(2)}€</span>
+                    )}
+                    <span class="product-price">{product.price.toFixed(2)}€</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <button class="pagination__side pagination__next" id="nextPage" aria-label="Página siguiente">→</button>
+        </div>
+
+        <!-- Mensaje sin resultados -->
+        <div class="no-results" id="noResults" style="display: none;">
+          <p>No hay productos que coincidan con los filtros seleccionados.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .catalog {
+    width: 100%;
+    padding: 2rem 3rem;
+    background: #1a1a1a;
+    min-height: 80vh;
+  }
+
+  .catalog__container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .breadcrumb a {
+    color: #C8FF00;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumb a:hover {
+    color: #a4dd00;
+  }
+
+  /* Layout Principal */
+  .catalog__content {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+  }
+
+  /* Sidebar Filtros */
+  .catalog__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .sidebar-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filter-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #C8FF00;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #f5f5f5;
+  }
+
+  .filter-checkbox input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #C8FF00;
+  }
+
+  .filter-reset {
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--border-radius-normal);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .filter-reset:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Main Content */
+  .catalog__main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .catalog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .catalog__title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .catalog__count {
+    margin: 0.5rem 0 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+  }
+
+  .catalog__controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .filter-toggle {
+    display: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--border-radius-normal);
+    background: #C8FF00;
+    color: #090909;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .sort-select {
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius-normal);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .sort-select option {
+    background: #1a1a1a;
+    color: #f5f5f5;
+  }
+
+  /* Indicador de Página */
+  .page-indicator {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #C8FF00;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Grid de Productos */
+  .catalog__grid-wrapper {
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    width: 100%;
+  }
+
+  .pagination__side {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .pagination__side:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .product-card {
+    background: #111111;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--border-radius-card);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 1rem;
+    padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp 0.4s ease;
+    min-height: 420px;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .product-card.hidden {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .product-card:hover {
+    border-color: rgba(200, 255, 0, 0.3);
+  }
+
+  .product-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    background: #C8FF00;
+    color: #090909;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .icon-fav {
+    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f5f5f5;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .icon-fav:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .product-card__image {
+    height: 260px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+    border-radius: var(--border-radius-card);
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.28);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.95rem;
+  }
+
+  .product-card__content {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .product-category {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .product-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.4;
+  }
+
+  .product-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .product-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #C8FF00;
+  }
+
+  .product-price-original {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: line-through;
+    margin-right: 0;
+  }
+
+  /* Sin resultados */
+  .no-results {
+    text-align: center;
+    padding: 3rem;
+    color: rgba(255, 255, 255, 0.6);
+    grid-column: 1 / -1;
+  }
+
+  /* Paginación */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 3rem;
+  }
+
+  .pagination__btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius-normal);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .pagination__btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .pagination__btn.active {
+    background: #C8FF00;
+    color: #090909;
+    border-color: #C8FF00;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .catalog__content {
+      grid-template-columns: 1fr;
+    }
+
+    .catalog__sidebar {
+      display: none;
+    }
+
+    .filter-toggle {
+      display: inline-flex;
+    }
+
+    .catalog__grid-wrapper {
+      grid-template-columns: 40px 1fr 40px;
+    }
+
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .pagination__side {
+      width: 40px;
+      height: 40px;
+    }
+
+    .catalog__header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .catalog {
+      padding: 1.5rem;
+    }
+
+    .catalog__grid-wrapper {
+      grid-template-columns: 36px 1fr 36px;
+    }
+
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pagination__side {
+      width: 36px;
+      height: 36px;
+    }
+
+    .page-indicator {
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .pagination {
+      gap: 0.3rem;
+    }
+
+    .pagination__btn {
+      width: 36px;
+      height: 36px;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+
+<script src="/catalog-client.js" is:inline></script>

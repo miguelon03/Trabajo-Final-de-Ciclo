@@ -1,0 +1,312 @@
+---
+import HomeLayout from "../../layouts/HomeLayout.astro";
+import products from "../../data/products.json";
+
+export async function getStaticPaths() {
+  const categorias = ["novedades", "accesorios", "ofertas"];
+  return categorias.map(categoria => ({
+    params: { categoria },
+    props: { categoria }
+  }));
+}
+
+const { categoria } = Astro.props;
+
+// Filtrar productos según la categoría
+let filteredProducts = products;
+if (categoria === "novedades") {
+  filteredProducts = products.filter(product => product.badge === "NEW");
+} else if (categoria === "accesorios") {
+  filteredProducts = products.filter(product => product.type === "accesorio");
+} else if (categoria === "ofertas") {
+  filteredProducts = products.filter(product => product.badge === "Oferta" || product.originalPrice);
+}
+
+const titulo = categoria === "novedades" ? "Novedades" : categoria.charAt(0).toUpperCase() + categoria.slice(1);
+---
+
+<HomeLayout title={`DMH - ${titulo}`}>
+  <section class="categoria">
+    <div class="categoria__container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Inicio</a>
+        <span>/</span>
+        <span>{titulo}</span>
+      </nav>
+
+      <div class="categoria__content">
+        {categoria === "novedades" && (
+          <div class="novedades__hero">
+            <div class="novedades__images">
+              <div class="placeholder-image">Imagen Marca 1</div>
+              <div class="placeholder-image">Imagen Marca 2</div>
+            </div>
+            <div class="novedades__text">
+              <h2>Nueva Colección Primavera</h2>
+              <p>Descubre nuestras últimas prendas con diseños exclusivos y materiales de alta calidad.</p>
+              <p>Nueva Sudadera Urban Style - Disponible ahora en negro y gris.</p>
+            </div>
+          </div>
+        )}
+
+        <div class="categoria__products">
+          <h1 class="categoria__title">{titulo}</h1>
+          <div class="products-grid">
+            {filteredProducts.map((product) => (
+              <article class="product-card" data-type={product.type} data-color={product.color} data-price={product.price}>
+                <div class="product-card__top">
+                  {product.badge && <span class="badge">{product.badge}</span>}
+                  <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
+                </div>
+                <div class="product-card__image" aria-hidden="true">{product.image}</div>
+                <div class="product-card__content">
+                  <h3>{product.title}</h3>
+                  <p class="product-category">{product.category}</p>
+                  <div class="product-card__footer">
+                    {product.originalPrice && (
+                      <span class="product-price-original">{product.originalPrice.toFixed(2)}€</span>
+                    )}
+                    <span class="product-price">{product.price.toFixed(2)}€</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .categoria {
+    width: 100%;
+    padding: 2rem 3rem;
+    background: #1a1a1a;
+    min-height: 80vh;
+  }
+
+  .categoria__container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .breadcrumb a {
+    color: #C8FF00;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumb a:hover {
+    color: #a4dd00;
+  }
+
+  .categoria__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .novedades__hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .novedades__images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .placeholder-image {
+    aspect-ratio: 1;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+    border-radius: var(--border-radius-card);
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.28);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.95rem;
+  }
+
+  .novedades__text h2 {
+    color: #C8FF00;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .novedades__text p {
+    color: #f5f5f5;
+    margin-bottom: 0.5rem;
+  }
+
+  .categoria__products {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .categoria__title {
+    font-size: 1.5rem;
+    color: #f5f5f5;
+    margin: 0;
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    align-items: stretch;
+  }
+
+  .product-card {
+    background: #111111;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--border-radius-card);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 1rem;
+    padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 420px;
+  }
+
+  .product-card:hover {
+    border-color: rgba(200, 255, 0, 0.3);
+  }
+
+  .product-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    background: #C8FF00;
+    color: #090909;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .icon-fav {
+    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f5f5f5;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .icon-fav:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .product-card__image {
+    height: 260px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+    border-radius: var(--border-radius-card);
+    display: grid;
+    place-items: center;
+    color: rgba(255, 255, 255, 0.28);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.95rem;
+  }
+
+  .product-card__content {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .product-category {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .product-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.4;
+  }
+
+  .product-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .product-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #C8FF00;
+  }
+
+  .product-price-original {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: line-through;
+    margin-right: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .categoria {
+      padding: 1.5rem;
+    }
+
+    .novedades__hero {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .novedades__images {
+      grid-template-columns: 1fr;
+    }
+
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

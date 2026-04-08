@@ -168,7 +168,7 @@ const destacados = [
   .products-grid {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1.2rem;
   }
 
@@ -178,8 +178,10 @@ const destacados = [
     border-radius: var(--border-radius-card);
     overflow: hidden;
     display: grid;
+    grid-template-rows: auto 1fr auto;
     gap: 1rem;
     padding: 1rem;
+    min-height: 420px;
   }
 
   .product-card__top {
@@ -214,7 +216,7 @@ const destacados = [
   }
 
   .product-card__image {
-    min-height: 260px;
+    height: 260px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
     border-radius: 1.2rem;
     display: grid;
@@ -249,7 +251,7 @@ const destacados = [
   .product-card__footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.75rem;
   }
 

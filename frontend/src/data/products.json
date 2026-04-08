@@ -1,0 +1,174 @@
+[
+  {
+    "id": 1,
+    "title": "DMH Logo Tee Black",
+    "category": "Camisetas",
+    "price": 34.99,
+    "type": "camiseta",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-08",
+    "image": "placeholder"
+  },
+  {
+    "id": 2,
+    "title": "DMH Oversized Hoodie",
+    "category": "Sudaderas",
+    "price": 59.99,
+    "type": "sudadera",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-06",
+    "image": "placeholder"
+  },
+  {
+    "id": 3,
+    "title": "DMH Crewneck White",
+    "category": "Sudaderas",
+    "price": 39.99,
+    "originalPrice": 54.99,
+    "type": "sudadera",
+    "color": "blanco",
+    "badge": "Oferta",
+    "createdAt": "2026-03-29",
+    "image": "placeholder"
+  },
+  {
+    "id": 4,
+    "title": "DMH Cargo Pant",
+    "category": "Pantalones",
+    "price": 79.99,
+    "type": "pantalon",
+    "color": "negro",
+    "createdAt": "2026-04-02",
+    "image": "placeholder"
+  },
+  {
+    "id": 5,
+    "title": "DMH Cap Logo",
+    "category": "Accesorios",
+    "price": 24.99,
+    "type": "accesorio",
+    "color": "negro",
+    "createdAt": "2026-03-31",
+    "image": "placeholder"
+  },
+  {
+    "id": 6,
+    "title": "DMH Bomber Jacket",
+    "category": "Outerwear",
+    "price": 129.99,
+    "type": "chaqueta",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-03",
+    "image": "placeholder"
+  },
+  {
+    "id": 7,
+    "title": "DMH Track Pant",
+    "category": "Pantalones",
+    "price": 49.99,
+    "originalPrice": 69.99,
+    "type": "pantalon",
+    "color": "gris",
+    "badge": "Oferta",
+    "createdAt": "2026-03-22",
+    "image": "placeholder"
+  },
+  {
+    "id": 8,
+    "title": "DMH Beanie Black",
+    "category": "Accesorios",
+    "price": 19.99,
+    "type": "accesorio",
+    "color": "negro",
+    "createdAt": "2026-03-20",
+    "image": "placeholder"
+  },
+  {
+    "id": 9,
+    "title": "DMH Shorts White",
+    "category": "Pantalones",
+    "price": 34.99,
+    "originalPrice": 49.99,
+    "type": "pantalon",
+    "color": "blanco",
+    "badge": "Oferta",
+    "createdAt": "2026-03-25",
+    "image": "placeholder"
+  },
+  {
+    "id": 10,
+    "title": "DMH Tank Top",
+    "category": "Camisetas",
+    "price": 29.99,
+    "type": "camiseta",
+    "color": "blanco",
+    "createdAt": "2026-04-01",
+    "image": "placeholder"
+  },
+  {
+    "id": 11,
+    "title": "DMH Zip Hoodie",
+    "category": "Sudaderas",
+    "price": 64.99,
+    "type": "sudadera",
+    "color": "gris",
+    "createdAt": "2026-03-24",
+    "image": "placeholder"
+  },
+  {
+    "id": 12,
+    "title": "DMH Socks Pack",
+    "category": "Accesorios",
+    "price": 11.99,
+    "originalPrice": 15.99,
+    "type": "accesorio",
+    "color": "negro",
+    "badge": "Oferta",
+    "createdAt": "2026-03-18",
+    "image": "placeholder"
+  },
+  {
+    "id": 13,
+    "title": "DMH Polo Shirt",
+    "category": "Camisetas",
+    "price": 44.99,
+    "type": "camiseta",
+    "color": "gris",
+    "createdAt": "2026-03-30",
+    "image": "placeholder"
+  },
+  {
+    "id": 14,
+    "title": "DMH Sweatpants",
+    "category": "Pantalones",
+    "price": 54.99,
+    "type": "pantalon",
+    "color": "gris",
+    "createdAt": "2026-03-26",
+    "image": "placeholder"
+  },
+  {
+    "id": 15,
+    "title": "DMH Baseball Cap",
+    "category": "Accesorios",
+    "price": 29.99,
+    "type": "accesorio",
+    "color": "blanco",
+    "createdAt": "2026-03-27",
+    "image": "placeholder"
+  },
+  {
+    "id": 16,
+    "title": "DMH Windbreaker",
+    "category": "Outerwear",
+    "price": 99.99,
+    "type": "chaqueta",
+    "color": "blanco",
+    "badge": "NEW",
+    "createdAt": "2026-04-05",
+    "image": "placeholder"
+  }
+]
