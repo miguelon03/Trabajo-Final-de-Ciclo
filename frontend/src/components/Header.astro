@@ -1,3 +1,7 @@
+---
+import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
+---
+
 <header class="site-header">
   <div class="site-header__brand-nav">
     <a class="brand" href="/">DMH</a>
@@ -10,11 +14,11 @@
   </div>
 
   <div class="site-header__actions">
-    <button class="icon-button" type="button" aria-label="Buscar">🔍</button>
-    <button class="icon-button" type="button" aria-label="Favoritos">♡</button>
-    <button class="icon-button" type="button" aria-label="Cuenta">👤</button>
+    <button class="icon-button" type="button" aria-label="Buscar" set:html={searchIcon}></button>
+    <button class="icon-button" type="button" aria-label="Favoritos" set:html={heartIcon}></button>
+    <button class="icon-button" type="button" aria-label="Cuenta" set:html={userIcon}></button>
     <a class="cart-button" href="/carrito" aria-label="Carrito de compras">
-      🛒
+      <span class="cart-icon" set:html={cartIcon}></span>
       <span class="cart-badge">2</span>
     </a>
   </div>
