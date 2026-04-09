@@ -54,7 +54,16 @@ const titulo = categoria === "novedades" ? "Novedades" : categoria.charAt(0).toU
           <h1 class="categoria__title">{titulo}</h1>
           <div class="products-grid">
             {filteredProducts.map((product) => (
-              <article class="product-card" data-type={product.type} data-color={product.color} data-price={product.price}>
+              <article
+                class="product-card"
+                data-type={product.type}
+                data-color={product.color}
+                data-price={product.price}
+                data-product-slug={product.slug}
+                tabindex="0"
+                role="link"
+                aria-label={`Ver ${product.title}`}
+              >
                 <div class="product-card__top">
                   {product.badge && <span class="badge">{product.badge}</span>}
                   <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
@@ -77,6 +86,35 @@ const titulo = categoria === "novedades" ? "Novedades" : categoria.charAt(0).toU
       </div>
     </div>
   </section>
+
+  <script>
+    const cards = document.querySelectorAll(".product-card");
+
+    cards.forEach((card) => {
+      const slug = card.getAttribute("data-product-slug");
+      if (!slug) {
+        return;
+      }
+
+      card.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest(".icon-fav")) {
+          return;
+        }
+        window.location.href = `/producto/${slug}`;
+      });
+
+      card.addEventListener("keydown", (event) => {
+        if (!(event instanceof KeyboardEvent)) {
+          return;
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          window.location.href = `/producto/${slug}`;
+        }
+      });
+    });
+  </script>
 </HomeLayout>
 
 <style>
@@ -183,6 +221,7 @@ const titulo = categoria === "novedades" ? "Novedades" : categoria.charAt(0).toU
     padding: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-height: 420px;
+    cursor: pointer;
   }
 
   .product-card:hover {

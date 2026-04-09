@@ -1,0 +1,1250 @@
+﻿[
+    {
+        "productId":  1,
+        "productSlug":  "dmh-logo-tee-black",
+        "averageRating":  4,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "1-1",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2025-12-13",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "1-2",
+                          "user":  "Diego C.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "1-3",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-16",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "1-4",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-27",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  2,
+        "productSlug":  "dmh-oversized-hoodie",
+        "averageRating":  4,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "2-1",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-19",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "2-2",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-12",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "2-3",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-14",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "2-4",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-17",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "2-5",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-03",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  3,
+        "productSlug":  "dmh-crewneck-white",
+        "averageRating":  4,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "3-1",
+                          "user":  "Diego C.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-03-12",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "3-2",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-08",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  4,
+        "productSlug":  "dmh-cargo-pant",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "4-1",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-24",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "4-2",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-31",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  5,
+        "productSlug":  "dmh-cap-logo",
+        "averageRating":  4,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "5-1",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-04-01",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "5-2",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-11",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  6,
+        "productSlug":  "dmh-bomber-jacket",
+        "averageRating":  4,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "6-1",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-12",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "6-2",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-02-02",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "6-3",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-17",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  7,
+        "productSlug":  "dmh-track-pant",
+        "averageRating":  5,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "7-1",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-02-25",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "7-2",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-01-02",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "7-3",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-22",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "7-4",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2025-12-15",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  8,
+        "productSlug":  "dmh-beanie-black",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "8-1",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-14",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "8-2",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-12",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  9,
+        "productSlug":  "dmh-shorts-white",
+        "averageRating":  3.6,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "9-1",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-02-19",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "9-2",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-22",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "9-3",
+                          "user":  "Nerea V.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-01-16",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "9-4",
+                          "user":  "Nerea V.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-30",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "9-5",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-29",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  10,
+        "productSlug":  "dmh-tank-top",
+        "averageRating":  4.2,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "10-1",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-22",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "10-2",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-20",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "10-3",
+                          "user":  "Nerea V.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-11",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "10-4",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-02-17",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  11,
+        "productSlug":  "dmh-zip-hoodie",
+        "averageRating":  4.5,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "11-1",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-08",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "11-2",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-26",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "11-3",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-01",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "11-4",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2025-12-17",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  12,
+        "productSlug":  "dmh-socks-pack",
+        "averageRating":  3.7,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "12-1",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "12-2",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-01-16",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "12-3",
+                          "user":  "Nerea V.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-07",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  13,
+        "productSlug":  "dmh-polo-shirt",
+        "averageRating":  4,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "13-1",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-09",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "13-2",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-14",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  14,
+        "productSlug":  "dmh-sweatpants",
+        "averageRating":  4.3,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "14-1",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-28",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "14-2",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2025-12-21",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "14-3",
+                          "user":  "Diego C.",
+                          "rating":  4,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-02-15",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  15,
+        "productSlug":  "dmh-baseball-cap",
+        "averageRating":  4.2,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "15-1",
+                          "user":  "Diego C.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-01-02",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "15-2",
+                          "user":  "Nerea V.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2025-12-14",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "15-3",
+                          "user":  "Sergio M.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-13",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "15-4",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-22",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "15-5",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-09",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  16,
+        "productSlug":  "dmh-windbreaker",
+        "averageRating":  4,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "16-1",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "16-2",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-26",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "16-3",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-04-01",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "16-4",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-20",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "16-5",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-17",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  17,
+        "productSlug":  "dmh-striped-tee",
+        "averageRating":  4.7,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "17-1",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-28",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "17-2",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2025-12-12",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "17-3",
+                          "user":  "Sergio M.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-28",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  18,
+        "productSlug":  "dmh-graphic-tee-vol2",
+        "averageRating":  3.8,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "18-1",
+                          "user":  "Diego C.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-07",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "18-2",
+                          "user":  "Adrian P.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-02-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "18-3",
+                          "user":  "Diego C.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-02-20",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "18-4",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-24",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "18-5",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-12",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  19,
+        "productSlug":  "dmh-essential-tee-grey",
+        "averageRating":  4.5,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "19-1",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-24",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "19-2",
+                          "user":  "Sergio M.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-07",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "19-3",
+                          "user":  "Diego C.",
+                          "rating":  4,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-02",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "19-4",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-05",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  20,
+        "productSlug":  "dmh-longline-tee",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "20-1",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2025-12-13",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "20-2",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-10",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  21,
+        "productSlug":  "dmh-hoodie-grey",
+        "averageRating":  3.5,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "21-1",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-06",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "21-2",
+                          "user":  "Adrian P.",
+                          "rating":  3,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-18",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "21-3",
+                          "user":  "Adrian P.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-06",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "21-4",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-13",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  22,
+        "productSlug":  "dmh-crewneck-black",
+        "averageRating":  4,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "22-1",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-11",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "22-2",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-04-01",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  23,
+        "productSlug":  "dmh-half-zip-sweat",
+        "averageRating":  4.8,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "23-1",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-22",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "23-2",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2025-12-13",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "23-3",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-30",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "23-4",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2025-12-13",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  24,
+        "productSlug":  "dmh-oversized-crewneck",
+        "averageRating":  4,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "24-1",
+                          "user":  "Adrian P.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2025-12-29",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "24-2",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-14",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "24-3",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2025-12-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "24-4",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-04-03",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  25,
+        "productSlug":  "dmh-jogger-black",
+        "averageRating":  4,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "25-1",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-23",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "25-2",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-29",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "25-3",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-01-19",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  26,
+        "productSlug":  "dmh-wide-leg-pant",
+        "averageRating":  4,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "26-1",
+                          "user":  "Nerea V.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-20",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "26-2",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-14",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "26-3",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-06",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  27,
+        "productSlug":  "dmh-denim-jogger",
+        "averageRating":  3.5,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "27-1",
+                          "user":  "Lucia R.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-03-21",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "27-2",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2025-12-12",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "27-3",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2025-12-14",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "27-4",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2025-12-23",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  28,
+        "productSlug":  "dmh-linen-short",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "28-1",
+                          "user":  "Nerea V.",
+                          "rating":  4,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-18",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "28-2",
+                          "user":  "Nerea V.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-03-27",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  29,
+        "productSlug":  "dmh-tote-bag",
+        "averageRating":  4.2,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "29-1",
+                          "user":  "Lucia R.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-02-17",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "29-2",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-03",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "29-3",
+                          "user":  "Adrian P.",
+                          "rating":  4,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2025-12-14",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "29-4",
+                          "user":  "Adrian P.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-16",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  30,
+        "productSlug":  "dmh-bucket-hat",
+        "averageRating":  4.3,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "30-1",
+                          "user":  "Nerea V.",
+                          "rating":  4,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-01-09",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "30-2",
+                          "user":  "Diego C.",
+                          "rating":  5,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-28",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "30-3",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-10",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  31,
+        "productSlug":  "dmh-keychain",
+        "averageRating":  4,
+        "totalReviews":  3,
+        "items":  [
+                      {
+                          "id":  "31-1",
+                          "user":  "Lucia R.",
+                          "rating":  4,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-01-17",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "31-2",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-01-07",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "31-3",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-03-31",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  32,
+        "productSlug":  "dmh-shoulder-bag",
+        "averageRating":  3.8,
+        "totalReviews":  4,
+        "items":  [
+                      {
+                          "id":  "32-1",
+                          "user":  "Nerea V.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-28",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "32-2",
+                          "user":  "Sergio M.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-03-19",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "32-3",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-02-16",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "32-4",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-28",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  33,
+        "productSlug":  "dmh-coach-jacket",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "33-1",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-02-06",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "33-2",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-03-17",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  34,
+        "productSlug":  "dmh-denim-jacket",
+        "averageRating":  4,
+        "totalReviews":  5,
+        "items":  [
+                      {
+                          "id":  "34-1",
+                          "user":  "Marta G.",
+                          "rating":  4,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-01-04",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "34-2",
+                          "user":  "Marta G.",
+                          "rating":  5,
+                          "comment":  "El tejido se nota premium y los acabados son muy buenos.",
+                          "date":  "2026-02-04",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "34-3",
+                          "user":  "Nerea V.",
+                          "rating":  5,
+                          "comment":  "Me llego rapido y la talla coincide con la guia.",
+                          "date":  "2026-02-15",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "34-4",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-01-14",
+                          "verifiedPurchase":  true
+                      },
+                      {
+                          "id":  "34-5",
+                          "user":  "Diego C.",
+                          "rating":  3,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2025-12-13",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    },
+    {
+        "productId":  35,
+        "productSlug":  "dmh-puffer-vest",
+        "averageRating":  4,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "35-1",
+                          "user":  "Marta G.",
+                          "rating":  3,
+                          "comment":  "Muy comodo para uso diario, repetiria sin duda.",
+                          "date":  "2026-02-20",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "35-2",
+                          "user":  "Sergio M.",
+                          "rating":  5,
+                          "comment":  "Calidad top y corte brutal, queda exactamente como en las fotos.",
+                          "date":  "2026-02-17",
+                          "verifiedPurchase":  false
+                      }
+                  ]
+    },
+    {
+        "productId":  36,
+        "productSlug":  "dmh-overshirt",
+        "averageRating":  3.5,
+        "totalReviews":  2,
+        "items":  [
+                      {
+                          "id":  "36-1",
+                          "user":  "Sergio M.",
+                          "rating":  4,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-04-03",
+                          "verifiedPurchase":  false
+                      },
+                      {
+                          "id":  "36-2",
+                          "user":  "Diego C.",
+                          "rating":  3,
+                          "comment":  "Gran compra, combina facil y tiene muy buen fit.",
+                          "date":  "2026-01-09",
+                          "verifiedPurchase":  true
+                      }
+                  ]
+    }
+]

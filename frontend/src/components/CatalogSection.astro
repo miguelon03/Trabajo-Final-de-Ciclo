@@ -75,7 +75,7 @@ import products from "../data/products.json";
               <span>€25 - €50</span>
             </label>
             <label class="filter-checkbox">
-              <input type="checkbox" class="filter-input" data-filter-type="price" value="50-P00" />
+              <input type="checkbox" class="filter-input" data-filter-type="price" value="50-100" />
               <span>€50 - €100</span>
             </label>
             <label class="filter-checkbox">
@@ -117,10 +117,14 @@ import products from "../data/products.json";
               <article 
                 class="product-card" 
                 data-product-id={product.id}
+                data-product-slug={product.slug}
                 data-type={product.type}
                 data-color={product.color}
                 data-price={product.price}
                 data-created-at={product.createdAt}
+                tabindex="0"
+                role="link"
+                aria-label={`Ver ${product.title}`}
               >
                 <div class="product-card__top">
                   {product.badge && <span class="badge">{product.badge}</span>}
@@ -340,7 +344,7 @@ import products from "../data/products.json";
 
   .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 260px));
     gap: 1.2rem;
     width: 100%;
   }
@@ -377,6 +381,7 @@ import products from "../data/products.json";
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: slideInUp 0.4s ease;
     min-height: 420px;
+    cursor: pointer;
   }
 
   @keyframes slideInUp {

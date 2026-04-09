@@ -18,6 +18,30 @@ const pageIndicator = document.getElementById("pageIndicator");
 const toggleFiltersBtn = document.getElementById("toggleFilters");
 const sidebar = document.getElementById("sidebar");
 
+function setupCardNavigation() {
+  productCards.forEach((card) => {
+    const slug = card.getAttribute("data-product-slug");
+    if (!slug) {
+      return;
+    }
+
+    card.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".icon-fav")) {
+        return;
+      }
+      window.location.href = `/producto/${slug}`;
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        window.location.href = `/producto/${slug}`;
+      }
+    });
+  });
+}
+
 const activeFilters = {
   type: [],
   color: [],
@@ -185,4 +209,5 @@ if (toggleFiltersBtn && sidebar) {
   });
 }
 
+setupCardNavigation();
 applyFiltersAndPagination();

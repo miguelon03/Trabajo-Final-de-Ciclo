@@ -1,5 +1,7 @@
 ---
 import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
+import productsRaw from "../data/products.json";
+const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((p) => ({ slug: p.slug, title: p.title }));
 ---
 
 <header class="site-header">
@@ -14,12 +16,26 @@ import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
   </div>
 
   <div class="site-header__actions">
-    <button class="icon-button" type="button" aria-label="Buscar" set:html={searchIcon}></button>
+    <div class="search-wrapper" id="searchWrapper">
+      <div class="search-expand" id="searchExpand">
+        <input
+          type="search"
+          id="searchInput"
+          class="search-input"
+          placeholder="Buscar productos…"
+          autocomplete="off"
+          aria-label="Buscar productos"
+          aria-expanded="false"
+        />
+      </div>
+      <ul class="search-suggestions" id="searchSuggestions" role="listbox"></ul>
+      <button class="icon-button" id="searchBtn" type="button" aria-label="Buscar" set:html={searchIcon}></button>
+    </div>
     <button class="icon-button" type="button" aria-label="Favoritos" set:html={heartIcon}></button>
     <button class="icon-button" type="button" aria-label="Cuenta" set:html={userIcon}></button>
     <a class="cart-button" href="/carrito" aria-label="Carrito de compras">
       <span class="cart-icon" set:html={cartIcon}></span>
-      <span class="cart-badge">2</span>
+      <span class="cart-badge" id="cart-badge">0</span>
     </a>
   </div>
 
@@ -144,4 +160,178 @@ import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
         gap: 1rem;
       }
     }
+
+    /* ── Search ── */
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-expand {
+      width: 0;
+      overflow: hidden;
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-expand.is-open {
+      width: 260px;
+      margin-right: 0.5rem;
+    }
+
+    #searchBtn.is-active {
+      color: #c8ff00;
+      background: rgba(200, 255, 0, 0.08);
+    }
+
+    #searchBtn.is-active svg {
+      stroke: #c8ff00;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 42px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      color: #f5f5f5;
+      padding: 0 1.1rem;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-input:focus {
+      border-color: rgba(200, 255, 0, 0.45);
+    }
+
+    .search-input::-webkit-search-cancel-button {
+      display: none;
+    }
+
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 42px;
+      width: 260px;
+      background: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      list-style: none;
+      padding: 0.35rem 0;
+      margin: 0;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .search-suggestions :global(li) {
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.75);
+      transition: background 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-suggestions :global(li:hover) {
+      background: rgba(200, 255, 0, 0.07);
+      color: #f5f5f5;
+    }
+
+    .search-suggestions :global(mark) {
+      background: transparent;
+      color: #c8ff00;
+      font-weight: 600;
+    }
   </style>
+
+<script>
+  function updateCartBadge() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]') as Array<{ quantity?: number }>;
+    const total = cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0);
+    const badge = document.getElementById('cart-badge');
+    if (badge) {
+      badge.textContent = String(total);
+      badge.style.display = total > 0 ? 'flex' : 'none';
+    }
+  }
+
+  updateCartBadge();
+  window.addEventListener('cart-updated', updateCartBadge);
+</script>
+
+<script define:vars={{ searchData }}>
+  // @ts-nocheck
+  const searchWrapper = document.getElementById('searchWrapper');
+  const searchExpand = document.getElementById('searchExpand');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const searchSuggestions = document.getElementById('searchSuggestions');
+  let isOpen = false;
+
+  function openSearch() {
+    isOpen = true;
+    searchExpand.classList.add('is-open');
+    searchBtn.classList.add('is-active');
+    searchInput.setAttribute('aria-expanded', 'true');
+    setTimeout(() => searchInput.focus(), 40);
+  }
+
+  function closeSearch() {
+    isOpen = false;
+    searchExpand.classList.remove('is-open');
+    searchBtn.classList.remove('is-active');
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.value = '';
+    hideSuggestions();
+  }
+
+  function doSearch() {
+    const q = searchInput.value.trim();
+    if (q) window.location.href = '/buscar?q=' + encodeURIComponent(q);
+  }
+
+  function escRe(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function renderSuggestions(q) {
+    if (!q.trim()) { hideSuggestions(); return; }
+    const lq = q.toLowerCase();
+    const matches = searchData.filter(p => p.title.toLowerCase().includes(lq)).slice(0, 6);
+    if (!matches.length) { hideSuggestions(); return; }
+    const re = new RegExp(escRe(q), 'gi');
+    searchSuggestions.innerHTML = matches
+      .map(p => '<li data-slug="' + p.slug + '" role="option">' + p.title.replace(re, m => '<mark>' + m + '</mark>') + '</li>')
+      .join('');
+    searchSuggestions.style.display = 'block';
+    searchSuggestions.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => { window.location.href = '/producto/' + li.dataset.slug; });
+    });
+  }
+
+  function hideSuggestions() {
+    searchSuggestions.style.display = 'none';
+    searchSuggestions.innerHTML = '';
+  }
+
+  searchBtn.addEventListener('click', () => {
+    if (!isOpen) { openSearch(); return; }
+    if (searchInput.value.trim()) { doSearch(); } else { closeSearch(); }
+  });
+
+  searchInput.addEventListener('input', () => renderSuggestions(searchInput.value));
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { doSearch(); }
+    else if (e.key === 'Escape') { closeSearch(); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (searchWrapper && !searchWrapper.contains(e.target)) closeSearch();
+  });
+</script>

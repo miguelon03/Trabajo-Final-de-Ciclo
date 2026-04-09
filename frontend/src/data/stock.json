@@ -1,0 +1,846 @@
+﻿[
+    {
+        "productId":  1,
+        "productSlug":  "dmh-logo-tee-black",
+        "totalStock":  98,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  26,
+                                 "sku":  "DMH-1-M"
+                             },
+                       "L":  {
+                                 "stock":  29,
+                                 "sku":  "DMH-1-L"
+                             },
+                       "S":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-1-S"
+                             },
+                       "XS":  {
+                                  "stock":  9,
+                                  "sku":  "DMH-1-XS"
+                              },
+                       "XL":  {
+                                  "stock":  18,
+                                  "sku":  "DMH-1-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  2,
+        "productSlug":  "dmh-oversized-hoodie",
+        "totalStock":  67,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  9,
+                                 "sku":  "DMH-2-M"
+                             },
+                       "L":  {
+                                 "stock":  8,
+                                 "sku":  "DMH-2-L"
+                             },
+                       "S":  {
+                                 "stock":  23,
+                                 "sku":  "DMH-2-S"
+                             },
+                       "XS":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-2-XS"
+                              },
+                       "XL":  {
+                                  "stock":  11,
+                                  "sku":  "DMH-2-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  3,
+        "productSlug":  "dmh-crewneck-white",
+        "totalStock":  111,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  30,
+                                 "sku":  "DMH-3-M"
+                             },
+                       "L":  {
+                                 "stock":  22,
+                                 "sku":  "DMH-3-L"
+                             },
+                       "S":  {
+                                 "stock":  10,
+                                 "sku":  "DMH-3-S"
+                             },
+                       "XS":  {
+                                  "stock":  21,
+                                  "sku":  "DMH-3-XS"
+                              },
+                       "XL":  {
+                                  "stock":  28,
+                                  "sku":  "DMH-3-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  4,
+        "productSlug":  "dmh-cargo-pant",
+        "totalStock":  68,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-4-42"
+                              },
+                       "38":  {
+                                  "stock":  7,
+                                  "sku":  "DMH-4-38"
+                              },
+                       "36":  {
+                                  "stock":  8,
+                                  "sku":  "DMH-4-36"
+                              },
+                       "44":  {
+                                  "stock":  21,
+                                  "sku":  "DMH-4-44"
+                              },
+                       "40":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-4-40"
+                              }
+                   }
+    },
+    {
+        "productId":  5,
+        "productSlug":  "dmh-cap-logo",
+        "totalStock":  29,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  29,
+                                           "sku":  "DMH-5-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  6,
+        "productSlug":  "dmh-bomber-jacket",
+        "totalStock":  96,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  23,
+                                 "sku":  "DMH-6-M"
+                             },
+                       "L":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-6-L"
+                             },
+                       "S":  {
+                                 "stock":  19,
+                                 "sku":  "DMH-6-S"
+                             },
+                       "XS":  {
+                                  "stock":  20,
+                                  "sku":  "DMH-6-XS"
+                              },
+                       "XL":  {
+                                  "stock":  18,
+                                  "sku":  "DMH-6-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  7,
+        "productSlug":  "dmh-track-pant",
+        "totalStock":  99,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  29,
+                                  "sku":  "DMH-7-42"
+                              },
+                       "38":  {
+                                  "stock":  23,
+                                  "sku":  "DMH-7-38"
+                              },
+                       "36":  {
+                                  "stock":  13,
+                                  "sku":  "DMH-7-36"
+                              },
+                       "44":  {
+                                  "stock":  6,
+                                  "sku":  "DMH-7-44"
+                              },
+                       "40":  {
+                                  "stock":  28,
+                                  "sku":  "DMH-7-40"
+                              }
+                   }
+    },
+    {
+        "productId":  8,
+        "productSlug":  "dmh-beanie-black",
+        "totalStock":  27,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  27,
+                                           "sku":  "DMH-8-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  9,
+        "productSlug":  "dmh-shorts-white",
+        "totalStock":  125,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  21,
+                                  "sku":  "DMH-9-42"
+                              },
+                       "38":  {
+                                  "stock":  29,
+                                  "sku":  "DMH-9-38"
+                              },
+                       "36":  {
+                                  "stock":  23,
+                                  "sku":  "DMH-9-36"
+                              },
+                       "44":  {
+                                  "stock":  27,
+                                  "sku":  "DMH-9-44"
+                              },
+                       "40":  {
+                                  "stock":  25,
+                                  "sku":  "DMH-9-40"
+                              }
+                   }
+    },
+    {
+        "productId":  10,
+        "productSlug":  "dmh-tank-top",
+        "totalStock":  115,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  21,
+                                 "sku":  "DMH-10-M"
+                             },
+                       "L":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-10-L"
+                             },
+                       "S":  {
+                                 "stock":  27,
+                                 "sku":  "DMH-10-S"
+                             },
+                       "XS":  {
+                                  "stock":  23,
+                                  "sku":  "DMH-10-XS"
+                              },
+                       "XL":  {
+                                  "stock":  28,
+                                  "sku":  "DMH-10-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  11,
+        "productSlug":  "dmh-zip-hoodie",
+        "totalStock":  90,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  27,
+                                 "sku":  "DMH-11-M"
+                             },
+                       "L":  {
+                                 "stock":  15,
+                                 "sku":  "DMH-11-L"
+                             },
+                       "S":  {
+                                 "stock":  14,
+                                 "sku":  "DMH-11-S"
+                             },
+                       "XS":  {
+                                  "stock":  18,
+                                  "sku":  "DMH-11-XS"
+                              },
+                       "XL":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-11-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  12,
+        "productSlug":  "dmh-socks-pack",
+        "totalStock":  35,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  35,
+                                           "sku":  "DMH-12-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  13,
+        "productSlug":  "dmh-polo-shirt",
+        "totalStock":  89,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  19,
+                                 "sku":  "DMH-13-M"
+                             },
+                       "L":  {
+                                 "stock":  6,
+                                 "sku":  "DMH-13-L"
+                             },
+                       "S":  {
+                                 "stock":  11,
+                                 "sku":  "DMH-13-S"
+                             },
+                       "XS":  {
+                                  "stock":  27,
+                                  "sku":  "DMH-13-XS"
+                              },
+                       "XL":  {
+                                  "stock":  26,
+                                  "sku":  "DMH-13-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  14,
+        "productSlug":  "dmh-sweatpants",
+        "totalStock":  89,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  10,
+                                  "sku":  "DMH-14-42"
+                              },
+                       "38":  {
+                                  "stock":  15,
+                                  "sku":  "DMH-14-38"
+                              },
+                       "36":  {
+                                  "stock":  14,
+                                  "sku":  "DMH-14-36"
+                              },
+                       "44":  {
+                                  "stock":  24,
+                                  "sku":  "DMH-14-44"
+                              },
+                       "40":  {
+                                  "stock":  26,
+                                  "sku":  "DMH-14-40"
+                              }
+                   }
+    },
+    {
+        "productId":  15,
+        "productSlug":  "dmh-baseball-cap",
+        "totalStock":  44,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  44,
+                                           "sku":  "DMH-15-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  16,
+        "productSlug":  "dmh-windbreaker",
+        "totalStock":  82,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  26,
+                                 "sku":  "DMH-16-M"
+                             },
+                       "L":  {
+                                 "stock":  10,
+                                 "sku":  "DMH-16-L"
+                             },
+                       "S":  {
+                                 "stock":  10,
+                                 "sku":  "DMH-16-S"
+                             },
+                       "XS":  {
+                                  "stock":  7,
+                                  "sku":  "DMH-16-XS"
+                              },
+                       "XL":  {
+                                  "stock":  29,
+                                  "sku":  "DMH-16-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  17,
+        "productSlug":  "dmh-striped-tee",
+        "totalStock":  97,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  28,
+                                 "sku":  "DMH-17-M"
+                             },
+                       "L":  {
+                                 "stock":  14,
+                                 "sku":  "DMH-17-L"
+                             },
+                       "S":  {
+                                 "stock":  20,
+                                 "sku":  "DMH-17-S"
+                             },
+                       "XS":  {
+                                  "stock":  21,
+                                  "sku":  "DMH-17-XS"
+                              },
+                       "XL":  {
+                                  "stock":  14,
+                                  "sku":  "DMH-17-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  18,
+        "productSlug":  "dmh-graphic-tee-vol2",
+        "totalStock":  72,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  22,
+                                 "sku":  "DMH-18-M"
+                             },
+                       "L":  {
+                                 "stock":  9,
+                                 "sku":  "DMH-18-L"
+                             },
+                       "S":  {
+                                 "stock":  26,
+                                 "sku":  "DMH-18-S"
+                             },
+                       "XS":  {
+                                  "stock":  8,
+                                  "sku":  "DMH-18-XS"
+                              },
+                       "XL":  {
+                                  "stock":  7,
+                                  "sku":  "DMH-18-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  19,
+        "productSlug":  "dmh-essential-tee-grey",
+        "totalStock":  80,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  15,
+                                 "sku":  "DMH-19-M"
+                             },
+                       "L":  {
+                                 "stock":  28,
+                                 "sku":  "DMH-19-L"
+                             },
+                       "S":  {
+                                 "stock":  11,
+                                 "sku":  "DMH-19-S"
+                             },
+                       "XS":  {
+                                  "stock":  18,
+                                  "sku":  "DMH-19-XS"
+                              },
+                       "XL":  {
+                                  "stock":  8,
+                                  "sku":  "DMH-19-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  20,
+        "productSlug":  "dmh-longline-tee",
+        "totalStock":  113,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  17,
+                                 "sku":  "DMH-20-M"
+                             },
+                       "L":  {
+                                 "stock":  29,
+                                 "sku":  "DMH-20-L"
+                             },
+                       "S":  {
+                                 "stock":  18,
+                                 "sku":  "DMH-20-S"
+                             },
+                       "XS":  {
+                                  "stock":  24,
+                                  "sku":  "DMH-20-XS"
+                              },
+                       "XL":  {
+                                  "stock":  25,
+                                  "sku":  "DMH-20-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  21,
+        "productSlug":  "dmh-hoodie-grey",
+        "totalStock":  107,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  21,
+                                 "sku":  "DMH-21-M"
+                             },
+                       "L":  {
+                                 "stock":  8,
+                                 "sku":  "DMH-21-L"
+                             },
+                       "S":  {
+                                 "stock":  28,
+                                 "sku":  "DMH-21-S"
+                             },
+                       "XS":  {
+                                  "stock":  25,
+                                  "sku":  "DMH-21-XS"
+                              },
+                       "XL":  {
+                                  "stock":  25,
+                                  "sku":  "DMH-21-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  22,
+        "productSlug":  "dmh-crewneck-black",
+        "totalStock":  77,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  7,
+                                 "sku":  "DMH-22-M"
+                             },
+                       "L":  {
+                                 "stock":  7,
+                                 "sku":  "DMH-22-L"
+                             },
+                       "S":  {
+                                 "stock":  22,
+                                 "sku":  "DMH-22-S"
+                             },
+                       "XS":  {
+                                  "stock":  13,
+                                  "sku":  "DMH-22-XS"
+                              },
+                       "XL":  {
+                                  "stock":  28,
+                                  "sku":  "DMH-22-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  23,
+        "productSlug":  "dmh-half-zip-sweat",
+        "totalStock":  76,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-23-M"
+                             },
+                       "L":  {
+                                 "stock":  11,
+                                 "sku":  "DMH-23-L"
+                             },
+                       "S":  {
+                                 "stock":  24,
+                                 "sku":  "DMH-23-S"
+                             },
+                       "XS":  {
+                                  "stock":  19,
+                                  "sku":  "DMH-23-XS"
+                              },
+                       "XL":  {
+                                  "stock":  6,
+                                  "sku":  "DMH-23-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  24,
+        "productSlug":  "dmh-oversized-crewneck",
+        "totalStock":  89,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  10,
+                                 "sku":  "DMH-24-M"
+                             },
+                       "L":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-24-L"
+                             },
+                       "S":  {
+                                 "stock":  28,
+                                 "sku":  "DMH-24-S"
+                             },
+                       "XS":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-24-XS"
+                              },
+                       "XL":  {
+                                  "stock":  19,
+                                  "sku":  "DMH-24-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  25,
+        "productSlug":  "dmh-jogger-black",
+        "totalStock":  77,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  22,
+                                  "sku":  "DMH-25-42"
+                              },
+                       "38":  {
+                                  "stock":  13,
+                                  "sku":  "DMH-25-38"
+                              },
+                       "36":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-25-36"
+                              },
+                       "44":  {
+                                  "stock":  10,
+                                  "sku":  "DMH-25-44"
+                              },
+                       "40":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-25-40"
+                              }
+                   }
+    },
+    {
+        "productId":  26,
+        "productSlug":  "dmh-wide-leg-pant",
+        "totalStock":  99,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  15,
+                                  "sku":  "DMH-26-42"
+                              },
+                       "38":  {
+                                  "stock":  26,
+                                  "sku":  "DMH-26-38"
+                              },
+                       "36":  {
+                                  "stock":  28,
+                                  "sku":  "DMH-26-36"
+                              },
+                       "44":  {
+                                  "stock":  16,
+                                  "sku":  "DMH-26-44"
+                              },
+                       "40":  {
+                                  "stock":  14,
+                                  "sku":  "DMH-26-40"
+                              }
+                   }
+    },
+    {
+        "productId":  27,
+        "productSlug":  "dmh-denim-jogger",
+        "totalStock":  98,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  17,
+                                  "sku":  "DMH-27-42"
+                              },
+                       "38":  {
+                                  "stock":  19,
+                                  "sku":  "DMH-27-38"
+                              },
+                       "36":  {
+                                  "stock":  6,
+                                  "sku":  "DMH-27-36"
+                              },
+                       "44":  {
+                                  "stock":  30,
+                                  "sku":  "DMH-27-44"
+                              },
+                       "40":  {
+                                  "stock":  26,
+                                  "sku":  "DMH-27-40"
+                              }
+                   }
+    },
+    {
+        "productId":  28,
+        "productSlug":  "dmh-linen-short",
+        "totalStock":  119,
+        "bySize":  {
+                       "42":  {
+                                  "stock":  23,
+                                  "sku":  "DMH-28-42"
+                              },
+                       "38":  {
+                                  "stock":  30,
+                                  "sku":  "DMH-28-38"
+                              },
+                       "36":  {
+                                  "stock":  21,
+                                  "sku":  "DMH-28-36"
+                              },
+                       "44":  {
+                                  "stock":  30,
+                                  "sku":  "DMH-28-44"
+                              },
+                       "40":  {
+                                  "stock":  15,
+                                  "sku":  "DMH-28-40"
+                              }
+                   }
+    },
+    {
+        "productId":  29,
+        "productSlug":  "dmh-tote-bag",
+        "totalStock":  43,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  43,
+                                           "sku":  "DMH-29-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  30,
+        "productSlug":  "dmh-bucket-hat",
+        "totalStock":  36,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  36,
+                                           "sku":  "DMH-30-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  31,
+        "productSlug":  "dmh-keychain",
+        "totalStock":  37,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  37,
+                                           "sku":  "DMH-31-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  32,
+        "productSlug":  "dmh-shoulder-bag",
+        "totalStock":  36,
+        "bySize":  {
+                       "Talla unica":  {
+                                           "stock":  36,
+                                           "sku":  "DMH-32-Tallaunica"
+                                       }
+                   }
+    },
+    {
+        "productId":  33,
+        "productSlug":  "dmh-coach-jacket",
+        "totalStock":  85,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  12,
+                                 "sku":  "DMH-33-M"
+                             },
+                       "L":  {
+                                 "stock":  16,
+                                 "sku":  "DMH-33-L"
+                             },
+                       "S":  {
+                                 "stock":  19,
+                                 "sku":  "DMH-33-S"
+                             },
+                       "XS":  {
+                                  "stock":  19,
+                                  "sku":  "DMH-33-XS"
+                              },
+                       "XL":  {
+                                  "stock":  19,
+                                  "sku":  "DMH-33-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  34,
+        "productSlug":  "dmh-denim-jacket",
+        "totalStock":  92,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  30,
+                                 "sku":  "DMH-34-M"
+                             },
+                       "L":  {
+                                 "stock":  10,
+                                 "sku":  "DMH-34-L"
+                             },
+                       "S":  {
+                                 "stock":  8,
+                                 "sku":  "DMH-34-S"
+                             },
+                       "XS":  {
+                                  "stock":  29,
+                                  "sku":  "DMH-34-XS"
+                              },
+                       "XL":  {
+                                  "stock":  15,
+                                  "sku":  "DMH-34-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  35,
+        "productSlug":  "dmh-puffer-vest",
+        "totalStock":  59,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  14,
+                                 "sku":  "DMH-35-M"
+                             },
+                       "L":  {
+                                 "stock":  6,
+                                 "sku":  "DMH-35-L"
+                             },
+                       "S":  {
+                                 "stock":  7,
+                                 "sku":  "DMH-35-S"
+                             },
+                       "XS":  {
+                                  "stock":  25,
+                                  "sku":  "DMH-35-XS"
+                              },
+                       "XL":  {
+                                  "stock":  7,
+                                  "sku":  "DMH-35-XL"
+                              }
+                   }
+    },
+    {
+        "productId":  36,
+        "productSlug":  "dmh-overshirt",
+        "totalStock":  49,
+        "bySize":  {
+                       "M":  {
+                                 "stock":  8,
+                                 "sku":  "DMH-36-M"
+                             },
+                       "L":  {
+                                 "stock":  13,
+                                 "sku":  "DMH-36-L"
+                             },
+                       "S":  {
+                                 "stock":  8,
+                                 "sku":  "DMH-36-S"
+                             },
+                       "XS":  {
+                                  "stock":  11,
+                                  "sku":  "DMH-36-XS"
+                              },
+                       "XL":  {
+                                  "stock":  9,
+                                  "sku":  "DMH-36-XL"
+                              }
+                   }
+    }
+]
