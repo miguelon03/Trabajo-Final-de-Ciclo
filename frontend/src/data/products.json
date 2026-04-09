@@ -170,5 +170,220 @@
     "badge": "NEW",
     "createdAt": "2026-04-05",
     "image": "placeholder"
+  },
+  {
+    "id": 17,
+    "title": "DMH Striped Tee",
+    "category": "Camisetas",
+    "price": 29.99,
+    "type": "camiseta",
+    "color": "blanco",
+    "badge": "NEW",
+    "createdAt": "2026-04-09",
+    "image": "placeholder"
+  },
+  {
+    "id": 18,
+    "title": "DMH Graphic Tee Vol.2",
+    "category": "Camisetas",
+    "price": 34.99,
+    "originalPrice": 44.99,
+    "type": "camiseta",
+    "color": "negro",
+    "badge": "Oferta",
+    "createdAt": "2026-03-15",
+    "image": "placeholder"
+  },
+  {
+    "id": 19,
+    "title": "DMH Essential Tee Grey",
+    "category": "Camisetas",
+    "price": 24.99,
+    "type": "camiseta",
+    "color": "gris",
+    "createdAt": "2026-03-10",
+    "image": "placeholder"
+  },
+  {
+    "id": 20,
+    "title": "DMH Longline Tee",
+    "category": "Camisetas",
+    "price": 39.99,
+    "type": "camiseta",
+    "color": "negro",
+    "createdAt": "2026-03-05",
+    "image": "placeholder"
+  },
+  {
+    "id": 21,
+    "title": "DMH Hoodie Grey",
+    "category": "Sudaderas",
+    "price": 54.99,
+    "type": "sudadera",
+    "color": "gris",
+    "badge": "NEW",
+    "createdAt": "2026-04-07",
+    "image": "placeholder"
+  },
+  {
+    "id": 22,
+    "title": "DMH Crewneck Black",
+    "category": "Sudaderas",
+    "price": 49.99,
+    "originalPrice": 64.99,
+    "type": "sudadera",
+    "color": "negro",
+    "badge": "Oferta",
+    "createdAt": "2026-03-20",
+    "image": "placeholder"
+  },
+  {
+    "id": 23,
+    "title": "DMH Half-Zip Sweat",
+    "category": "Sudaderas",
+    "price": 69.99,
+    "type": "sudadera",
+    "color": "blanco",
+    "createdAt": "2026-03-12",
+    "image": "placeholder"
+  },
+  {
+    "id": 24,
+    "title": "DMH Oversized Crewneck",
+    "category": "Sudaderas",
+    "price": 59.99,
+    "type": "sudadera",
+    "color": "gris",
+    "createdAt": "2026-03-08",
+    "image": "placeholder"
+  },
+  {
+    "id": 25,
+    "title": "DMH Jogger Black",
+    "category": "Pantalones",
+    "price": 59.99,
+    "type": "pantalon",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-08",
+    "image": "placeholder"
+  },
+  {
+    "id": 26,
+    "title": "DMH Wide Leg Pant",
+    "category": "Pantalones",
+    "price": 84.99,
+    "type": "pantalon",
+    "color": "gris",
+    "createdAt": "2026-04-01",
+    "image": "placeholder"
+  },
+  {
+    "id": 27,
+    "title": "DMH Denim Jogger",
+    "category": "Pantalones",
+    "price": 69.99,
+    "originalPrice": 89.99,
+    "type": "pantalon",
+    "color": "negro",
+    "badge": "Oferta",
+    "createdAt": "2026-03-17",
+    "image": "placeholder"
+  },
+  {
+    "id": 28,
+    "title": "DMH Linen Short",
+    "category": "Pantalones",
+    "price": 39.99,
+    "type": "pantalon",
+    "color": "blanco",
+    "createdAt": "2026-03-03",
+    "image": "placeholder"
+  },
+  {
+    "id": 29,
+    "title": "DMH Tote Bag",
+    "category": "Accesorios",
+    "price": 22.99,
+    "type": "accesorio",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-09",
+    "image": "placeholder"
+  },
+  {
+    "id": 30,
+    "title": "DMH Bucket Hat",
+    "category": "Accesorios",
+    "price": 27.99,
+    "type": "accesorio",
+    "color": "blanco",
+    "createdAt": "2026-03-28",
+    "image": "placeholder"
+  },
+  {
+    "id": 31,
+    "title": "DMH Keychain",
+    "category": "Accesorios",
+    "price": 9.99,
+    "originalPrice": 14.99,
+    "type": "accesorio",
+    "color": "negro",
+    "badge": "Oferta",
+    "createdAt": "2026-03-14",
+    "image": "placeholder"
+  },
+  {
+    "id": 32,
+    "title": "DMH Shoulder Bag",
+    "category": "Accesorios",
+    "price": 49.99,
+    "type": "accesorio",
+    "color": "gris",
+    "createdAt": "2026-03-06",
+    "image": "placeholder"
+  },
+  {
+    "id": 33,
+    "title": "DMH Coach Jacket",
+    "category": "Outerwear",
+    "price": 109.99,
+    "type": "chaqueta",
+    "color": "negro",
+    "badge": "NEW",
+    "createdAt": "2026-04-07",
+    "image": "placeholder"
+  },
+  {
+    "id": 34,
+    "title": "DMH Denim Jacket",
+    "category": "Outerwear",
+    "price": 119.99,
+    "originalPrice": 149.99,
+    "type": "chaqueta",
+    "color": "gris",
+    "badge": "Oferta",
+    "createdAt": "2026-03-23",
+    "image": "placeholder"
+  },
+  {
+    "id": 35,
+    "title": "DMH Puffer Vest",
+    "category": "Outerwear",
+    "price": 89.99,
+    "type": "chaqueta",
+    "color": "blanco",
+    "createdAt": "2026-03-11",
+    "image": "placeholder"
+  },
+  {
+    "id": 36,
+    "title": "DMH Overshirt",
+    "category": "Outerwear",
+    "price": 94.99,
+    "type": "chaqueta",
+    "color": "negro",
+    "createdAt": "2026-03-01",
+    "image": "placeholder"
   }
 ]
