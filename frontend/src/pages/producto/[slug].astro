@@ -289,14 +289,14 @@ const relatedProducts = allProducts
     addToCartBtn?.addEventListener("click", () => {
       const selected = getSelectedSizeInput();
       if (!selected || !productInfo) {
-        alert("Selecciona una talla disponible.");
+        (window as any).showToast?.("Selecciona una talla disponible.", "error");
         return;
       }
 
       const quantity = Math.max(1, Number(quantityInput?.value || 1));
       const stock = Number(selected.dataset.stock || 0);
       if (quantity > stock) {
-        alert("No hay suficiente stock para la cantidad seleccionada.");
+        (window as any).showToast?.("No hay suficiente stock para esa cantidad.", "error");
         return;
       }
 
@@ -330,7 +330,7 @@ const relatedProducts = allProducts
 
       localStorage.setItem("cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("cart-updated"));
-      alert("Producto añadido al carrito.");
+      (window as any).showToast?.("¡Producto añadido al carrito!", "success");
     });
 
     // --- Related cards navigation ---

@@ -141,3 +141,81 @@ button.secondary:hover,
 a.button.secondary:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ── Toast global ── */
+.dmh-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  background: #1e1e1e;
+  border: 1px solid rgba(200, 255, 0, 0.45);
+  border-radius: 12px;
+  padding: 0.85rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(200, 255, 0, 0.1), 0 4px 24px rgba(200, 255, 0, 0.12);
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  max-width: 320px;
+  pointer-events: none;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.dmh-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dmh-toast__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dmh-toast--success .dmh-toast__icon { background: rgba(200, 255, 0, 0.15); color: #c8ff00; }
+.dmh-toast--error   .dmh-toast__icon { background: rgba(255, 80, 80, 0.15);  color: #ff6060; }
+.dmh-toast--info    .dmh-toast__icon { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7); }
+
+/* Toast de confirmación */
+.dmh-toast--confirm {
+  pointer-events: auto;
+  max-width: 340px;
+  align-items: flex-start;
+}
+.dmh-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.dmh-toast__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.dmh-toast__btn {
+  padding: 0.35rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.dmh-toast__btn:hover { opacity: 0.85; }
+.dmh-toast__btn--confirm {
+  background: #c8ff00;
+  color: #0f0f0f;
+}
+.dmh-toast__btn--cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f5f5;
+}

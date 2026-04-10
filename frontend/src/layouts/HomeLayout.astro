@@ -30,6 +30,8 @@ const { title = "DripMode Hood", description = "" } = Astro.props;
         <title>{title}</title>
         <!-- Meta descripción opcional -->
         {description && <meta name="description" content={description} />}
+        <!-- Utilidades globales (toast, etc.) -->
+        <script src="/dmh-utils.js" is:inline></script>
     </head>
 
     <body>

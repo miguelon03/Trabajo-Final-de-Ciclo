@@ -136,6 +136,18 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       align-items: center;
       justify-content: center;
       padding: 0 0.35rem;
+      transition: transform 0.15s ease;
+    }
+
+    @keyframes badge-bump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.55); }
+      70%  { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
+    .cart-badge.is-bumping {
+      animation: badge-bump 0.35s ease forwards;
     }
 
     @media (max-width: 900px) {
@@ -250,18 +262,24 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
   </style>
 
 <script>
-  function updateCartBadge() {
+  function updateCartBadge(bump = false) {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]') as Array<{ quantity?: number }>;
     const total = cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0);
     const badge = document.getElementById('cart-badge');
     if (badge) {
       badge.textContent = String(total);
       badge.style.display = total > 0 ? 'flex' : 'none';
+      if (bump && total > 0) {
+        badge.classList.remove('is-bumping');
+        void badge.offsetWidth; // reflow
+        badge.classList.add('is-bumping');
+        badge.addEventListener('animationend', () => badge.classList.remove('is-bumping'), { once: true });
+      }
     }
   }
 
   updateCartBadge();
-  window.addEventListener('cart-updated', updateCartBadge);
+  window.addEventListener('cart-updated', () => updateCartBadge(true));
 </script>
 
 <script define:vars={{ searchData }}>
