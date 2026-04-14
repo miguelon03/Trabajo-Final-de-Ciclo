@@ -1,53 +1,67 @@
 <?php
-/*
- * INSTALADOR DE LA BASE DE DATOS DRIPMODE
- * ---------------------------------------
- * Este script:
- *  1. Conecta a MySQL usando PDO
- *  2. Crea la base de datos si no existe
- *  3. Crea todas las tablas necesarias
- *  4. Inserta un usuario administrador inicial
- *
- * Requisitos:
- *  - Apache y MySQL activos en XAMPP
- *  - conexion.php en la misma carpeta
- */
 
+//cabeceras CORS para permitir peticiones desde el frontend de Astro en localhost
+header("Access-Control-Allow-Origin: http://localhost:4321");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// Falta por añadir la tabla "carrito" para guardar productos antes de finalizar el pedido, pero se puede añadir después sin problemas.
+//la respuesta es en JSON
+header("Content-Type: application/json; charset=utf-8");
 
-require_once "conexion.php"; // Importamos la conexión PDO
+//si el navegador hace una peticion previa OPTIONS respondemos OK y terminamos
+if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
+    http_response_code(200);
+    exit();
+}
+
+//datos del servidor MySQL
+$host = "localhost";
+$usuario = "root";
+$contrasena = "";
+$basedatos = "dripmode";
 
 try {
-    echo "<h2>Instalando base de datos...</h2>";
+    //creamos una conexion PDO al servidor como en conexion.php pero sin la base de datos porque no existe, la estamos creando
+    $conexion = new PDO(
+        "mysql:host=$host;charset=utf8mb4",
+        $usuario,
+        $contrasena
+    );
 
-    // Crear base de datos si no existe
-    $conexion->exec("CREATE DATABASE IF NOT EXISTS dripmode CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    echo "✔ Base de datos creada o ya existente<br>";
+    //como en conexion.php excepciones para capturar errores SQL y que los resultados sean arrays asociativos
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conexion->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-    // Seleccionar la base de datos
-    $conexion->exec("USE dripmode");
+    //diego, en vez de tener los echos que se cargan el archivo te he puesto un array que se vayan metiendo las cosas 
+    $pasos = [];
 
-    /*
-     * TABLA: usuarios
-     */
+    //creamos la base de datos si no existe
+    $conexion->exec("
+        CREATE DATABASE IF NOT EXISTS `$basedatos`
+        CHARACTER SET utf8mb4
+        COLLATE utf8mb4_unicode_ci
+    ");
+    $pasos[] = "Base de datos creada o ya existente";
+
+    //seleccionamos la base de datos que hemos creado
+    $conexion->exec("USE `$basedatos`");
+
+    //Tabla de usuarios
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS usuarios (
             id INT AUTO_INCREMENT PRIMARY KEY,
             nombre VARCHAR(100) NOT NULL,
             email VARCHAR(150) NOT NULL UNIQUE,
-            contraseña_hash VARCHAR(255) NOT NULL,
+            contrasena_hash VARCHAR(255) NOT NULL,
             rol ENUM('cliente','admin') NOT NULL DEFAULT 'cliente',
             estado ENUM('activo','desactivado') NOT NULL DEFAULT 'activo',
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
-    echo "✔ Tabla usuarios creada<br>";
-
-    /*
-     * TABLA: puntos_usuarios
-     */
+    $pasos[] = "Tabla usuarios creada";
+    //Tabla de puntos de usuarios
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS puntos_usuarios (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,11 +71,8 @@ try {
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         )
     ");
-    echo "✔ Tabla puntos_usuarios creada<br>";
-
-    /*
-     * TABLA: historial_puntos
-     */
+    $pasos[] = "Tabla puntos_usuarios creada";
+    //Tabla de historial de puntos del usuario
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS historial_puntos (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,11 +84,9 @@ try {
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         )
     ");
-    echo "✔ Tabla historial_puntos creada<br>";
+    $pasos[] = "Tabla historial_puntos creada";
 
-    /*
-     * TABLA: categorias
-     */
+    //Tabla de categorias
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS categorias (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -89,11 +98,8 @@ try {
             FOREIGN KEY (categoria_padre_id) REFERENCES categorias(id)
         )
     ");
-    echo "✔ Tabla categorias creada<br>";
-
-    /*
-     * TABLA: productos
-     */
+    $pasos[] = "Tabla categorias creada";
+    //Tabla de productos
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS productos (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -106,29 +112,23 @@ try {
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
-    echo "✔ Tabla productos creada<br>";
-
-    /*
-    * TABLA: opiniones
-    */
+    $pasos[] = "Tabla productos creada";
+    //Tabla de opiniones
     $conexion->exec("
-    CREATE TABLE IF NOT EXISTS opiniones (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        usuario_id INT NOT NULL,
-        producto_id INT NOT NULL,
-        puntuacion TINYINT NOT NULL CHECK (puntuacion BETWEEN 1 AND 5),
-        comentario TEXT NULL,
-        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE (usuario_id, producto_id), -- 1 opinión por usuario por producto
-        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-        FOREIGN KEY (producto_id) REFERENCES productos(id)
-    )
-");
-    echo "✔ Tabla opiniones creada<br>";
-
-    /*
-     * TABLA: productos_categorias
-     */
+        CREATE TABLE IF NOT EXISTS opiniones (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT NOT NULL,
+            producto_id INT NOT NULL,
+            puntuacion TINYINT NOT NULL CHECK (puntuacion BETWEEN 1 AND 5),
+            comentario TEXT NULL,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (usuario_id, producto_id),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+            FOREIGN KEY (producto_id) REFERENCES productos(id)
+        )
+    ");
+    $pasos[] = "Tabla opiniones creada";
+    //Tabla de productos por categoria
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS productos_categorias (
             producto_id INT NOT NULL,
@@ -138,11 +138,8 @@ try {
             FOREIGN KEY (categoria_id) REFERENCES categorias(id)
         )
     ");
-    echo "✔ Tabla productos_categorias creada<br>";
-
-    /*
-     * TABLA: imagenes_productos
-     */
+    $pasos[] = "Tabla productos_categorias creada";
+    //Tabla de imagenes de los productos
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS imagenes_productos (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -152,11 +149,8 @@ try {
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         )
     ");
-    echo "✔ Tabla imagenes_productos creada<br>";
-
-    /*
-     * TABLA: variantes_producto
-     */
+    $pasos[] = "Tabla imagenes_productos creada";
+    //Tabla de variantes de producto
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS variantes_producto (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -169,11 +163,8 @@ try {
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         )
     ");
-    echo "✔ Tabla variantes_producto creada<br>";
-
-    /*
-     * TABLA: pedidos
-     */
+    $pasos[] = "Tabla variantes_producto creada";
+    //Tabla de mis pedidos
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS pedidos (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -188,11 +179,8 @@ try {
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         )
     ");
-    echo "✔ Tabla pedidos creada<br>";
-
-    /*
-     * TABLA: items_pedido
-     */
+    $pasos[] = "Tabla pedidos creada";
+    //Tabla de items por pedido
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS items_pedido (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -207,11 +195,8 @@ try {
             FOREIGN KEY (variante_id) REFERENCES variantes_producto(id)
         )
     ");
-    echo "✔ Tabla items_pedido creada<br>";
-
-    /*
-     * TABLA: devoluciones
-     */
+    $pasos[] = "Tabla items_pedido creada";
+    //Tabla de devoluciones
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS devoluciones (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -225,11 +210,8 @@ try {
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         )
     ");
-    echo "✔ Tabla devoluciones creada<br>";
-
-    /*
-     * TABLA: contenido
-     */
+    $pasos[] = "Tabla devoluciones creada";
+    //Tabla de contenido
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS contenido (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -246,11 +228,8 @@ try {
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
-    echo "✔ Tabla contenido creada<br>";
-
-    /*
-     * TABLA: carrusel
-     */
+    $pasos[] = "Tabla contenido creada";
+    //Tabla de carrusel
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS carrusel (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -263,11 +242,8 @@ try {
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
-    echo "✔ Tabla carrusel creada<br>";
-
-    /*
-     * TABLA: logs_admin
-     */
+    $pasos[] = "Tabla carrusel creada";
+    //Tabla de los logs del admin
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS logs_admin (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -279,11 +255,8 @@ try {
             FOREIGN KEY (admin_id) REFERENCES usuarios(id)
         )
     ");
-    echo "✔ Tabla logs_admin creada<br>";
-
-    /*
-     * TABLA: vistas_producto
-     */
+    $pasos[] = "Tabla logs_admin creada";
+    //Tabla vistas de un producto
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS vistas_producto (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -292,20 +265,36 @@ try {
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         )
     ");
-    echo "✔ Tabla vistas_producto creada<br>";
+    $pasos[] = "Tabla vistas_producto creada";
 
-    /*
-     * Crear usuario administrador inicial
-     */
+    //Creamos el administrador y lo insertamos en la tabla de usuarios
     $password = password_hash("admin123", PASSWORD_DEFAULT);
-
-    $conexion->exec("
-        INSERT INTO usuarios (nombre, email, contraseña_hash, rol)
-        VALUES ('Administrador', 'admin@dripmode.com', '$password', 'admin')
-        ON DUPLICATE KEY UPDATE email=email
+    $stmt = $conexion->prepare("
+        INSERT INTO usuarios (nombre, email, contrasena_hash, rol)
+        VALUES (:nombre, :email, :contrasena_hash, 'admin')
+        ON DUPLICATE KEY UPDATE email = email
     ");
+    $stmt->execute([
+        "nombre" => "Administrador",
+        "email" => "admin@dripmode.com",
+        "contrasena_hash" => $password
+    ]);
 
-    echo "<br><strong>✔ Instalación completada. Usuario admin creado.</strong>";
-} catch (PDOException $e) {
-    die("<br><br><strong>Error durante la instalación:</strong> " . $e->getMessage());
+    $pasos[] = "Usuario administrador creado o ya existente";
+
+    //devolvemos un json de que todo ha salido correctamente
+    echo json_encode([
+        "ok" => true,
+        "mensaje" => "Instalación completada correctamente",
+        "pasos" => $pasos
+    ]);
+
+//si hay algun error devolvemos un json con el error
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode([
+        "ok" => false,
+        "error" => "Error durante la instalación",
+        "detalle" => $e->getMessage()
+    ]);
 }

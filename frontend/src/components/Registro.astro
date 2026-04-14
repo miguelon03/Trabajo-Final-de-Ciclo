@@ -1,0 +1,332 @@
+<style>
+  /* Variables del tema */
+  :root {
+    --bg: #050505;
+    --panel: #0b0b0b;
+    --input: #141414;
+    --border: #2b2b2b;
+    --text: #f5f5f5;
+    --muted: #6f6f6f;
+    --accent: #d9ff00;
+    --accent-dark: #111111;
+    --error: #ff6b6b;
+    --success: #7dff98;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Contenedor general */
+  .page {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 16px;
+    overflow-x: hidden;
+  }
+
+  /* Tarjeta del formulario */
+  .register-card {
+    width: min(100%, 460px);
+  }
+
+  /* Logo */
+  .logo {
+    text-align: center;
+    color: var(--accent);
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    margin: 0 0 16px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #4f4f4f;
+    letter-spacing: 0.35em;
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
+    margin: 0 0 42px;
+  }
+
+  .field {
+    margin-bottom: 28px;
+  }
+
+  .label {
+    display: block;
+    color: #787878;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+
+  .input {
+    width: 100%;
+    height: 52px;
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 0 14px;
+    outline: none;
+    font-size: 1rem;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .input:focus {
+    border-color: #1597ff;
+    box-shadow: 0 0 0 1px #1597ff inset;
+  }
+
+  /* Bloque de aceptación de términos */
+  .terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 4px 0 24px;
+    color: #9a9a9a;
+    line-height: 1.5;
+    font-size: 0.96rem;
+  }
+
+  .terms input[type="checkbox"] {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .terms a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* Mensajes */
+  .message {
+    min-height: 24px;
+    margin: 0 0 18px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .message.error {
+    color: var(--error);
+  }
+
+  .message.success {
+    color: var(--success);
+  }
+
+  /* Botones */
+  .btn {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 4px;
+    border: none;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition:
+      transform 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  .btn:hover {
+    opacity: 0.96;
+  }
+
+  .btn:active {
+    transform: scale(0.99);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #111;
+    margin-bottom: 14px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #242424;
+    margin: 38px 0;
+  }
+
+  .login-text {
+    text-align: center;
+    color: #666;
+    font-size: 0.96rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .login-text a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .btn-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    background: transparent;
+    color: #d0d0d0;
+    border: 1px solid #313131;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.98rem;
+    transition:
+      transform 0.15s ease,
+      opacity 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .btn-home:hover {
+    opacity: 0.96;
+    border-color: #4a4a4a;
+  }
+
+  .btn-home:active {
+    transform: scale(0.99);
+  }
+
+  .btn-home span {
+    margin-right: 8px;
+    font-size: 1rem;
+  }
+</style>
+
+<section class="page">
+  <div class="register-card">
+    <h1 class="logo">DMH</h1>
+    <p class="subtitle">REGÍSTRATE</p>
+
+    <!-- Formulario de registro -->
+    <form id="registerForm">
+      <div class="field">
+        <label class="label" for="nombre">Nombre</label>
+        <input class="input" type="text" id="nombre" name="nombre" />
+      </div>
+
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" type="email" id="email" name="email" />
+      </div>
+
+      <div class="field">
+        <label class="label" for="contrasena">Contraseña</label>
+        <input
+          class="input"
+          type="password"
+          id="contrasena"
+          name="contrasena"
+        />
+      </div>
+
+      <!-- Checkbox de términos -->
+      <label class="terms">
+        <input type="checkbox" name="acepta" value="1" />
+        <span>
+          Acepto los <a href="/terminos">términos y condiciones</a> y la
+          <a href="/privacidad">política de privacidad</a>
+        </span>
+      </label>
+
+      <!-- Mensajes -->
+      <p id="registerMessage" class="message"></p>
+
+      <button class="btn btn-primary" type="submit">
+        CREAR CUENTA
+      </button>
+
+      <a class="btn-home" href="/">
+        <span>←</span> Volver al inicio
+      </a>
+    </form>
+
+    <hr class="divider" />
+
+    <p class="login-text">
+      ¿Ya tienes una cuenta? <a href="/login">Inicia Sesión</a>
+    </p>
+  </div>
+
+  <script>
+    // Referencias al formulario y al contenedor de mensajes
+    const registerForm = document.getElementById("registerForm");
+    const registerMessage = document.getElementById("registerMessage");
+
+    if (
+      registerForm instanceof HTMLFormElement &&
+      registerMessage instanceof HTMLElement
+    ) {
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Limpiamos el mensaje anterior
+        registerMessage.textContent = "";
+        registerMessage.className = "message";
+
+        // Recogemos los datos del formulario
+        const formData = new FormData(registerForm);
+
+        try {
+          // Enviamos los datos al backend
+          const response = await fetch(
+            "http://localhost/TrabajoFinalDeCiclo/backend/register.php",
+            {
+              method: "POST",
+              body: formData,
+              credentials: "include",
+            }
+          );
+
+          // Leemos la respuesta como texto para poder capturar errores de JSON
+          const text = await response.text();
+
+          try {
+            const data = JSON.parse(text);
+
+            if (data.ok) {
+              // Si el registro fue correcto, mostramos éxito y redirigimos
+              registerMessage.textContent = "Cuenta creada correctamente";
+              registerMessage.className = "message success";
+
+              setTimeout(() => {
+                window.location.href = "/";
+              }, 800);
+            } else {
+              // Si el backend devuelve error, lo mostramos
+              registerMessage.textContent =
+                data.error || "Error al crear la cuenta";
+              registerMessage.className = "message error";
+            }
+          } catch {
+            // Si la respuesta no era JSON válido, mostramos el texto recibido
+            registerMessage.textContent = text || "Respuesta no válida del servidor";
+            registerMessage.className = "message error";
+            console.error("Respuesta PHP no válida:", text);
+          }
+        } catch (error) {
+          // Error de conexión con el servidor
+          registerMessage.textContent = "Error de conexión con el servidor";
+          registerMessage.className = "message error";
+          console.error(error);
+        }
+      });
+    }
+  </script>
+</section>

@@ -1,12 +1,24 @@
 ---
+/* Importamos los iconos SVG usados en la cabecera */
 import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
+
+/* Importamos el JSON de productos para alimentar el buscador */
 import productsRaw from "../data/products.json";
-const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((p) => ({ slug: p.slug, title: p.title }));
+
+/* Transformamos los productos para quedarnos solo con slug y título */
+const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
+  (p) => ({
+    slug: p.slug,
+    title: p.title,
+  }),
+);
 ---
 
 <header class="site-header">
+  <!-- Bloque izquierdo: logo + navegación principal -->
   <div class="site-header__brand-nav">
     <a class="brand" href="/">DMH</a>
+
     <nav class="site-nav" aria-label="Navegación principal">
       <a class="site-nav__link active" href="/catalogo">Catálogo</a>
       <a class="site-nav__link" href="/categoria/novedades">Novedades</a>
@@ -15,7 +27,9 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
     </nav>
   </div>
 
+  <!-- Bloque derecho: búsqueda + favoritos + cuenta + carrito -->
   <div class="site-header__actions">
+    <!-- Buscador expandible -->
     <div class="search-wrapper" id="searchWrapper">
       <div class="search-expand" id="searchExpand">
         <input
@@ -28,18 +42,58 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
           aria-expanded="false"
         />
       </div>
+
+      <!-- Lista de sugerencias del buscador -->
       <ul class="search-suggestions" id="searchSuggestions" role="listbox"></ul>
-      <button class="icon-button" id="searchBtn" type="button" aria-label="Buscar" set:html={searchIcon}></button>
+
+      <!-- Botón del buscador -->
+      <button
+        class="icon-button"
+        id="searchBtn"
+        type="button"
+        aria-label="Buscar"
+        set:html={searchIcon}
+      />
     </div>
-    <button class="icon-button" type="button" aria-label="Favoritos" set:html={heartIcon}></button>
-    <button class="icon-button" type="button" aria-label="Cuenta" set:html={userIcon}></button>
+
+    <!-- Botón de favoritos -->
+    <button
+      class="icon-button"
+      type="button"
+      aria-label="Favoritos"
+      set:html={heartIcon}
+    />
+
+    <!-- Menú de cuenta de usuario -->
+    <div class="account-menu" id="accountMenu">
+      <button
+        id="accountButton"
+        class="icon-button"
+        type="button"
+        aria-label="Cuenta"
+        aria-expanded="false"
+      >
+        <span set:html={userIcon} />
+      </button>
+
+      <!-- Desplegable del usuario -->
+      <div class="account-dropdown" id="accountDropdown">
+        <a id="profileLink" href="/login">Mi perfil</a>
+        <a id="ordersLink" href="/login">Mis pedidos</a>
+        <a id="favoritesLink" href="/login">Favoritos</a>
+        <button id="logoutBtn" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <!-- Botón del carrito con contador -->
     <a class="cart-button" href="/carrito" aria-label="Carrito de compras">
-      <span class="cart-icon" set:html={cartIcon}></span>
+      <span class="cart-icon" set:html={cartIcon} />
       <span class="cart-badge" id="cart-badge">0</span>
     </a>
   </div>
 
   <style>
+    /* Contenedor principal del header */
     .site-header {
       width: 100%;
       max-width: 1200px;
@@ -52,6 +106,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       color: #f5f5f5;
     }
 
+    /* Logo / marca */
     .brand {
       font-family: Inter, system-ui, sans-serif;
       font-size: 1.4rem;
@@ -62,6 +117,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       margin-right: 2rem;
     }
 
+    /* Navegación principal */
     .site-nav {
       display: flex;
       gap: 1.6rem;
@@ -95,6 +151,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       flex-wrap: wrap;
     }
 
+    /* Botones redondos de iconos */
     .icon-button,
     .cart-button {
       border: none;
@@ -107,7 +164,9 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       justify-content: center;
       border-radius: 999px;
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
       text-decoration: none;
     }
 
@@ -117,6 +176,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       transform: translateY(-1px);
     }
 
+    /* Carrito con badge */
     .cart-button {
       position: relative;
     }
@@ -139,10 +199,11 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       transition: transform 0.15s ease;
     }
 
+    /* Animación del badge del carrito al actualizarse */
     @keyframes badge-bump {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.55); }
-      70%  { transform: scale(0.9); }
+      0% { transform: scale(1); }
+      40% { transform: scale(1.55); }
+      70% { transform: scale(0.9); }
       100% { transform: scale(1); }
     }
 
@@ -150,6 +211,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       animation: badge-bump 0.35s ease forwards;
     }
 
+    /* Responsive */
     @media (max-width: 900px) {
       .site-header {
         flex-direction: column;
@@ -173,7 +235,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       }
     }
 
-    /* ── Search ── */
+    /* Buscador */
     .search-wrapper {
       position: relative;
       display: flex;
@@ -259,97 +321,330 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map((
       color: #c8ff00;
       font-weight: 600;
     }
+
+    /* Menú de cuenta */
+    .account-menu {
+      position: relative;
+    }
+
+    .account-dropdown {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      min-width: 190px;
+      background: #151515;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.3rem;
+      z-index: 300;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .account-dropdown.is-open {
+      display: flex;
+    }
+
+    .account-dropdown a,
+    .account-dropdown button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #f5f5f5;
+      text-decoration: none;
+      text-align: left;
+      padding: 0.8rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition:
+        background 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .account-dropdown a:hover,
+    .account-dropdown button:hover {
+      background: rgba(215, 255, 0, 0.08);
+      color: #d7ff00;
+    }
   </style>
 
-<script>
-  function updateCartBadge(bump = false) {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]') as Array<{ quantity?: number }>;
-    const total = cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0);
-    const badge = document.getElementById('cart-badge');
-    if (badge) {
-      badge.textContent = String(total);
-      badge.style.display = total > 0 ? 'flex' : 'none';
-      if (bump && total > 0) {
-        badge.classList.remove('is-bumping');
-        void badge.offsetWidth; // reflow
-        badge.classList.add('is-bumping');
-        badge.addEventListener('animationend', () => badge.classList.remove('is-bumping'), { once: true });
+  <script>
+    // Actualiza el contador visual del carrito leyendo localStorage
+    function updateCartBadge(bump = false) {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]") as Array<{
+        quantity?: number;
+      }>;
+
+      const total = cart.reduce(
+        (sum: number, item: { quantity?: number }) =>
+          sum + (item.quantity || 1),
+        0,
+      );
+
+      const badge = document.getElementById("cart-badge");
+
+      if (badge) {
+        badge.textContent = String(total);
+        badge.style.display = total > 0 ? "flex" : "none";
+
+        if (bump && total > 0) {
+          badge.classList.remove("is-bumping");
+          void badge.offsetWidth;
+          badge.classList.add("is-bumping");
+          badge.addEventListener(
+            "animationend",
+            () => badge.classList.remove("is-bumping"),
+            { once: true },
+          );
+        }
       }
     }
-  }
 
-  updateCartBadge();
-  window.addEventListener('cart-updated', () => updateCartBadge(true));
-</script>
+    // Consulta la sesión al backend y adapta el menú de usuario
+    async function updateSessionUI() {
+      const profileLink = document.getElementById(
+        "profileLink",
+      ) as HTMLAnchorElement | null;
+      const ordersLink = document.getElementById(
+        "ordersLink",
+      ) as HTMLAnchorElement | null;
+      const favoritesLink = document.getElementById(
+        "favoritesLink",
+      ) as HTMLAnchorElement | null;
+      const accountButton = document.getElementById(
+        "accountButton",
+      ) as HTMLButtonElement | null;
+      const logoutBtn = document.getElementById(
+        "logoutBtn",
+      ) as HTMLButtonElement | null;
+      const accountDropdown = document.getElementById(
+        "accountDropdown",
+      ) as HTMLDivElement | null;
+      const accountMenu = document.getElementById(
+        "accountMenu",
+      ) as HTMLDivElement | null;
 
-<script define:vars={{ searchData }}>
-  // @ts-nocheck
-  const searchWrapper = document.getElementById('searchWrapper');
-  const searchExpand = document.getElementById('searchExpand');
-  const searchInput = document.getElementById('searchInput');
-  const searchBtn = document.getElementById('searchBtn');
-  const searchSuggestions = document.getElementById('searchSuggestions');
-  let isOpen = false;
+      if (
+        !accountButton ||
+        !accountDropdown ||
+        !profileLink ||
+        !ordersLink ||
+        !favoritesLink ||
+        !logoutBtn ||
+        !accountMenu
+      ) {
+        return;
+      }
 
-  function openSearch() {
-    isOpen = true;
-    searchExpand.classList.add('is-open');
-    searchBtn.classList.add('is-active');
-    searchInput.setAttribute('aria-expanded', 'true');
-    setTimeout(() => searchInput.focus(), 40);
-  }
+      try {
+        // Pedimos al backend información de la sesión actual
+        const response = await fetch(
+          "http://localhost/TrabajoFinalDeCiclo/backend/session.php",
+          {
+            credentials: "include",
+          },
+        );
 
-  function closeSearch() {
-    isOpen = false;
-    searchExpand.classList.remove('is-open');
-    searchBtn.classList.remove('is-active');
-    searchInput.setAttribute('aria-expanded', 'false');
-    searchInput.value = '';
-    hideSuggestions();
-  }
+        const data = await response.json();
 
-  function doSearch() {
-    const q = searchInput.value.trim();
-    if (q) window.location.href = '/buscar?q=' + encodeURIComponent(q);
-  }
+        // Si hay usuario logueado, activamos el desplegable
+        if (data.logueado && data.usuario) {
+          const isAdmin = data.usuario.rol === "admin";
 
-  function escRe(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
+          // Las rutas cambian según sea admin o cliente
+          profileLink.href = isAdmin ? "/admin" : "/usuario";
+          ordersLink.href = isAdmin ? "/admin/pedidos" : "/usuario/pedidos";
+          favoritesLink.href = isAdmin ? "/admin" : "/usuario/favoritos";
 
-  function renderSuggestions(q) {
-    if (!q.trim()) { hideSuggestions(); return; }
-    const lq = q.toLowerCase();
-    const matches = searchData.filter(p => p.title.toLowerCase().includes(lq)).slice(0, 6);
-    if (!matches.length) { hideSuggestions(); return; }
-    const re = new RegExp(escRe(q), 'gi');
-    searchSuggestions.innerHTML = matches
-      .map(p => '<li data-slug="' + p.slug + '" role="option">' + p.title.replace(re, m => '<mark>' + m + '</mark>') + '</li>')
-      .join('');
-    searchSuggestions.style.display = 'block';
-    searchSuggestions.querySelectorAll('li').forEach(li => {
-      li.addEventListener('click', () => { window.location.href = '/producto/' + li.dataset.slug; });
+          // Al pulsar el icono se abre o cierra el menú desplegable
+          accountButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isOpen = accountDropdown.classList.toggle("is-open");
+            accountButton.setAttribute("aria-expanded", String(isOpen));
+          });
+
+          // Si haces clic fuera del menú, se cierra
+          document.addEventListener("click", (e) => {
+            const target = e.target as Node | null;
+
+            if (accountMenu && target && !accountMenu.contains(target)) {
+              accountDropdown?.classList.remove("is-open");
+              accountButton?.setAttribute("aria-expanded", "false");
+            }
+          });
+
+          // Botón para cerrar sesión
+          logoutBtn.addEventListener("click", async () => {
+            try {
+              const logoutResponse = await fetch(
+                "http://localhost/TrabajoFinalDeCiclo/backend/logout.php",
+                {
+                  method: "POST",
+                  credentials: "include",
+                },
+              );
+
+              const logoutData = await logoutResponse.json();
+
+              if (logoutData.ok) {
+                window.location.href = "/";
+              }
+            } catch (error) {
+              console.error("Error cerrando sesión:", error);
+            }
+          });
+        } else {
+          // Si no hay sesión, el botón de usuario lleva al login
+          profileLink.href = "/login";
+          ordersLink.href = "/login";
+          favoritesLink.href = "/login";
+
+          accountButton.addEventListener("click", () => {
+            window.location.href = "/login";
+          });
+
+          // Ocultamos el botón de cerrar sesión
+          logoutBtn.style.display = "none";
+        }
+      } catch (error) {
+        console.error("Error leyendo sesión:", error);
+      }
+    }
+
+    // Inicializamos el badge del carrito y el estado de la sesión
+    updateCartBadge();
+    updateSessionUI();
+
+    // Escuchamos eventos personalizados para refrescar el carrito al añadir productos
+    window.addEventListener("cart-updated", () => updateCartBadge(true));
+  </script>
+
+  <script define:vars={{ searchData }}>
+    // @ts-nocheck
+
+    // Referencias a los elementos del buscador
+    const searchWrapper = document.getElementById("searchWrapper");
+    const searchExpand = document.getElementById("searchExpand");
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchSuggestions = document.getElementById("searchSuggestions");
+    let isOpen = false;
+
+    // Abre el buscador expandible
+    function openSearch() {
+      isOpen = true;
+      searchExpand.classList.add("is-open");
+      searchBtn.classList.add("is-active");
+      searchInput.setAttribute("aria-expanded", "true");
+      setTimeout(() => searchInput.focus(), 40);
+    }
+
+    // Cierra el buscador y limpia sugerencias
+    function closeSearch() {
+      isOpen = false;
+      searchExpand.classList.remove("is-open");
+      searchBtn.classList.remove("is-active");
+      searchInput.setAttribute("aria-expanded", "false");
+      searchInput.value = "";
+      hideSuggestions();
+    }
+
+    // Redirige a la página de resultados de búsqueda
+    function doSearch() {
+      const q = searchInput.value.trim();
+      if (q) window.location.href = "/buscar?q=" + encodeURIComponent(q);
+    }
+
+    // Escapa caracteres especiales para construir una expresión regular segura
+    function escRe(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    // Muestra sugerencias en tiempo real según el texto escrito
+    function renderSuggestions(q) {
+      if (!q.trim()) {
+        hideSuggestions();
+        return;
+      }
+
+      const lq = q.toLowerCase();
+
+      const matches = searchData
+        .filter((p) => p.title.toLowerCase().includes(lq))
+        .slice(0, 6);
+
+      if (!matches.length) {
+        hideSuggestions();
+        return;
+      }
+
+      const re = new RegExp(escRe(q), "gi");
+
+      searchSuggestions.innerHTML = matches
+        .map(
+          (p) =>
+            '<li data-slug="' +
+            p.slug +
+            '" role="option">' +
+            p.title.replace(re, (m) => "<mark>" + m + "</mark>") +
+            "</li>",
+        )
+        .join("");
+
+      searchSuggestions.style.display = "block";
+
+      // Al pulsar una sugerencia, redirige a la página del producto
+      searchSuggestions.querySelectorAll("li").forEach((li) => {
+        li.addEventListener("click", () => {
+          window.location.href = "/producto/" + li.dataset.slug;
+        });
+      });
+    }
+
+    // Oculta y limpia la lista de sugerencias
+    function hideSuggestions() {
+      searchSuggestions.style.display = "none";
+      searchSuggestions.innerHTML = "";
+    }
+
+    // Lógica del botón de búsqueda
+    searchBtn.addEventListener("click", () => {
+      if (!isOpen) {
+        openSearch();
+        return;
+      }
+
+      if (searchInput.value.trim()) {
+        doSearch();
+      } else {
+        closeSearch();
+      }
     });
-  }
 
-  function hideSuggestions() {
-    searchSuggestions.style.display = 'none';
-    searchSuggestions.innerHTML = '';
-  }
+    // Actualiza sugerencias mientras el usuario escribe
+    searchInput.addEventListener("input", () =>
+      renderSuggestions(searchInput.value),
+    );
 
-  searchBtn.addEventListener('click', () => {
-    if (!isOpen) { openSearch(); return; }
-    if (searchInput.value.trim()) { doSearch(); } else { closeSearch(); }
-  });
+    // Enter busca, Escape cierra
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        doSearch();
+      } else if (e.key === "Escape") {
+        closeSearch();
+      }
+    });
 
-  searchInput.addEventListener('input', () => renderSuggestions(searchInput.value));
-
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { doSearch(); }
-    else if (e.key === 'Escape') { closeSearch(); }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (searchWrapper && !searchWrapper.contains(e.target)) closeSearch();
-  });
-</script>
+    // Si se hace clic fuera del buscador, se cierra
+    document.addEventListener("click", (e) => {
+      if (searchWrapper && !searchWrapper.contains(e.target)) {
+        closeSearch();
+      }
+    });
+  </script>
+</header>

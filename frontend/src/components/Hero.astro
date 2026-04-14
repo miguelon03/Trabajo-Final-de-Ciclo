@@ -1,17 +1,24 @@
 ---
+/* No se reciben props ni imports en este componente */
 ---
+
 <section class="hero">
   <div class="hero-grid">
+    <!-- Parte izquierda del hero: textos y botones -->
     <div class="hero-copy">
       <span class="eyebrow">SS26 COLLECTION</span>
       <h1>DRIP<br />MODE<br />HOOD</h1>
-      <p>Prendas premium de edición limitada. Diseñadas para durar. Fabricadas en Europa.</p>
+      <p>
+        Prendas premium de edición limitada. Diseñadas para durar. Fabricadas en Europa.
+      </p>
+
       <div class="hero-actions">
-        <a class="button primary" href="/categoria/catalogo">VER COLECCIÓN</a>
+        <a class="button primary" href="/catalogo">VER COLECCIÓN</a>
         <a class="button secondary" href="/categoria/novedades">Novedades</a>
       </div>
     </div>
 
+    <!-- Parte derecha del hero: espacio visual para imagen destacada -->
     <div class="hero-visual" aria-hidden="true">
       <div class="hero-visual__placeholder">
         Imagen de producto
@@ -21,6 +28,7 @@
 </section>
 
 <style>
+  /* Contenedor general del hero */
   .hero {
     min-height: calc(100vh - 140px);
     width: 100%;
@@ -30,6 +38,7 @@
     background: #1a1a1a;
   }
 
+  /* Distribución en dos columnas */
   .hero-grid {
     width: 100%;
     max-width: 1400px;
@@ -40,10 +49,12 @@
     align-items: center;
   }
 
+  /* Bloque de texto */
   .hero-copy {
     max-width: 640px;
   }
 
+  /* Texto superior pequeño */
   .eyebrow {
     display: inline-block;
     letter-spacing: 0.5em;
@@ -53,6 +64,7 @@
     margin-bottom: 1.5rem;
   }
 
+  /* Título principal */
   h1 {
     margin: 0;
     font-size: clamp(3.8rem, 8vw, 7rem);
@@ -62,6 +74,7 @@
     text-transform: uppercase;
   }
 
+  /* Texto descriptivo */
   p {
     max-width: 34rem;
     margin: 1.5rem 0 2.5rem;
@@ -70,6 +83,7 @@
     line-height: 1.9;
   }
 
+  /* Botones del hero */
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
@@ -102,6 +116,7 @@
     background: rgba(255, 255, 255, 0.04);
   }
 
+  /* Parte visual del hero */
   .hero-visual {
     display: flex;
     justify-content: flex-end;
@@ -121,6 +136,7 @@
     font-size: 0.95rem;
   }
 
+  /* Responsive */
   @media (max-width: 900px) {
     .hero-grid {
       grid-template-columns: 1fr;
@@ -145,3 +161,24 @@
     }
   }
 </style>
+
+<script>
+  // Llamamos al instalador al cargar el hero para asegurar
+  // que la base de datos y tablas existen al arrancar la app
+  fetch("http://localhost/TrabajoFinalDeCiclo/backend/instalador.php", {
+    credentials: "include"
+  })
+    .then(async (response) => {
+      const text = await response.text();
+
+      try {
+        const data = JSON.parse(text);
+        console.log("Instalador:", data);
+      } catch (error) {
+        console.error("Respuesta no válida del instalador:", text);
+      }
+    })
+    .catch((error) => {
+      console.error("Error preparando la base de datos:", error);
+    });
+</script>
