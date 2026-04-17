@@ -57,6 +57,13 @@ const allStock = stock as unknown as StockEntry[];
 const allReviews = reviews as ReviewEntry[];
 
 const { slug } = Astro.props;
+const sourceLinks: Record<string, { href: string; label: string }> = {
+  catalogo: { href: "/catalogo", label: "Catálogo" },
+  novedades: { href: "/novedades", label: "Novedades" },
+  accesorios: { href: "/accesorios", label: "Accesorios" },
+  ofertas: { href: "/ofertas", label: "Ofertas" },
+};
+const sourceLink = sourceLinks.catalogo;
 const product = allProducts.find((item: Product) => item.slug === slug);
 
 if (!product) {
@@ -94,7 +101,7 @@ const relatedProducts = allProducts
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/">Inicio</a>
         <span>/</span>
-        <a href="/catalogo">Catálogo</a>
+        <a id="sourceBreadcrumbLink" href={sourceLink.href}>{sourceLink.label}</a>
         <span>/</span>
         <span>{product.title}</span>
       </nav>
@@ -248,6 +255,30 @@ const relatedProducts = allProducts
 
   <script>
     // @ts-nocheck
+    const sourceLinks = {
+      catalogo: { href: "/catalogo", label: "Catálogo" },
+      novedades: { href: "/novedades", label: "Novedades" },
+      accesorios: { href: "/accesorios", label: "Accesorios" },
+      ofertas: { href: "/ofertas", label: "Ofertas" },
+    };
+    const currentSourceSlug =
+      new URLSearchParams(window.location.search).get("from") || "catalogo";
+    const currentSourceLink =
+      sourceLinks[currentSourceSlug] || sourceLinks.catalogo;
+
+    const sourceBreadcrumbLink = document.getElementById("sourceBreadcrumbLink");
+    if (sourceBreadcrumbLink instanceof HTMLAnchorElement) {
+      sourceBreadcrumbLink.href = currentSourceLink.href;
+      sourceBreadcrumbLink.textContent = currentSourceLink.label;
+    }
+
+    function productUrlWithSource(targetSlug) {
+      const suffix = currentSourceSlug
+        ? `?from=${encodeURIComponent(currentSourceSlug)}`
+        : "";
+      return `/producto/${targetSlug}${suffix}`;
+    }
+
     // --- Carrusel ---
     const carouselSlides = document.querySelectorAll(".gallery__slide");
     const dots = document.querySelectorAll(".carousel__dot");
@@ -337,10 +368,10 @@ const relatedProducts = allProducts
     document.querySelectorAll(".related-card").forEach((card) => {
       const slug = card.getAttribute("data-slug");
       if (!slug) return;
-      card.addEventListener("click", () => { window.location.href = `/producto/${slug}`; });
+      card.addEventListener("click", () => { window.location.href = productUrlWithSource(slug); });
       card.addEventListener("keydown", (e) => {
         if (!(e instanceof KeyboardEvent)) return;
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.href = `/producto/${slug}`; }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.href = productUrlWithSource(slug); }
       });
     });
   </script>

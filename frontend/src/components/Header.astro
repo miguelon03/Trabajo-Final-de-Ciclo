@@ -12,6 +12,12 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
     title: p.title,
   }),
 );
+
+const currentPath = Astro.url.pathname;
+
+function isActivePath(path: string) {
+  return currentPath === path || currentPath.startsWith(`${path}/`);
+}
 ---
 
 <header class="site-header">
@@ -20,10 +26,10 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
     <a class="brand" href="/">DMH</a>
 
     <nav class="site-nav" aria-label="Navegación principal">
-      <a class="site-nav__link active" href="/catalogo">Catálogo</a>
-      <a class="site-nav__link" href="/categoria/novedades">Novedades</a>
-      <a class="site-nav__link" href="/categoria/accesorios">Accesorios</a>
-      <a class="site-nav__link" href="/categoria/ofertas">Ofertas</a>
+      <a class={`site-nav__link ${isActivePath("/catalogo") ? "active" : ""}`} href="/catalogo">Catálogo</a>
+      <a class={`site-nav__link ${isActivePath("/novedades") ? "active" : ""}`} href="/novedades">Novedades</a>
+      <a class={`site-nav__link ${isActivePath("/accesorios") ? "active" : ""}`} href="/accesorios">Accesorios</a>
+      <a class={`site-nav__link ${isActivePath("/ofertas") ? "active" : ""}`} href="/ofertas">Ofertas</a>
     </nav>
   </div>
 

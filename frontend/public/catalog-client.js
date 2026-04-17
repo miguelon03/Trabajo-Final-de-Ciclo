@@ -19,6 +19,10 @@ const toggleFiltersBtn = document.getElementById("toggleFilters");
 const sidebar = document.getElementById("sidebar");
 
 function setupCardNavigation() {
+  const sourceSlug = window.location.pathname.replace(/^\/+|\/+$/g, "") || "catalogo";
+  const buildProductUrl = (slug) =>
+    `/producto/${slug}?from=${encodeURIComponent(sourceSlug)}`;
+
   productCards.forEach((card) => {
     const slug = card.getAttribute("data-product-slug");
     if (!slug) {
@@ -30,13 +34,13 @@ function setupCardNavigation() {
       if (target instanceof Element && target.closest(".icon-fav")) {
         return;
       }
-      window.location.href = `/producto/${slug}`;
+      window.location.href = buildProductUrl(slug);
     });
 
     card.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        window.location.href = `/producto/${slug}`;
+        window.location.href = buildProductUrl(slug);
       }
     });
   });

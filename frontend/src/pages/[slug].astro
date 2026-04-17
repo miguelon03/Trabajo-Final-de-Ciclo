@@ -1,120 +1,148 @@
 ---
-import HomeLayout from "../../layouts/HomeLayout.astro";
-import products from "../../data/products.json";
+import HomeLayout from "../layouts/HomeLayout.astro";
+import CatalogSection from "../components/CatalogSection.astro";
+import products from "../data/products.json";
+
+type Product = {
+  id: number;
+  slug: string;
+  title: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  type: string;
+  color: string;
+  badge?: string;
+  createdAt: string;
+  image: string;
+};
 
 export async function getStaticPaths() {
-  const categorias = ["novedades", "accesorios", "ofertas"];
-  return categorias.map(categoria => ({
-    params: { categoria },
-    props: { categoria }
+  return ["catalogo", "novedades", "accesorios", "ofertas"].map((slug) => ({
+    params: { slug },
+    props: { slug }
   }));
 }
 
-const { categoria } = Astro.props;
+const allProducts = products as Product[];
+const { slug } = Astro.props;
+const isCatalog = slug === "catalogo";
 
-// Filtrar productos según la categoría
-let filteredProducts = products;
-if (categoria === "novedades") {
-  filteredProducts = products.filter(product => product.badge === "NEW");
-} else if (categoria === "accesorios") {
-  filteredProducts = products.filter(product => product.type === "accesorio");
-} else if (categoria === "ofertas") {
-  filteredProducts = products.filter(product => product.badge === "Oferta" || product.originalPrice);
+let filteredProducts = allProducts;
+let titulo = "Catálogo";
+
+if (slug === "novedades") {
+  titulo = "Novedades";
+  filteredProducts = allProducts.filter((product) => product.badge === "NEW");
+} else if (slug === "accesorios") {
+  titulo = "Accesorios";
+  filteredProducts = allProducts.filter((product) => product.type === "accesorio");
+} else if (slug === "ofertas") {
+  titulo = "Ofertas";
+  filteredProducts = allProducts.filter(
+    (product) => product.badge === "Oferta" || Boolean(product.originalPrice)
+  );
 }
-
-const titulo = categoria === "novedades" ? "Novedades" : categoria.charAt(0).toUpperCase() + categoria.slice(1);
 ---
 
 <HomeLayout title={`DMH - ${titulo}`}>
-  <section class="categoria">
-    <div class="categoria__container">
-      <!-- Breadcrumb -->
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/">Inicio</a>
-        <span>/</span>
-        <span>{titulo}</span>
-      </nav>
+  {isCatalog ? (
+    <CatalogSection />
+  ) : (
+    <section class="categoria">
+      <div class="categoria__container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Inicio</a>
+          <span>/</span>
+          <span>{titulo}</span>
+        </nav>
 
-      <div class="categoria__content">
-        {categoria === "novedades" && (
-          <div class="novedades__hero">
-            <div class="novedades__images">
-              <div class="placeholder-image">Imagen Marca 1</div>
-              <div class="placeholder-image">Imagen Marca 2</div>
+        <div class="categoria__content">
+          {slug === "novedades" && (
+            <div class="novedades__hero">
+              <div class="novedades__images">
+                <div class="placeholder-image">Imagen Marca 1</div>
+                <div class="placeholder-image">Imagen Marca 2</div>
+              </div>
+              <div class="novedades__text">
+                <h2>Nueva Colección Primavera</h2>
+                <p>Descubre nuestras últimas prendas con diseños exclusivos y materiales de alta calidad.</p>
+                <p>Nueva Sudadera Urban Style - Disponible ahora en negro y gris.</p>
+              </div>
             </div>
-            <div class="novedades__text">
-              <h2>Nueva Colección Primavera</h2>
-              <p>Descubre nuestras últimas prendas con diseños exclusivos y materiales de alta calidad.</p>
-              <p>Nueva Sudadera Urban Style - Disponible ahora en negro y gris.</p>
-            </div>
-          </div>
-        )}
+          )}
 
-        <div class="categoria__products">
-          <h1 class="categoria__title">{titulo}</h1>
-          <div class="products-grid">
-            {filteredProducts.map((product) => (
-              <article
-                class="product-card"
-                data-type={product.type}
-                data-color={product.color}
-                data-price={product.price}
-                data-product-slug={product.slug}
-                tabindex="0"
-                role="link"
-                aria-label={`Ver ${product.title}`}
-              >
-                <div class="product-card__top">
-                  {product.badge && <span class="badge">{product.badge}</span>}
-                  <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
-                </div>
-                <div class="product-card__image" aria-hidden="true">{product.image}</div>
-                <div class="product-card__content">
-                  <h3>{product.title}</h3>
-                  <p class="product-category">{product.category}</p>
-                  <div class="product-card__footer">
-                    {product.originalPrice && (
-                      <span class="product-price-original">{product.originalPrice.toFixed(2)}€</span>
-                    )}
-                    <span class="product-price">{product.price.toFixed(2)}€</span>
+          <div class="categoria__products">
+            <h1 class="categoria__title">{titulo}</h1>
+            <div class="products-grid">
+              {filteredProducts.map((product) => (
+                <article
+                  class="product-card"
+                  data-type={product.type}
+                  data-color={product.color}
+                  data-price={product.price}
+                  data-product-slug={product.slug}
+                  tabindex="0"
+                  role="link"
+                  aria-label={`Ver ${product.title}`}
+                >
+                  <div class="product-card__top">
+                    {product.badge && <span class="badge">{product.badge}</span>}
+                    <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
                   </div>
-                </div>
-              </article>
-            ))}
+                  <div class="product-card__image" aria-hidden="true">{product.image}</div>
+                  <div class="product-card__content">
+                    <h3>{product.title}</h3>
+                    <p class="product-category">{product.category}</p>
+                    <div class="product-card__footer">
+                      {product.originalPrice && (
+                        <span class="product-price-original">{product.originalPrice.toFixed(2)}€</span>
+                      )}
+                      <span class="product-price">{product.price.toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
-  <script>
-    const cards = document.querySelectorAll(".product-card");
+  {!isCatalog && (
+    <script define:vars={{ sourceSlug: slug }}>
+      const buildProductUrl = (productSlug) =>
+        `/producto/${productSlug}?from=${encodeURIComponent(sourceSlug)}`;
 
-    cards.forEach((card) => {
-      const slug = card.getAttribute("data-product-slug");
-      if (!slug) {
-        return;
-      }
+      const cards = document.querySelectorAll(".product-card");
 
-      card.addEventListener("click", (event) => {
-        const target = event.target;
-        if (target instanceof Element && target.closest(".icon-fav")) {
+      cards.forEach((card) => {
+        const productSlug = card.getAttribute("data-product-slug");
+        if (!productSlug) {
           return;
         }
-        window.location.href = `/producto/${slug}`;
-      });
 
-      card.addEventListener("keydown", (event) => {
-        if (!(event instanceof KeyboardEvent)) {
-          return;
-        }
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          window.location.href = `/producto/${slug}`;
-        }
+        card.addEventListener("click", (event) => {
+          const target = event.target;
+          if (target instanceof Element && target.closest(".icon-fav")) {
+            return;
+          }
+          window.location.href = buildProductUrl(productSlug);
+        });
+
+        card.addEventListener("keydown", (event) => {
+          if (!(event instanceof KeyboardEvent)) {
+            return;
+          }
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            window.location.href = buildProductUrl(productSlug);
+          }
+        });
       });
-    });
-  </script>
+    </script>
+  )}
 </HomeLayout>
 
 <style>
