@@ -1,0 +1,73 @@
+---
+const currentPath = Astro.url.pathname;
+---
+
+<aside class="sidebar">
+  <div class="brand">DMH — ADMIN</div>
+
+  <div class="section-label">Panel</div>
+  <nav class="nav">
+    <a href="/admin" class={currentPath === "/admin" ? "active" : ""}>Dashboard</a>
+  </nav>
+
+  <div class="section-label">Tienda</div>
+  <nav class="nav">
+    <a href="/admin/productos" class={currentPath === "/admin/productos" ? "active" : ""}>Productos</a>
+    <a href="/admin/pedidos" class={currentPath === "/admin/pedidos" ? "active" : ""}>Pedidos</a>
+    <a href="/admin/devoluciones" class={currentPath === "/admin/devoluciones" ? "active" : ""}>Devoluciones</a>
+    <a href="/admin/opiniones" class={currentPath === "/admin/opiniones" ? "active" : ""}>Opiniones</a>
+    <a href="/admin/usuarios" class={currentPath === "/admin/usuarios" ? "active" : ""}>Usuarios</a>
+  </nav>
+</aside>
+
+<style>
+  .sidebar {
+    background: #141414;
+    border-right: 1px solid #232323;
+    padding: 22px 18px;
+  }
+
+  .brand {
+    color: #d7ff00;
+    font-size: 1.9rem;
+    font-weight: 900;
+    letter-spacing: 0.22em;
+    margin-bottom: 36px;
+  }
+
+  .section-label {
+    color: #5e5e5e;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin: 24px 0 10px;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nav a {
+    text-decoration: none;
+    color: #d8d8d8;
+    padding: 12px 14px;
+    border-radius: 10px;
+    display: block;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .nav a:hover,
+  .nav a.active {
+    background: #1f1f1f;
+    color: white;
+  }
+
+  @media (max-width: 980px) {
+    .sidebar {
+      border-right: none;
+      border-bottom: 1px solid #232323;
+    }
+  }
+</style>

@@ -1,0 +1,71 @@
+<section class="admin-section">
+  <h1>DASHBOARD</h1>
+
+  <div class="cards">
+    <div class="card">
+      <span class="label">Productos</span>
+      <strong>24</strong>
+    </div>
+
+    <div class="card">
+      <span class="label">Pedidos</span>
+      <strong>18</strong>
+    </div>
+
+    <div class="card">
+      <span class="label">Usuarios</span>
+      <strong>125</strong>
+    </div>
+
+    <div class="card">
+      <span class="label">Ingresos del mes</span>
+      <strong>3.450€</strong>
+    </div>
+  </div>
+</section>
+
+<style>
+  .admin-section h1 {
+    font-size: 2.3rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    margin-bottom: 24px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+
+  .card {
+    background: #121212;
+    border: 1px solid #232323;
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .label {
+    display: block;
+    color: #777;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+  }
+
+  .card strong {
+    font-size: 2rem;
+    color: #f5f5f5;
+  }
+
+  @media (max-width: 980px) {
+    .cards {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,252 @@
+<section class="admin-section">
+  <div class="title-row">
+    <h1>PEDIDOS</h1>
+  </div>
+
+  <div class="filters">
+    <input type="text" placeholder="Buscar ref. o cliente..." />
+    <select>
+      <option>Estado</option>
+    </select>
+    <select>
+      <option>Fecha</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Referencia</th>
+          <th>Cliente</th>
+          <th>Artículos</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ref">PED-8F2K9M</td>
+          <td>Juan García <span class="muted">juan@email.com</span></td>
+          <td>3</td>
+          <td>154,97€</td>
+          <td><span class="badge shipped">Enviado</span></td>
+          <td>28 mar 2026</td>
+          <td><button class="btn-view">Ver detalle</button></td>
+        </tr>
+
+        <tr>
+          <td class="ref">PED-3X9QR2</td>
+          <td>Ana Martínez <span class="muted">ana@email.com</span></td>
+          <td>1</td>
+          <td>49,99€</td>
+          <td><span class="badge pending">Pendiente</span></td>
+          <td>15 mar 2026</td>
+          <td><button class="btn-view">Ver detalle</button></td>
+        </tr>
+
+        <tr>
+          <td class="ref">PED-9KL2PR</td>
+          <td>Carlos Ruiz <span class="muted">carlos@email.com</span></td>
+          <td>2</td>
+          <td>79,98€</td>
+          <td><span class="badge pending">Pendiente</span></td>
+          <td>10 mar 2026</td>
+          <td><button class="btn-view">Ver detalle</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h2>DETALLE — PED-3X9QR2</h2>
+      <div class="detail-item">
+        <div>
+          <strong>DMH Cap Logo — Talla única × 1</strong>
+        </div>
+        <div>49,99€</div>
+      </div>
+      <div class="detail-total">
+        <strong>Total</strong>
+        <strong>49,99€</strong>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <h2>CAMBIAR ESTADO</h2>
+      <div class="status-actions">
+        <button>Pendiente</button>
+        <button class="active">Pagado ✓</button>
+        <button>Enviado</button>
+        <button>Entregado</button>
+        <button class="danger">Cancelado</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .admin-section h1 {
+    font-size: 2.3rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .title-row {
+    margin-bottom: 22px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .filters input,
+  .filters select {
+    background: #171717;
+    border: 1px solid #232323;
+    color: white;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .filters input {
+    min-width: 260px;
+  }
+
+  .table-wrap {
+    background: #0f0f0f;
+    border: 1px solid #232323;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: #0b0b0b;
+  }
+
+  th, td {
+    padding: 16px 14px;
+    text-align: left;
+    border-bottom: 1px solid #181818;
+    font-size: 0.95rem;
+  }
+
+  th {
+    color: #6f6f6f;
+    font-weight: 700;
+  }
+
+  td {
+    color: #eaeaea;
+  }
+
+  .muted {
+    color: #666;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .ref {
+    color: #d7ff00;
+    font-weight: 800;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .shipped { background: rgba(66,133,244,0.15); color: #63a4ff; }
+  .pending { background: rgba(255,184,0,0.15); color: #ffb800; }
+
+  .btn-view {
+    background: #d7ff00;
+    color: #111;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .detail-card {
+    background: #121212;
+    border: 1px solid #232323;
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .detail-card h2 {
+    color: #d7ff00;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .detail-item,
+  .detail-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .detail-total {
+    border-top: 1px solid #232323;
+    margin-top: 10px;
+  }
+
+  .status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .status-actions button {
+    background: #1c1c1c;
+    color: #ddd;
+    border: 1px solid #2b2b2b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .status-actions button.active {
+    background: #d7ff00;
+    color: #111;
+    border-color: #d7ff00;
+  }
+
+  .status-actions button.danger {
+    color: #ff4d4d;
+  }
+
+  @media (max-width: 980px) {
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

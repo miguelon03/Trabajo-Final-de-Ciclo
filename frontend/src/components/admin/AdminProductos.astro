@@ -1,0 +1,216 @@
+<section class="admin-section">
+  <div class="title-row">
+    <h1>PRODUCTOS</h1>
+    <button class="new-btn">+ Nuevo producto</button>
+  </div>
+
+  <div class="filters">
+    <input type="text" placeholder="Buscar producto..." />
+    <select>
+      <option>Categoría</option>
+    </select>
+    <select>
+      <option>Estado</option>
+    </select>
+    <select>
+      <option>Stock</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DMH Logo Tee Black <span class="muted">dmh-logo-tee-black</span></td>
+          <td>Camisetas</td>
+          <td>34,99€</td>
+          <td class="stock-ok">18 ud.</td>
+          <td><span class="badge published">Publicado</span></td>
+          <td class="actions">
+            <button class="btn-edit">Editar</button>
+            <button class="btn-delete">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr>
+          <td>DMH Oversized Hoodie <span class="muted">dmh-oversized-hoodie</span></td>
+          <td>Sudaderas</td>
+          <td>59,99€</td>
+          <td class="stock-low">2 ud.</td>
+          <td><span class="badge published">Publicado</span></td>
+          <td class="actions">
+            <button class="btn-edit">Editar</button>
+            <button class="btn-delete">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr>
+          <td>DMH Cargo Pant <span class="muted">dmh-cargo-pant</span></td>
+          <td>Pantalones</td>
+          <td>79,99€</td>
+          <td class="stock-out">0 ud.</td>
+          <td><span class="badge soldout">Agotado</span></td>
+          <td class="actions">
+            <button class="btn-edit">Editar</button>
+            <button class="btn-delete">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr>
+          <td>DMH Cap Logo <span class="muted">dmh-cap-logo</span></td>
+          <td>Accesorios</td>
+          <td>24,99€</td>
+          <td class="stock-ok">32 ud.</td>
+          <td><span class="badge draft">Borrador</span></td>
+          <td class="actions">
+            <button class="btn-edit">Editar</button>
+            <button class="btn-delete">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-row">Mostrando 4 productos</div>
+</section>
+
+<style>
+  .admin-section h1 {
+    font-size: 2.3rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+
+  .new-btn {
+    background: #d7ff00;
+    color: #111;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 20px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .filters input,
+  .filters select {
+    background: #171717;
+    border: 1px solid #232323;
+    color: white;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .filters input {
+    min-width: 260px;
+  }
+
+  .table-wrap {
+    background: #0f0f0f;
+    border: 1px solid #232323;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: #0b0b0b;
+  }
+
+  th, td {
+    padding: 16px 14px;
+    text-align: left;
+    border-bottom: 1px solid #181818;
+    font-size: 0.95rem;
+  }
+
+  th {
+    color: #6f6f6f;
+    font-weight: 700;
+  }
+
+  td {
+    color: #eaeaea;
+  }
+
+  .muted {
+    color: #666;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .stock-ok { color: #1ecb70; font-weight: 700; }
+  .stock-low { color: #ffb800; font-weight: 700; }
+  .stock-out { color: #ff4d4d; font-weight: 700; }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .published { background: rgba(30,203,112,0.12); color: #1ecb70; }
+  .draft { background: rgba(255,255,255,0.08); color: #a7a7a7; }
+  .soldout { background: rgba(255,77,77,0.12); color: #ff4d4d; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-edit,
+  .btn-delete {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #232323;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .btn-edit {
+    background: #d7ff00;
+    color: #111;
+    border: none;
+  }
+
+  .btn-delete {
+    background: transparent;
+    color: #ff4d4d;
+  }
+
+  .footer-row {
+    padding: 16px 4px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+</style>
