@@ -1,6 +1,6 @@
 ---
 /* Importamos los iconos SVG usados en la cabecera */
-import { searchIcon, heartIcon, userIcon, cartIcon } from "./icons.ts";
+import { searchIcon, userIcon, cartIcon } from "./icons.ts";
 
 /* Importamos el JSON de productos para alimentar el buscador */
 import productsRaw from "../data/products.json";
@@ -33,7 +33,7 @@ function isActivePath(path: string) {
     </nav>
   </div>
 
-  <!-- Bloque derecho: búsqueda + favoritos + cuenta + carrito -->
+  <!-- Bloque derecho: búsqueda + cuenta + carrito -->
   <div class="site-header__actions">
     <!-- Buscador expandible -->
     <div class="search-wrapper" id="searchWrapper">
@@ -61,14 +61,6 @@ function isActivePath(path: string) {
         set:html={searchIcon}
       />
     </div>
-
-    <!-- Botón de favoritos -->
-    <button
-      class="icon-button"
-      type="button"
-      aria-label="Favoritos"
-      set:html={heartIcon}
-    />
 
     <!-- Menú de cuenta de usuario -->
     <div class="account-menu" id="accountMenu">
@@ -448,7 +440,7 @@ function isActivePath(path: string) {
       try {
         // Pedimos al backend información de la sesión actual
         const response = await fetch(
-          "http://localhost/TrabajoFinalDeCiclo/backend/session.php",
+          "http://tfc.local/backend/session.php",
           {
             credentials: "include",
           },
@@ -488,7 +480,7 @@ function isActivePath(path: string) {
           logoutBtn.addEventListener("click", async () => {
             try {
               const logoutResponse = await fetch(
-                "http://localhost/TrabajoFinalDeCiclo/backend/logout.php",
+                "http://tfc.local/backend/logout.php",
                 {
                   method: "POST",
                   credentials: "include",

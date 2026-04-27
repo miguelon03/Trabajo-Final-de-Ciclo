@@ -77,6 +77,7 @@ const averageRating = productReviews?.averageRating ?? 0;
 const reviewCount = productReviews?.totalReviews ?? 0;
 const reviewsList = productReviews?.items ?? [];
 const typeLabel = product.type.charAt(0).toUpperCase() + product.type.slice(1);
+const isAccessory = product.type === "accesorio";
 
 const rawSizes = product.sizes ?? [];
 const sizesArray: string[] = Array.isArray(rawSizes) ? rawSizes : [rawSizes as unknown as string];
@@ -145,6 +146,8 @@ const relatedProducts = allProducts
           data-product-price={product.price}
           data-product-image={gallery[0]}
           data-product-color={product.color}
+          data-product-type={product.type}
+          data-product-total-stock={productStock?.totalStock ?? 0}
         >
           <p class="product-info__type">{product.category} · {typeLabel}</p>
           <h1>{product.title}</h1>
@@ -172,26 +175,28 @@ const relatedProducts = allProducts
             </div>
           </div>
 
-          <div class="size-selector" id="sizeSelector">
-            <p class="section-label">Talla</p>
-            <div class="size-selector__grid">
-              {sizeOptions.map((option, index) => (
-                <label class={`size-pill ${!option.available ? "is-disabled" : ""}`}>
-                  <input
-                    type="radio"
-                    name="size"
-                    value={option.size}
-                    data-stock={option.stock}
-                    data-sku={option.sku}
-                    disabled={!option.available}
-                    checked={index === 0 && option.available}
-                  />
-                  <span>{option.size}</span>
-                </label>
-              ))}
+          {!isAccessory && (
+            <div class="size-selector" id="sizeSelector">
+              <p class="section-label">Talla</p>
+              <div class="size-selector__grid">
+                {sizeOptions.map((option, index) => (
+                  <label class={`size-pill ${!option.available ? "is-disabled" : ""}`}>
+                    <input
+                      type="radio"
+                      name="size"
+                      value={option.size}
+                      data-stock={option.stock}
+                      data-sku={option.sku}
+                      disabled={!option.available}
+                      checked={index === 0 && option.available}
+                    />
+                    <span>{option.size}</span>
+                  </label>
+                ))}
+              </div>
+              <p class="size-selector__hint" id="sizeHint">Selecciona una talla disponible</p>
             </div>
-            <p class="size-selector__hint" id="sizeHint">Selecciona una talla disponible</p>
-          </div>
+          )}
 
           <div class="buy-box">
             <label class="quantity">
@@ -318,18 +323,31 @@ const relatedProducts = allProducts
     });
 
     addToCartBtn?.addEventListener("click", () => {
+      if (!productInfo) {
+        return;
+      }
+
+      const isAccessory = productInfo.dataset.productType === "accesorio";
       const selected = getSelectedSizeInput();
-      if (!selected || !productInfo) {
+
+      if (!isAccessory && !selected) {
         (window as any).showToast?.("Selecciona una talla disponible.", "error");
         return;
       }
 
       const quantity = Math.max(1, Number(quantityInput?.value || 1));
-      const stock = Number(selected.dataset.stock || 0);
+      const stock = isAccessory
+        ? Number(productInfo.dataset.productTotalStock || 0)
+        : Number(selected?.dataset.stock || 0);
       if (quantity > stock) {
         (window as any).showToast?.("No hay suficiente stock para esa cantidad.", "error");
         return;
       }
+
+      const size = isAccessory ? "Única" : selected?.value || "";
+      const sku = isAccessory
+        ? `DMH-${Number(productInfo.dataset.productId)}-UNICA`
+        : selected?.dataset.sku;
 
       const cartItem = {
         id: Number(productInfo.dataset.productId),
@@ -338,8 +356,8 @@ const relatedProducts = allProducts
         price: Number(productInfo.dataset.productPrice),
         image: productInfo.dataset.productImage,
         color: productInfo.dataset.productColor,
-        size: selected.value,
-        sku: selected.dataset.sku,
+        size,
+        sku,
         quantity
       };
 

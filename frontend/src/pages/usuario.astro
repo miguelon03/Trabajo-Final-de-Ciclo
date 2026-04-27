@@ -1,13 +1,357 @@
 ---
 import HomeLayout from "../layouts/HomeLayout.astro";
-import Header from "../components/Header.astro";
-import Hero from "../components/Hero.astro";
-import PromoBanner from "../components/PromoBanner.astro";
-import ProductsSection from "../components/ProductsSection.astro";
 ---
 
-<HomeLayout title="DMH - Usuario">
-  <Hero />
-  <PromoBanner />
-  <ProductsSection />
+<HomeLayout title="DMH - Mi perfil">
+  <section class="profile-page">
+    <div class="profile-container">
+      <header class="profile-header">
+        <p class="profile-kicker">Área de usuario</p>
+        <h1>Mi perfil</h1>
+        <p>Edita tus datos personales y gestiona tu wishlist.</p>
+      </header>
+
+      <div id="profileGuest" class="profile-card" hidden>
+        <h2>Sesión no iniciada</h2>
+        <p>Para acceder a tu perfil necesitas iniciar sesión.</p>
+        <a class="btn-primary" href="/login">Ir a login</a>
+      </div>
+
+      <div id="profileContent" class="profile-grid" hidden>
+        <article class="profile-card">
+          <div id="profileLoading" class="profile-loading" hidden>
+            <span class="profile-loading__spinner" aria-hidden="true"></span>
+            <span>Cargando perfil...</span>
+          </div>
+
+          <div class="profile-card__head">
+            <h2>Datos personales</h2>
+            <a class="btn-secondary" href="/usuario/favoritos">Ver wishlist</a>
+          </div>
+
+          <p id="profileMessage" class="profile-message"></p>
+
+          <form id="profileForm" class="profile-form">
+            <label>
+              <span>Nombre</span>
+              <input type="text" id="nombre" name="nombre" required />
+            </label>
+
+            <label>
+              <span>Email</span>
+              <input type="email" id="email" name="email" disabled />
+            </label>
+
+            <label>
+              <span>Teléfono</span>
+              <input type="text" id="telefono" name="telefono" />
+            </label>
+
+            <label>
+              <span>Dirección</span>
+              <input type="text" id="direccion" name="direccion" />
+            </label>
+
+            <label>
+              <span>Ciudad</span>
+              <input type="text" id="ciudad" name="ciudad" />
+            </label>
+
+            <label>
+              <span>Código postal</span>
+              <input type="text" id="codigoPostal" name="codigoPostal" />
+            </label>
+
+            <button class="btn-primary" type="submit">Guardar cambios</button>
+          </form>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // @ts-nocheck
+    const PROFILE_API_ENDPOINT = "perfil.php";
+
+    const profileGuest = document.getElementById("profileGuest");
+    const profileContent = document.getElementById("profileContent");
+    const profileMessage = document.getElementById("profileMessage");
+    const profileForm = document.getElementById("profileForm");
+    const profileLoading = document.getElementById("profileLoading");
+
+    const nombreInput = document.getElementById("nombre");
+    const emailInput = document.getElementById("email");
+    const telefonoInput = document.getElementById("telefono");
+    const direccionInput = document.getElementById("direccion");
+    const ciudadInput = document.getElementById("ciudad");
+    const codigoPostalInput = document.getElementById("codigoPostal");
+    const profileSubmitBtn = profileForm?.querySelector("button[type='submit']");
+
+    function setProfileLoading(isLoading, loadingText) {
+      if (profileLoading) {
+        profileLoading.hidden = !isLoading;
+      }
+
+      if (profileForm) {
+        profileForm.classList.toggle("is-loading", isLoading);
+      }
+
+      if (profileSubmitBtn instanceof HTMLButtonElement) {
+        profileSubmitBtn.disabled = isLoading;
+        profileSubmitBtn.textContent = isLoading
+          ? loadingText || "Guardando..."
+          : "Guardar cambios";
+      }
+    }
+
+    function fillForm(usuario) {
+      nombreInput.value = usuario.nombre || "";
+      emailInput.value = usuario.email || "";
+      telefonoInput.value = usuario.telefono || "";
+      direccionInput.value = usuario.direccion || "";
+      ciudadInput.value = usuario.ciudad || "";
+      codigoPostalInput.value = usuario.codigo_postal || "";
+    }
+
+    async function loadProfile() {
+      setProfileLoading(true, "Cargando perfil...");
+
+      try {
+        const result = await window.dmhFetchJson(PROFILE_API_ENDPOINT, {
+          credentials: "include",
+        });
+
+        if (!result.ok && result.status === 401) {
+          profileGuest.hidden = false;
+          profileContent.hidden = true;
+          return;
+        }
+
+        if (!result.ok) {
+          throw new Error(result.error || "No se pudo obtener el perfil");
+        }
+
+        const data = result.data;
+        if (!data.ok || !data.usuario) {
+          throw new Error(data.error || "Perfil no disponible");
+        }
+
+        fillForm(data.usuario);
+        profileGuest.hidden = true;
+        profileContent.hidden = false;
+      } catch (error) {
+        profileMessage.textContent = error?.message || "Error cargando el perfil";
+        profileMessage.className = "profile-message is-error";
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    profileForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      profileMessage.textContent = "";
+      setProfileLoading(true, "Guardando...");
+
+      const payload = {
+        nombre: nombreInput.value,
+        telefono: telefonoInput.value,
+        direccion: direccionInput.value,
+        ciudad: ciudadInput.value,
+        codigoPostal: codigoPostalInput.value,
+      };
+
+      try {
+        const result = await window.dmhFetchJson(PROFILE_API_ENDPOINT, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = result.data || {};
+        if (!result.ok || !data.ok) {
+          profileMessage.textContent = result.error || data.error || "No se pudo actualizar el perfil";
+          profileMessage.className = "profile-message is-error";
+
+          if (result.status === 401) {
+            setTimeout(() => {
+              window.location.href = "/login";
+            }, 500);
+          }
+
+          return;
+        }
+
+        fillForm(data.usuario);
+        profileMessage.textContent = "Perfil actualizado correctamente";
+        profileMessage.className = "profile-message is-success";
+      } catch (error) {
+        profileMessage.textContent = error?.message || "Error de conexión al guardar";
+        profileMessage.className = "profile-message is-error";
+      } finally {
+        setProfileLoading(false);
+      }
+    });
+
+    loadProfile();
+  </script>
+
+  <style>
+    .profile-page {
+      min-height: 78vh;
+      padding: 2.2rem 1.5rem 4rem;
+      background: #151515;
+    }
+
+    .profile-container {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .profile-header {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 1.7rem;
+      background: linear-gradient(150deg, rgba(200, 255, 0, 0.12), rgba(255, 255, 255, 0.04));
+      color: #fff;
+    }
+
+    .profile-kicker {
+      margin: 0 0 0.6rem;
+      color: #c8ff00;
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      font-size: 0.76rem;
+    }
+
+    .profile-header h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+    }
+
+    .profile-header p {
+      margin: 0.85rem 0 0;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .profile-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .profile-card {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.4rem;
+      background: #1b1b1b;
+      color: #fff;
+    }
+
+    .profile-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .profile-form {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .profile-form.is-loading {
+      opacity: 0.62;
+      pointer-events: none;
+    }
+
+    .profile-form label {
+      display: grid;
+      gap: 0.45rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+
+    .profile-form input {
+      height: 46px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 0 0.85rem;
+      background: #111;
+      color: #fff;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: 999px;
+      padding: 0.65rem 1rem;
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #c8ff00;
+      color: #111;
+      width: fit-content;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f5f5f5;
+    }
+
+    .profile-message {
+      min-height: 22px;
+      margin: 0 0 0.7rem;
+      font-size: 0.9rem;
+    }
+
+    .profile-message.is-success {
+      color: #7dff98;
+    }
+
+    .profile-message.is-error {
+      color: #ff6b6b;
+    }
+
+    .profile-loading {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: rgba(10, 10, 10, 0.62);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      font-size: 0.95rem;
+      z-index: 3;
+      backdrop-filter: blur(2px);
+    }
+
+    .profile-loading__spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(200, 255, 0, 0.3);
+      border-top-color: #c8ff00;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </HomeLayout>

@@ -69,3 +69,131 @@ window.showConfirmToast = function (message, onConfirm) {
     _confirmEl.classList.remove('is-visible');
   };
 };
+
+// Config global de API para frontend.
+window.DMH_CONFIG = window.DMH_CONFIG || {
+  API_BASE_URL: 'http://tfc.local/backend/api',
+};
+
+window.dmhApiUrl = function (endpoint) {
+  var base = (window.DMH_CONFIG && window.DMH_CONFIG.API_BASE_URL) || '';
+  var cleanBase = base.replace(/\/+$/, '');
+  var cleanEndpoint = String(endpoint || '').replace(/^\/+/, '');
+  return cleanBase + '/' + cleanEndpoint;
+};
+
+window.dmhFetchJson = async function (endpoint, options) {
+  try {
+    var response = await fetch(window.dmhApiUrl(endpoint), options || {});
+    var data = null;
+
+    try {
+      data = await response.json();
+    } catch (_ignored) {
+      data = null;
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        data: data,
+        error: (data && data.error) || ('Error HTTP ' + response.status),
+      };
+    }
+
+    return {
+      ok: true,
+      status: response.status,
+      data: data,
+      error: null,
+    };
+  } catch (_error) {
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      error: 'No se pudo conectar con el servidor. Revisa backend y CORS.',
+    };
+  }
+};
+
+(function setupFavoritesSync() {
+  var FAVORITES_CACHE_KEY = 'dmh:favorites:slugs';
+
+  function normalizeSlugs(value) {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    var seen = {};
+    var result = [];
+
+    for (var i = 0; i < value.length; i += 1) {
+      var slug = String(value[i] || '').trim();
+      if (!slug || seen[slug]) {
+        continue;
+      }
+      seen[slug] = true;
+      result.push(slug);
+    }
+
+    return result;
+  }
+
+  function readCache() {
+    try {
+      var raw = localStorage.getItem(FAVORITES_CACHE_KEY);
+      return normalizeSlugs(raw ? JSON.parse(raw) : []);
+    } catch (_error) {
+      return [];
+    }
+  }
+
+  function writeCache(slugs) {
+    var next = normalizeSlugs(slugs);
+    localStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  function emit(slugs, source) {
+    var detail = {
+      slugs: normalizeSlugs(slugs),
+      source: source || 'unknown',
+    };
+
+    window.dispatchEvent(new CustomEvent('wishlist-updated', { detail: detail }));
+  }
+
+  window.dmhFavorites = {
+    get: function () {
+      return readCache();
+    },
+    set: function (slugs, source) {
+      var next = writeCache(slugs);
+      emit(next, source || 'set');
+      return next;
+    },
+    toggleOne: function (slug, shouldInclude, source) {
+      var current = readCache();
+      var next = current.filter(function (item) {
+        return item !== slug;
+      });
+
+      if (shouldInclude) {
+        next.push(slug);
+      }
+
+      var normalized = writeCache(next);
+      emit(normalized, source || 'toggle');
+      return normalized;
+    },
+  };
+
+  window.addEventListener('storage', function (event) {
+    if (event.key !== FAVORITES_CACHE_KEY) {
+      return;
+    }
+
+    emit(readCache(), 'storage');
+  });
+})();

@@ -1,5 +1,6 @@
 ---
 import products from "../data/products.json";
+import { cartIcon } from "./icons.ts";
 ---
 
 <section class="catalog">
@@ -112,12 +113,14 @@ import products from "../data/products.json";
         <div class="catalog__grid-wrapper">
           <button class="pagination__side pagination__prev" id="prevPage" aria-label="Página anterior">←</button>
 
-          <div class="products-grid" id="productsGrid">
+          <div class="products-grid" id="productsGrid" data-quick-add-icon={cartIcon}>
             {products.map((product) => (
               <article 
                 class="product-card" 
                 data-product-id={product.id}
                 data-product-slug={product.slug}
+                data-product-title={product.title}
+                data-product-image={product.image}
                 data-type={product.type}
                 data-color={product.color}
                 data-price={product.price}
@@ -496,6 +499,30 @@ import products from "../data/products.json";
     color: rgba(255, 255, 255, 0.5);
     text-decoration: line-through;
     margin-right: 0;
+  }
+
+  .quick-add-btn {
+    border: none;
+    background: rgba(200, 255, 0, 0.16);
+    color: #d8ff48;
+    border-radius: 999px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quick-add-btn:hover {
+    background: rgba(200, 255, 0, 0.24);
+  }
+
+  .quick-add-btn :global(svg) {
+    width: 16px;
+    height: 16px;
   }
 
   /* Sin resultados */

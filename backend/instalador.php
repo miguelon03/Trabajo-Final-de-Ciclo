@@ -56,11 +56,45 @@ try {
             contrasena_hash VARCHAR(255) NOT NULL,
             rol ENUM('cliente','admin') NOT NULL DEFAULT 'cliente',
             estado ENUM('activo','desactivado') NOT NULL DEFAULT 'activo',
+            telefono VARCHAR(30) NULL,
+            direccion VARCHAR(255) NULL,
+            ciudad VARCHAR(120) NULL,
+            codigo_postal VARCHAR(20) NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
     ");
     $pasos[] = "Tabla usuarios creada";
+
+    // Compatibilidad: si la tabla usuarios ya existía, añadimos los nuevos campos de perfil.
+    // Se consulta INFORMATION_SCHEMA para no depender de versiones concretas de MySQL.
+    $camposPerfilUsuarios = [
+        "telefono" => "ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(30) NULL",
+        "direccion" => "ALTER TABLE usuarios ADD COLUMN direccion VARCHAR(255) NULL",
+        "ciudad" => "ALTER TABLE usuarios ADD COLUMN ciudad VARCHAR(120) NULL",
+        "codigo_postal" => "ALTER TABLE usuarios ADD COLUMN codigo_postal VARCHAR(20) NULL",
+    ];
+
+    $stmtColumna = $conexion->prepare("
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'usuarios'
+          AND COLUMN_NAME = :columna
+    ");
+
+    foreach ($camposPerfilUsuarios as $nombreColumna => $sqlAlter) {
+        $stmtColumna->execute([
+            "schema" => $basedatos,
+            "columna" => $nombreColumna,
+        ]);
+
+        $existeColumna = (int)$stmtColumna->fetchColumn() > 0;
+        if (!$existeColumna) {
+            $conexion->exec($sqlAlter);
+            $pasos[] = "Columna '$nombreColumna' añadida en usuarios";
+        }
+    }
     //Tabla de puntos de usuarios
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS puntos_usuarios (
@@ -113,6 +147,42 @@ try {
         )
     ");
     $pasos[] = "Tabla productos creada";
+
+    // Tabla de favoritos por usuario.
+    // Usa slug directamente (productos vienen de JSON estático, no de BD).
+    $conexion->exec("
+        CREATE TABLE IF NOT EXISTS usuarios_favoritos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT NOT NULL,
+            slug VARCHAR(150) NOT NULL,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_usuario_slug (usuario_id, slug),
+            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        )
+    ");
+    $pasos[] = "Tabla usuarios_favoritos creada";
+
+    // Compatibilidad: si la tabla ya existía con producto_id, migramos a slug.
+    // Comprobamos si la columna slug ya existe.
+    $stmtCheckSlug = $conexion->prepare("
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'usuarios_favoritos'
+          AND COLUMN_NAME = 'slug'
+    ");
+    $stmtCheckSlug->execute(["schema" => $basedatos]);
+    $slugColumnaExiste = (int)$stmtCheckSlug->fetchColumn() > 0;
+
+    if (!$slugColumnaExiste) {
+        // Eliminamos FK y columna producto_id para migrar a slug.
+        // Primero eliminamos la FK si existe.
+        $conexion->exec("ALTER TABLE usuarios_favoritos DROP FOREIGN KEY IF EXISTS usuarios_favoritos_ibfk_2");
+        $conexion->exec("ALTER TABLE usuarios_favoritos DROP COLUMN IF EXISTS producto_id");
+        $conexion->exec("ALTER TABLE usuarios_favoritos ADD COLUMN slug VARCHAR(150) NOT NULL DEFAULT '' AFTER usuario_id");
+        $conexion->exec("ALTER TABLE usuarios_favoritos ADD UNIQUE KEY uk_usuario_slug (usuario_id, slug)");
+        $pasos[] = "Migrada columna producto_id -> slug en usuarios_favoritos";
+    }
     //Tabla de opiniones
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS opiniones (
@@ -164,11 +234,13 @@ try {
         )
     ");
     $pasos[] = "Tabla variantes_producto creada";
-    //Tabla de mis pedidos
+    // Tabla de pedidos: usuario_id nullable para permitir compra como invitado.
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS pedidos (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            usuario_id INT NOT NULL,
+            usuario_id INT NULL,
+            nombre_invitado VARCHAR(100) NULL,
+            email_invitado VARCHAR(150) NULL,
             estado ENUM('pendiente','pagado','enviado','entregado','cancelado','devuelto') NOT NULL DEFAULT 'pendiente',
             importe_total DECIMAL(10,2) NOT NULL,
             puntos_usados INT NOT NULL DEFAULT 0,
@@ -180,19 +252,53 @@ try {
         )
     ");
     $pasos[] = "Tabla pedidos creada";
-    //Tabla de items por pedido
+
+    // Migracion: hacer usuario_id nullable si aun es NOT NULL, y añadir campos de invitado.
+    $stmtCheckPedidosNull = $conexion->prepare("
+        SELECT IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'pedidos'
+          AND COLUMN_NAME = 'usuario_id'
+    ");
+    $stmtCheckPedidosNull->execute(['schema' => $basedatos]);
+    $isNullable = $stmtCheckPedidosNull->fetchColumn();
+
+    if ($isNullable === 'NO') {
+        $conexion->exec("ALTER TABLE pedidos MODIFY COLUMN usuario_id INT NULL");
+        $pasos[] = "pedidos.usuario_id migrado a NULL";
+    }
+
+    foreach (['nombre_invitado' => "ALTER TABLE pedidos ADD COLUMN nombre_invitado VARCHAR(100) NULL AFTER usuario_id",
+              'email_invitado'  => "ALTER TABLE pedidos ADD COLUMN email_invitado VARCHAR(150) NULL AFTER nombre_invitado"] as $col => $sql) {
+        $stmtColumna->execute(['schema' => $basedatos, 'columna' => $col]);
+        // Reutilizamos $stmtColumna pero con tabla pedidos.
+        $stmtCol2 = $conexion->prepare("
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = :columna
+        ");
+        $stmtCol2->execute(['schema' => $basedatos, 'columna' => $col]);
+        if ((int)$stmtCol2->fetchColumn() === 0) {
+            $conexion->exec($sql);
+            $pasos[] = "Columna pedidos.$col añadida";
+        }
+    }
+
+    // Tabla de items por pedido: guarda los datos del producto directamente
+    // (los productos vienen de JSON estático, no de la tabla productos).
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS items_pedido (
             id INT AUTO_INCREMENT PRIMARY KEY,
             pedido_id INT NOT NULL,
-            producto_id INT NOT NULL,
-            variante_id INT NULL,
+            slug VARCHAR(150) NOT NULL,
+            nombre_producto VARCHAR(150) NOT NULL,
+            talla VARCHAR(20) NOT NULL DEFAULT 'Única',
+            color VARCHAR(50) NULL,
+            sku VARCHAR(100) NULL,
             cantidad INT NOT NULL,
             precio_unitario DECIMAL(10,2) NOT NULL,
             subtotal DECIMAL(10,2) NOT NULL,
-            FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-            FOREIGN KEY (producto_id) REFERENCES productos(id),
-            FOREIGN KEY (variante_id) REFERENCES variantes_producto(id)
+            FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
         )
     ");
     $pasos[] = "Tabla items_pedido creada";
@@ -281,6 +387,49 @@ try {
     ]);
 
     $pasos[] = "Usuario administrador creado o ya existente";
+
+    // Usuarios de prueba para testing de flujos de cliente.
+    $usuariosPrueba = [
+        [
+            "nombre"   => "Carlos Prueba",
+            "email"    => "carlos@test.com",
+            "password" => "test1234",
+            "telefono" => "612345678",
+            "ciudad"   => "Madrid",
+        ],
+        [
+            "nombre"   => "Laura Demo",
+            "email"    => "laura@test.com",
+            "password" => "test1234",
+            "telefono" => "698765432",
+            "ciudad"   => "Barcelona",
+        ],
+        [
+            "nombre"   => "Marcos Tester",
+            "email"    => "marcos@test.com",
+            "password" => "test1234",
+            "telefono" => "",
+            "ciudad"   => "Sevilla",
+        ],
+    ];
+
+    $stmtUsuario = $conexion->prepare("
+        INSERT INTO usuarios (nombre, email, contrasena_hash, rol, telefono, ciudad)
+        VALUES (:nombre, :email, :hash, 'cliente', :telefono, :ciudad)
+        ON DUPLICATE KEY UPDATE email = email
+    ");
+
+    foreach ($usuariosPrueba as $u) {
+        $stmtUsuario->execute([
+            "nombre"   => $u["nombre"],
+            "email"    => $u["email"],
+            "hash"     => password_hash($u["password"], PASSWORD_DEFAULT),
+            "telefono" => $u["telefono"] ?: null,
+            "ciudad"   => $u["ciudad"],
+        ]);
+    }
+
+    $pasos[] = "Usuarios de prueba creados (password: test1234)";
 
     //devolvemos un json de que todo ha salido correctamente
     echo json_encode([

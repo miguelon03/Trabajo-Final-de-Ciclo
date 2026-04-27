@@ -1,0 +1,429 @@
+---
+import HomeLayout from "../../layouts/HomeLayout.astro";
+import products from "../../data/products.json";
+
+const allProducts = products as Array<{
+  id: number;
+  slug: string;
+  title: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  type: string;
+  color: string;
+  image: string;
+}>;
+---
+
+<HomeLayout title="DMH - Favoritos">
+  <section class="wishlist-page">
+    <div class="wishlist-container">
+      <header class="wishlist-header">
+        <p class="wishlist-kicker">Perfil</p>
+        <h1>Mi wishlist</h1>
+        <p>Guarda aquí tus prendas favoritas y añádelas al carrito cuando quieras.</p>
+      </header>
+
+      <div id="wishlistEmpty" class="wishlist-empty" hidden>
+        <p>Aún no tienes favoritos guardados.</p>
+        <a href="/catalogo">Explorar catálogo</a>
+      </div>
+
+      <div id="wishlistLoading" class="wishlist-loading" hidden>
+        <div class="wishlist-skeleton"></div>
+        <div class="wishlist-skeleton"></div>
+        <div class="wishlist-skeleton"></div>
+      </div>
+
+      <div id="wishlistGrid" class="wishlist-grid"></div>
+    </div>
+  </section>
+
+  <script define:vars={{ allProducts }}>
+    // @ts-nocheck
+    let currentFavorites = window.dmhFavorites?.get?.() || [];
+
+    async function fetchWishlist() {
+      const result = await window.dmhFetchJson("favoritos.php", {
+        credentials: "include",
+      });
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          return { authorized: false, slugs: [], error: "Debes iniciar sesión" };
+        }
+        return {
+          authorized: false,
+          slugs: currentFavorites,
+          error: result.error || "No se pudo cargar favoritos",
+        };
+      }
+
+      const slugs = result.data?.favoritos || [];
+      currentFavorites = window.dmhFavorites?.set?.(slugs, "favorites-page-fetch") || slugs;
+      return { authorized: true, slugs: currentFavorites, error: null };
+    }
+
+    async function removeFavorite(slug) {
+      const result = await window.dmhFetchJson("favoritos.php", {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ slug }),
+      });
+
+      if (result.ok) {
+        currentFavorites =
+          window.dmhFavorites?.toggleOne?.(slug, false, "favorites-page-remove") || currentFavorites;
+      }
+
+      return result;
+    }
+
+    function getCart() {
+      return JSON.parse(localStorage.getItem("cart") || "[]");
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem("cart", JSON.stringify(cart));
+      window.dispatchEvent(new Event("cart-updated"));
+    }
+
+    function setWishlistLoading(isLoading) {
+      const loading = document.getElementById("wishlistLoading");
+      const grid = document.getElementById("wishlistGrid");
+      const empty = document.getElementById("wishlistEmpty");
+
+      if (loading) {
+        loading.hidden = !isLoading;
+      }
+
+      if (grid) {
+        grid.classList.toggle("is-loading", isLoading);
+      }
+
+      if (empty && isLoading) {
+        empty.hidden = true;
+      }
+    }
+
+    async function renderWishlist() {
+      const grid = document.getElementById("wishlistGrid");
+      const empty = document.getElementById("wishlistEmpty");
+      if (!grid || !empty) {
+        return;
+      }
+
+      setWishlistLoading(true);
+
+      const { authorized, slugs, error } = await fetchWishlist();
+      if (!authorized) {
+        grid.innerHTML = "";
+        empty.hidden = false;
+        empty.innerHTML =
+          '<p>Necesitas iniciar sesión para ver tu wishlist.</p><a href="/login">Ir a login</a>';
+        if (error && error !== "Debes iniciar sesión") {
+          window.showToast?.(error, "error");
+        }
+        setWishlistLoading(false);
+        return;
+      }
+
+      const wishlist = slugs;
+      const favoriteProducts = allProducts.filter((product) => wishlist.includes(product.slug));
+
+      if (!favoriteProducts.length) {
+        grid.innerHTML = "";
+        empty.hidden = false;
+        setWishlistLoading(false);
+        return;
+      }
+
+      empty.hidden = true;
+      grid.innerHTML = favoriteProducts
+        .map((product) => {
+          const addButton =
+            product.type === "accesorio"
+              ? '<button type="button" class="wishlist-add" data-action="add" data-slug="' + product.slug + '">Añadir al carrito</button>'
+              : '<a class="wishlist-view" href="/producto/' + product.slug + '?from=catalogo">Ver producto</a>';
+
+          return (
+            '<article class="wishlist-card" data-slug="' +
+            product.slug +
+            '">' +
+            '<div class="wishlist-card__image">' +
+            product.image +
+            "</div>" +
+            '<div class="wishlist-card__content">' +
+            "<h2>" +
+            product.title +
+            "</h2>" +
+            '<p class="wishlist-card__meta">' +
+            product.category +
+            " · " +
+            product.color +
+            "</p>" +
+            '<div class="wishlist-card__footer">' +
+            '<strong>' +
+            product.price.toFixed(2) +
+            "€</strong>" +
+            '<button type="button" class="wishlist-remove" data-action="remove" data-slug="' +
+            product.slug +
+            '">Quitar</button>' +
+            "</div>" +
+            '<div class="wishlist-card__actions">' +
+            addButton +
+            "</div>" +
+            "</div>" +
+            "</article>"
+          );
+        })
+        .join("");
+
+      grid.querySelectorAll("button[data-action='remove']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const slug = btn.getAttribute("data-slug");
+          if (!slug) {
+            return;
+          }
+
+          removeFavorite(slug).then((result) => {
+            if (!result.ok) {
+              if (result.status === 401) {
+                window.showToast?.("Tu sesión ha caducado. Inicia sesión de nuevo", "info");
+                setTimeout(() => {
+                  window.location.href = "/login";
+                }, 500);
+                return;
+              }
+
+              window.showToast?.(result.error || "No se pudo actualizar favoritos", "error");
+              return;
+            }
+
+            renderWishlist();
+            window.showToast?.("Producto eliminado de favoritos", "success");
+          });
+        });
+      });
+
+      grid.querySelectorAll("button[data-action='add']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const slug = btn.getAttribute("data-slug");
+          const product = allProducts.find((item) => item.slug === slug);
+          if (!product) {
+            return;
+          }
+
+          const cart = getCart();
+          const existingIndex = cart.findIndex(
+            (item) => item.slug === product.slug && item.size === "Única",
+          );
+
+          if (existingIndex >= 0) {
+            cart[existingIndex].quantity += 1;
+          } else {
+            cart.push({
+              id: product.id,
+              slug: product.slug,
+              title: product.title,
+              price: product.price,
+              image: product.image,
+              color: product.color,
+              size: "Única",
+              sku: `DMH-${product.id}-UNICA`,
+              quantity: 1,
+            });
+          }
+
+          saveCart(cart);
+          window.showToast?.("Accesorio añadido al carrito", "success");
+        });
+      });
+
+      setWishlistLoading(false);
+    }
+
+    renderWishlist();
+    window.addEventListener("wishlist-updated", renderWishlist);
+  </script>
+
+  <style>
+    .wishlist-page {
+      min-height: 75vh;
+      padding: 2.2rem 1.5rem 4rem;
+      background: #151515;
+    }
+
+    .wishlist-container {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .wishlist-header {
+      background: linear-gradient(150deg, rgba(200, 255, 0, 0.12), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 1.8rem;
+      color: #fff;
+    }
+
+    .wishlist-kicker {
+      margin: 0 0 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      color: #c8ff00;
+      font-size: 0.75rem;
+    }
+
+    .wishlist-header h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+    }
+
+    .wishlist-header p {
+      margin: 0.8rem 0 0;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .wishlist-empty {
+      background: #1c1c1c;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      padding: 2rem;
+      text-align: center;
+      color: #fff;
+    }
+
+    .wishlist-empty a {
+      display: inline-flex;
+      margin-top: 1rem;
+      padding: 0.7rem 1rem;
+      border-radius: 999px;
+      text-decoration: none;
+      background: #c8ff00;
+      color: #111;
+      font-weight: 700;
+    }
+
+    .wishlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .wishlist-grid.is-loading {
+      opacity: 0;
+      pointer-events: none;
+      min-height: 0;
+    }
+
+    .wishlist-loading {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .wishlist-skeleton {
+      height: 310px;
+      border-radius: 18px;
+      background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0.04) 10%,
+        rgba(255, 255, 255, 0.12) 28%,
+        rgba(255, 255, 255, 0.04) 46%
+      );
+      background-size: 220% 100%;
+      animation: skeleton 1.15s ease-in-out infinite;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    @keyframes skeleton {
+      from {
+        background-position: 100% 0;
+      }
+      to {
+        background-position: -100% 0;
+      }
+    }
+
+    .wishlist-card {
+      background: #1b1b1b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1rem;
+      display: grid;
+      gap: 0.8rem;
+      color: #fff;
+    }
+
+    .wishlist-card__image {
+      height: 180px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      color: rgba(255, 255, 255, 0.36);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.85rem;
+    }
+
+    .wishlist-card__content {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .wishlist-card__content h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .wishlist-card__meta {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.86rem;
+    }
+
+    .wishlist-card__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wishlist-remove,
+    .wishlist-add,
+    .wishlist-view {
+      border: none;
+      border-radius: 999px;
+      padding: 0.45rem 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+
+    .wishlist-remove {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f2f2f2;
+    }
+
+    .wishlist-add,
+    .wishlist-view {
+      background: rgba(200, 255, 0, 0.16);
+      color: #d8ff48;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wishlist-card__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</HomeLayout>
