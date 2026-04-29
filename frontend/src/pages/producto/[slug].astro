@@ -206,6 +206,10 @@ const relatedProducts = allProducts
             <button class="btn-primary" type="button" id="addToCartBtn">Añadir al carrito</button>
           </div>
 
+          <button class="btn-secondary" type="button" id="toggleWishlistBtn" data-product-slug={product.slug}>
+            ♡ Añadir a wishlist
+          </button>
+
           <ul class="selling-points">
             <li>Envío en 24-48h laborables</li>
             <li>Cambios y devoluciones en 30 días</li>
@@ -307,6 +311,7 @@ const relatedProducts = allProducts
     const quantityInput = document.getElementById("quantityInput");
     const addToCartBtn = document.getElementById("addToCartBtn");
     const productInfo = document.getElementById("productInfo");
+    const toggleWishlistBtn = document.getElementById("toggleWishlistBtn");
 
     /** @returns {HTMLInputElement | null} */
     function getSelectedSizeInput() {
@@ -381,6 +386,121 @@ const relatedProducts = allProducts
       window.dispatchEvent(new Event("cart-updated"));
       (window as any).showToast?.("¡Producto añadido al carrito!", "success");
     });
+
+    async function fetchWishlistState() {
+      if (typeof window.dmhFetchJson !== "function") {
+        return { authorized: false, slugs: [] };
+      }
+
+      const result = await window.dmhFetchJson("favoritos.php", {
+        credentials: "include",
+      });
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          return { authorized: false, slugs: [] };
+        }
+        throw new Error(result.error || "No se pudo cargar favoritos");
+      }
+
+      const slugs = result.data?.favoritos || [];
+      const normalized = window.dmhFavorites?.set?.(slugs, "product-detail-fetch") || slugs;
+      return { authorized: true, slugs: normalized };
+    }
+
+    async function addFavorite(slug) {
+      const result = await window.dmhFetchJson("favoritos.php", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+
+      if (result.ok) {
+        window.dmhFavorites?.toggleOne?.(slug, true, "product-detail-add");
+      }
+
+      return result;
+    }
+
+    async function removeFavorite(slug) {
+      const result = await window.dmhFetchJson("favoritos.php", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+
+      if (result.ok) {
+        window.dmhFavorites?.toggleOne?.(slug, false, "product-detail-remove");
+      }
+
+      return result;
+    }
+
+    function paintWishlistButton(isFavorite) {
+      if (!(toggleWishlistBtn instanceof HTMLButtonElement)) {
+        return;
+      }
+      toggleWishlistBtn.textContent = isFavorite ? "♥ En wishlist" : "♡ Añadir a wishlist";
+      toggleWishlistBtn.setAttribute("aria-pressed", isFavorite ? "true" : "false");
+      toggleWishlistBtn.classList.toggle("is-active", isFavorite);
+    }
+
+    async function initWishlistButton() {
+      if (!(toggleWishlistBtn instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const slug = toggleWishlistBtn.dataset.productSlug;
+      if (!slug) {
+        return;
+      }
+
+      let authorized = false;
+      let currentSet = window.dmhFavorites?.get?.() || [];
+
+      try {
+        const state = await fetchWishlistState();
+        authorized = state.authorized;
+        currentSet = state.slugs;
+      } catch (_error) {
+        currentSet = window.dmhFavorites?.get?.() || [];
+      }
+
+      paintWishlistButton(currentSet.includes(slug));
+
+      toggleWishlistBtn.addEventListener("click", async () => {
+        if (!authorized) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const isFavorite = (window.dmhFavorites?.get?.() || []).includes(slug);
+        const result = isFavorite ? await removeFavorite(slug) : await addFavorite(slug);
+
+        if (!result.ok) {
+          if (result.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          (window as any).showToast?.(result.error || "No se pudo actualizar favoritos", "error");
+          return;
+        }
+
+        const nowFav = !isFavorite;
+        paintWishlistButton(nowFav);
+        (window as any).showToast?.(nowFav ? "Producto añadido a wishlist" : "Producto eliminado de wishlist", "success");
+      });
+
+      window.addEventListener("wishlist-updated", (event) => {
+        const slugs = event?.detail?.slugs;
+        if (!Array.isArray(slugs)) return;
+        paintWishlistButton(slugs.includes(slug));
+      });
+    }
+
+    initWishlistButton();
 
     // --- Related cards navigation ---
     document.querySelectorAll(".related-card").forEach((card) => {
@@ -702,6 +822,22 @@ const relatedProducts = allProducts
     color: #090909;
     font-weight: 800;
     cursor: pointer;
+  }
+
+  .btn-secondary {
+    min-height: 42px;
+    border-radius: var(--border-radius-normal);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f5f5f5;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-secondary.is-active {
+    border-color: rgba(200, 255, 0, 0.55);
+    color: #C8FF00;
+    background: rgba(200, 255, 0, 0.08);
   }
 
   .selling-points {

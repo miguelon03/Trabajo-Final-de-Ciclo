@@ -91,10 +91,6 @@ function updateWishlistButtonState(card, isFavorite) {
 async function setupWishlist() {
   const { authorized, slugs, error } = await fetchWishlist();
 
-  if (error && authorized === false) {
-    window.showToast?.(error, "error");
-  }
-
   productCards.forEach((card) => {
     const slug = card.getAttribute("data-product-slug");
     const favButton = card.querySelector(".icon-fav");
@@ -110,7 +106,6 @@ async function setupWishlist() {
       event.stopPropagation();
 
       if (!authorized) {
-        window.showToast?.("Inicia sesión para guardar favoritos", "info");
         setTimeout(() => {
           window.location.href = "/login";
         }, 500);
@@ -122,7 +117,6 @@ async function setupWishlist() {
 
       if (!result.ok) {
         if (result.status === 401) {
-          window.showToast?.("Tu sesión ha caducado. Inicia sesión de nuevo", "info");
           setTimeout(() => {
             window.location.href = "/login";
           }, 500);

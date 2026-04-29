@@ -74,23 +74,61 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       <h2 id="checkoutTitle">Finalizar compra</h2>
 
-      <div id="guestFields" hidden>
+      <p class="checkout-modal__hint checkout-modal__hint--soft" id="checkoutModeHint"></p>
+
+      <div id="guestFields" class="checkout-modal__guest-note" hidden>
         <p class="checkout-modal__hint">
-          Compras como invitado. Puedes <a href="/login">iniciar sesión</a> o continuar sin cuenta.
+          Compras como invitado. Si creas una cuenta tendrás beneficios de miembro: seguimiento de pedidos, historial y checkout más rápido.
         </p>
-        <label>
-          <span>Nombre completo</span>
-          <input type="text" id="checkoutNombre" autocomplete="name" />
-        </label>
-        <label>
-          <span>Email</span>
-          <input type="email" id="checkoutEmail" autocomplete="email" />
-        </label>
+        <a class="checkout-modal__link" href="/registro">Crear cuenta ahora</a>
       </div>
 
       <label>
-        <span>Dirección de envío</span>
-        <input type="text" id="checkoutDireccion" autocomplete="street-address" placeholder="Calle, número, ciudad, CP" />
+        <span>Nombre completo</span>
+        <input type="text" id="checkoutNombre" autocomplete="name" placeholder="Nombre y apellidos" />
+      </label>
+
+      <label>
+        <span>Email</span>
+        <input type="email" id="checkoutEmail" autocomplete="email" placeholder="tu@email.com" />
+      </label>
+
+      <div class="checkout-modal__grid-2">
+        <label>
+          <span>Teléfono</span>
+          <input type="tel" id="checkoutTelefono" autocomplete="tel" placeholder="600123123" />
+        </label>
+        <label>
+          <span>Código postal</span>
+          <input type="text" id="checkoutCodigoPostal" autocomplete="postal-code" placeholder="28001" />
+        </label>
+      </div>
+
+      <div class="checkout-modal__grid-2">
+        <label>
+          <span>Dirección de envío</span>
+          <input type="text" id="checkoutDireccion" autocomplete="street-address" placeholder="Calle, número" />
+        </label>
+        <label>
+          <span>Ciudad</span>
+          <input type="text" id="checkoutCiudad" autocomplete="address-level2" placeholder="Madrid" />
+        </label>
+      </div>
+
+      <div class="checkout-modal__paybox">
+        <strong>Método de pago: Bizum</strong>
+        <label>
+          <span>Número Bizum (9 dígitos)</span>
+          <input type="tel" id="checkoutBizum" inputmode="numeric" placeholder="600123123" />
+        </label>
+        <p class="checkout-modal__hint">Al confirmar, procesaremos el pedido y te mostraremos el resumen del pago por Bizum.</p>
+      </div>
+
+      <p id="checkoutProfileMissing" class="checkout-modal__warn" hidden></p>
+
+      <label class="checkout-modal__checkline">
+        <input type="checkbox" id="checkoutPolicy" />
+        <span>Acepto las condiciones de compra y la política de privacidad.</span>
       </label>
 
       <p id="checkoutError" class="checkout-modal__error" hidden></p>
@@ -249,7 +287,6 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       });
     });
 
-    // Finalizar compra (placeholder)
     // ── Checkout modal ─────────────────────────────────────────────────────
     const overlay       = document.getElementById('checkoutOverlay');
     const checkoutClose = document.getElementById('checkoutClose');
@@ -257,12 +294,24 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const checkoutError = document.getElementById('checkoutError');
     const checkoutBtn   = document.getElementById('cartCheckoutBtn');
     const confirmBtn    = document.getElementById('checkoutConfirm');
+    const modeHintEl    = document.getElementById('checkoutModeHint');
+    const missingEl     = document.getElementById('checkoutProfileMissing');
+    const policyEl      = document.getElementById('checkoutPolicy');
+
+    const nombreEl      = document.getElementById('checkoutNombre');
+    const emailEl       = document.getElementById('checkoutEmail');
+    const telefonoEl    = document.getElementById('checkoutTelefono');
+    const direccionEl   = document.getElementById('checkoutDireccion');
+    const ciudadEl      = document.getElementById('checkoutCiudad');
+    const cpEl          = document.getElementById('checkoutCodigoPostal');
+    const bizumEl       = document.getElementById('checkoutBizum');
 
     let isLoggedIn = false;
+    let profileData = null;
 
     async function checkSession() {
       try {
-        const res = await fetch('http://tfc.local/backend/session.php', { credentials: 'include' });
+        const res = await fetch('/backend/session.php', { credentials: 'include' });
         const data = await res.json();
         isLoggedIn = !!(data.autenticado && data.usuario);
       } catch (_) {
@@ -270,12 +319,123 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
     }
 
+    function inputVal(el) {
+      return el instanceof HTMLInputElement ? el.value.trim() : '';
+    }
+
+    function assignVal(el, value) {
+      if (el instanceof HTMLInputElement) {
+        el.value = value || '';
+      }
+    }
+
+    function setModeTexts() {
+      if (modeHintEl) {
+        modeHintEl.textContent = isLoggedIn
+          ? 'Compra como miembro. Revisa tus datos y paga por Bizum.'
+          : 'Compra como invitado. Te pediremos todos los datos para completar el pedido.';
+      }
+
+      if (guestFields) {
+        guestFields.hidden = isLoggedIn;
+      }
+    }
+
+    function getMissingProfileFields(data) {
+      const missing = [];
+      if (!data?.telefono) missing.push('teléfono');
+      if (!data?.direccion) missing.push('dirección');
+      if (!data?.ciudad) missing.push('ciudad');
+      if (!data?.codigo_postal) missing.push('código postal');
+      return missing;
+    }
+
+    async function loadProfileForCheckout() {
+      if (!isLoggedIn) {
+        profileData = null;
+        return;
+      }
+
+      const profileRes = await window.dmhFetchJson('perfil.php', {
+        credentials: 'include',
+      });
+
+      if (!profileRes.ok) {
+        throw new Error(profileRes.error || 'No se pudo cargar tu perfil');
+      }
+
+      profileData = profileRes.data?.usuario || null;
+
+      assignVal(nombreEl, profileData?.nombre || '');
+      assignVal(emailEl, profileData?.email || '');
+      assignVal(telefonoEl, profileData?.telefono || '');
+      assignVal(direccionEl, profileData?.direccion || '');
+      assignVal(ciudadEl, profileData?.ciudad || '');
+      assignVal(cpEl, profileData?.codigo_postal || '');
+
+      if (emailEl instanceof HTMLInputElement) {
+        emailEl.readOnly = true;
+      }
+    }
+
+    function resetGuestEditableFields() {
+      if (emailEl instanceof HTMLInputElement) {
+        emailEl.readOnly = false;
+      }
+      assignVal(nombreEl, '');
+      assignVal(emailEl, '');
+      assignVal(telefonoEl, '');
+      assignVal(direccionEl, '');
+      assignVal(ciudadEl, '');
+      assignVal(cpEl, '');
+    }
+
+    function showMissingFieldsHint() {
+      if (!missingEl) return;
+
+      if (!isLoggedIn || !profileData) {
+        missingEl.hidden = true;
+        missingEl.textContent = '';
+        return;
+      }
+
+      const missing = getMissingProfileFields(profileData);
+      if (!missing.length) {
+        missingEl.hidden = true;
+        missingEl.textContent = '';
+        return;
+      }
+
+      missingEl.hidden = false;
+      missingEl.textContent = 'Te faltan datos de perfil: ' + missing.join(', ') + '. Complétalos para finalizar la compra.';
+    }
+
+    async function prepareCheckoutState() {
+      await checkSession();
+      setModeTexts();
+
+      if (isLoggedIn) {
+        await loadProfileForCheckout();
+      } else {
+        profileData = null;
+        resetGuestEditableFields();
+      }
+
+      if (checkoutError) {
+        checkoutError.hidden = true;
+        checkoutError.textContent = '';
+      }
+      if (policyEl instanceof HTMLInputElement) {
+        policyEl.checked = false;
+      }
+      assignVal(bizumEl, '');
+      showMissingFieldsHint();
+    }
+
     function openCheckout() {
       if (!overlay) return;
       overlay.hidden = false;
       document.body.style.overflow = 'hidden';
-      if (guestFields) guestFields.hidden = isLoggedIn;
-      if (checkoutError) { checkoutError.hidden = true; checkoutError.textContent = ''; }
     }
 
     function closeCheckout() {
@@ -285,8 +445,12 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     checkoutBtn?.addEventListener('click', async () => {
-      await checkSession();
-      openCheckout();
+      try {
+        await prepareCheckoutState();
+        openCheckout();
+      } catch (error) {
+        window.showToast?.(error?.message || 'No se pudo preparar el checkout', 'error');
+      }
     });
 
     checkoutClose?.addEventListener('click', closeCheckout);
@@ -298,20 +462,62 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     confirmBtn?.addEventListener('click', async () => {
       if (checkoutError) { checkoutError.hidden = true; checkoutError.textContent = ''; }
 
-      const direccion = document.getElementById('checkoutDireccion').value.trim();
-      if (!direccion) { showCheckoutError('La dirección de envío es obligatoria'); return; }
+      const nombre = inputVal(nombreEl);
+      const email = inputVal(emailEl);
+      const telefono = inputVal(telefonoEl);
+      const direccion = inputVal(direccionEl);
+      const ciudad = inputVal(ciudadEl);
+      const codigoPostal = inputVal(cpEl);
+      const bizum = inputVal(bizumEl);
 
-      const payload = { items: getCart(), direccion_envio: direccion };
+      if (!nombre || !email || !telefono || !direccion || !ciudad || !codigoPostal) {
+        showCheckoutError('Completa todos los campos obligatorios para finalizar la compra');
+        return;
+      }
+
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        showCheckoutError('Introduce un email válido');
+        return;
+      }
+
+      if (!/^\d{9}$/.test(bizum)) {
+        showCheckoutError('El número de Bizum debe tener 9 dígitos');
+        return;
+      }
+
+      if (!(policyEl instanceof HTMLInputElement) || !policyEl.checked) {
+        showCheckoutError('Debes aceptar las condiciones de compra para continuar');
+        return;
+      }
+
+      const direccionCompleta = `${direccion}, ${codigoPostal} ${ciudad}`;
+
+      const payload = { items: getCart(), direccion_envio: direccionCompleta };
 
       if (!isLoggedIn) {
-        const nombre = document.getElementById('checkoutNombre').value.trim();
-        const email  = document.getElementById('checkoutEmail').value.trim();
-        if (!nombre || !email) {
-          showCheckoutError('Nombre y email son obligatorios para comprar sin cuenta');
-          return;
-        }
         payload.nombre = nombre;
         payload.email  = email;
+      } else {
+        const profileUpdate = await window.dmhFetchJson('perfil.php', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre,
+            telefono,
+            direccion,
+            ciudad,
+            codigo_postal: codigoPostal,
+          }),
+        });
+
+        if (!profileUpdate.ok) {
+          showCheckoutError(profileUpdate.error || 'No se pudo actualizar tu perfil para el pedido');
+          return;
+        }
+
+        profileData = profileUpdate.data?.usuario || profileData;
+        showMissingFieldsHint();
       }
 
       if (confirmBtn instanceof HTMLButtonElement) {
@@ -332,8 +538,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         saveCart([]);
         closeCheckout();
         render();
-        const totalFmt = String(result.data.pedido_id);
-        window.showToast?.(`¡Pedido #${result.data.pedido_id} realizado! Total: ${Number(result.data.total).toFixed(2).replace('.', ',')} €`, 'success');
+        window.showToast?.(`¡Pedido #${result.data.pedido_id} confirmado! Total: ${Number(result.data.total).toFixed(2).replace('.', ',')} €. Te contactaremos en Bizum ${bizum}.`, 'success');
       } finally {
         if (confirmBtn instanceof HTMLButtonElement) {
           confirmBtn.disabled = false;
@@ -352,97 +557,214 @@ import HomeLayout from "../layouts/HomeLayout.astro";
   </script>
 
   <style is:global>
-    .cart-page {
     /* ── Checkout modal ─────────────────────────── */
     .checkout-overlay {
       position: fixed;
       inset: 0;
       z-index: 9000;
-      background: rgba(0,0,0,.7);
+      background: rgba(8, 8, 8, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
     }
+
     .checkout-modal {
-      background: #242424;
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 12px;
-      padding: 2rem 2.5rem 2.5rem;
+      background: #181818;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 2rem;
       width: 100%;
-      max-width: 500px;
+      max-width: 640px;
+      max-height: min(90vh, 860px);
+      overflow: auto;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 1.2rem;
+      gap: 1rem;
+      box-shadow: 0 28px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(200,255,0,.08);
     }
+
     .checkout-modal h2 {
-      font-size: 1.35rem;
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
       color: #fff;
       margin: 0;
+      letter-spacing: 0.01em;
+      padding-right: 2rem;
     }
+
     .checkout-modal__close {
       position: absolute;
       top: 1rem;
       right: 1rem;
-      background: none;
-      border: none;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px;
       cursor: pointer;
-      color: rgba(255,255,255,.5);
-      padding: 4px;
+      color: rgba(255,255,255,.68);
+      padding: 0.35rem;
       line-height: 1;
     }
-    .checkout-modal__close:hover { color: #fff; }
+
+    .checkout-modal__close:hover {
+      color: #fff;
+      border-color: rgba(200,255,0,.55);
+    }
+
     .checkout-modal label {
       display: flex;
       flex-direction: column;
-      gap: .4rem;
-      font-size: .85rem;
-      color: rgba(255,255,255,.6);
+      gap: .45rem;
+      font-size: .83rem;
+      color: rgba(255,255,255,.67);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
     }
+
     .checkout-modal label input {
-      background: #1a1a1a;
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 8px;
-      padding: .65rem 1rem;
+      background: #101010;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: .7rem .9rem;
       color: #fff;
       font-size: .95rem;
       outline: none;
-      transition: border-color .2s;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 500;
+      transition: border-color .2s, box-shadow .2s;
     }
-    .checkout-modal label input:focus { border-color: #a8ff78; }
+
+    .checkout-modal label input:focus {
+      border-color: #c8ff00;
+      box-shadow: 0 0 0 3px rgba(200,255,0,.12);
+    }
+
     .checkout-modal__hint {
       font-size: .82rem;
-      color: rgba(255,255,255,.5);
+      color: rgba(255,255,255,.6);
       margin: 0;
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 500;
     }
-    .checkout-modal__hint a { color: #a8ff78; text-decoration: none; }
-    .checkout-modal__hint a:hover { text-decoration: underline; }
+
+    .checkout-modal__hint--soft {
+      color: rgba(200,255,0,.82);
+      background: rgba(200,255,0,.08);
+      border: 1px solid rgba(200,255,0,.22);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
+    }
+
+    .checkout-modal__guest-note {
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .checkout-modal__link {
+      display: inline-flex;
+      align-self: flex-start;
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      background: rgba(200,255,0,.16);
+      color: #d6ff59;
+      border: 1px solid rgba(200,255,0,.3);
+    }
+
+    .checkout-modal__grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .checkout-modal__paybox {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .checkout-modal__paybox strong {
+      color: #fff;
+      font-size: .9rem;
+    }
+
+    .checkout-modal__warn {
+      margin: 0;
+      font-size: .82rem;
+      color: #ffd174;
+      background: rgba(255, 209, 116, 0.12);
+      border: 1px solid rgba(255, 209, 116, 0.28);
+      border-radius: 8px;
+      padding: .55rem .75rem;
+    }
+
+    .checkout-modal__checkline {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.55rem;
+      color: rgba(255,255,255,.72);
+      font-size: 0.84rem;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+
+    .checkout-modal__checkline input {
+      margin-top: 0.15rem;
+      accent-color: #c8ff00;
+    }
+
     .checkout-modal__error {
       font-size: .84rem;
-      color: #ff6b6b;
+      color: #ff8484;
       margin: 0;
-      padding: .5rem .75rem;
+      padding: .6rem .75rem;
       background: rgba(255,107,107,.08);
-      border-radius: 6px;
+      border-radius: 8px;
       border: 1px solid rgba(255,107,107,.2);
     }
+
     .btn-checkout-confirm {
-      padding: .85rem 1.5rem;
-      background: linear-gradient(135deg, #a8ff78, #78ffd6);
-      color: #1a1a1a;
+      padding: .9rem 1.3rem;
+      background: linear-gradient(135deg, #c8ff00, #90f26b);
+      color: #101010;
       font-size: .95rem;
-      font-weight: 700;
+      font-weight: 800;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       text-align: center;
-      transition: opacity .2s;
+      transition: transform .2s, opacity .2s;
     }
-    .btn-checkout-confirm:hover:not(:disabled) { opacity: .9; }
-    .btn-checkout-confirm:disabled { opacity: .5; cursor: not-allowed; }
-    /* ─────────────────────────────────────────────── */
+
+    .btn-checkout-confirm:hover:not(:disabled) {
+      opacity: .95;
+      transform: translateY(-1px);
+    }
+
+    .btn-checkout-confirm:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .cart-page {
       padding: 2.5rem 3rem 5rem;
       background: #1a1a1a;
       min-height: 75vh;
@@ -759,6 +1081,15 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     @media (max-width: 580px) {
+      .checkout-modal {
+        padding: 1.35rem;
+        border-radius: 14px;
+      }
+
+      .checkout-modal__grid-2 {
+        grid-template-columns: 1fr;
+      }
+
       .cart-page {
         padding: 1.5rem 1rem 3rem;
       }

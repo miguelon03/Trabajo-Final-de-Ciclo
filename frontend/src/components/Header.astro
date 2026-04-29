@@ -440,7 +440,7 @@ function isActivePath(path: string) {
       try {
         // Pedimos al backend información de la sesión actual
         const response = await fetch(
-          "http://tfc.local/backend/session.php",
+          "/backend/session.php",
           {
             credentials: "include",
           },
@@ -480,7 +480,7 @@ function isActivePath(path: string) {
           logoutBtn.addEventListener("click", async () => {
             try {
               const logoutResponse = await fetch(
-                "http://tfc.local/backend/logout.php",
+                "/backend/logout.php",
                 {
                   method: "POST",
                   credentials: "include",

@@ -165,7 +165,7 @@
 <script>
   // Llamamos al instalador al cargar el hero para asegurar
   // que la base de datos y tablas existen al arrancar la app
-  fetch("http://tfc.local/backend/instalador.php", {
+  fetch("/backend/instalador.php", {
     credentials: "include"
   })
     .then(async (response) => {

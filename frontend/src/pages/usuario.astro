@@ -87,6 +87,28 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const codigoPostalInput = document.getElementById("codigoPostal");
     const profileSubmitBtn = profileForm?.querySelector("button[type='submit']");
 
+    async function requestProfile(endpoint, options) {
+      if (typeof window.dmhFetchJson === "function") {
+        return window.dmhFetchJson(endpoint, options || {});
+      }
+
+      // Fallback defensivo por si dmh-utils no está cargado.
+      const response = await fetch(`/backend/api/${endpoint}`, options || {});
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_error) {
+        data = null;
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        data,
+        error: response.ok ? null : (data && data.error) || `Error HTTP ${response.status}`,
+      };
+    }
+
     function setProfileLoading(isLoading, loadingText) {
       if (profileLoading) {
         profileLoading.hidden = !isLoading;
@@ -105,6 +127,15 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     function fillForm(usuario) {
+      if (!(nombreInput instanceof HTMLInputElement) ||
+          !(emailInput instanceof HTMLInputElement) ||
+          !(telefonoInput instanceof HTMLInputElement) ||
+          !(direccionInput instanceof HTMLInputElement) ||
+          !(ciudadInput instanceof HTMLInputElement) ||
+          !(codigoPostalInput instanceof HTMLInputElement)) {
+        throw new Error("No se encontraron todos los campos del formulario de perfil");
+      }
+
       nombreInput.value = usuario.nombre || "";
       emailInput.value = usuario.email || "";
       telefonoInput.value = usuario.telefono || "";
@@ -116,8 +147,16 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     async function loadProfile() {
       setProfileLoading(true, "Cargando perfil...");
 
+      const loadingFailsafe = setTimeout(() => {
+        setProfileLoading(false);
+        if (profileMessage) {
+          profileMessage.textContent = "La carga del perfil está tardando demasiado. Revisa backend/proxy.";
+          profileMessage.className = "profile-message is-error";
+        }
+      }, 15000);
+
       try {
-        const result = await window.dmhFetchJson(PROFILE_API_ENDPOINT, {
+        const result = await requestProfile(PROFILE_API_ENDPOINT, {
           credentials: "include",
         });
 
@@ -140,9 +179,12 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         profileGuest.hidden = true;
         profileContent.hidden = false;
       } catch (error) {
-        profileMessage.textContent = error?.message || "Error cargando el perfil";
-        profileMessage.className = "profile-message is-error";
+        if (profileMessage) {
+          profileMessage.textContent = error?.message || "Error cargando el perfil";
+          profileMessage.className = "profile-message is-error";
+        }
       } finally {
+        clearTimeout(loadingFailsafe);
         setProfileLoading(false);
       }
     }
@@ -150,19 +192,21 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     profileForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      profileMessage.textContent = "";
+      if (profileMessage) {
+        profileMessage.textContent = "";
+      }
       setProfileLoading(true, "Guardando...");
 
       const payload = {
-        nombre: nombreInput.value,
-        telefono: telefonoInput.value,
-        direccion: direccionInput.value,
-        ciudad: ciudadInput.value,
-        codigoPostal: codigoPostalInput.value,
+        nombre: nombreInput?.value,
+        telefono: telefonoInput?.value,
+        direccion: direccionInput?.value,
+        ciudad: ciudadInput?.value,
+        codigoPostal: codigoPostalInput?.value,
       };
 
       try {
-        const result = await window.dmhFetchJson(PROFILE_API_ENDPOINT, {
+        const result = await requestProfile(PROFILE_API_ENDPOINT, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -173,8 +217,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
         const data = result.data || {};
         if (!result.ok || !data.ok) {
-          profileMessage.textContent = result.error || data.error || "No se pudo actualizar el perfil";
-          profileMessage.className = "profile-message is-error";
+          if (profileMessage) {
+            profileMessage.textContent = result.error || data.error || "No se pudo actualizar el perfil";
+            profileMessage.className = "profile-message is-error";
+          }
 
           if (result.status === 401) {
             setTimeout(() => {
@@ -186,11 +232,15 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         }
 
         fillForm(data.usuario);
-        profileMessage.textContent = "Perfil actualizado correctamente";
-        profileMessage.className = "profile-message is-success";
+        if (profileMessage) {
+          profileMessage.textContent = "Perfil actualizado correctamente";
+          profileMessage.className = "profile-message is-success";
+        }
       } catch (error) {
-        profileMessage.textContent = error?.message || "Error de conexión al guardar";
-        profileMessage.className = "profile-message is-error";
+        if (profileMessage) {
+          profileMessage.textContent = error?.message || "Error de conexión al guardar";
+          profileMessage.className = "profile-message is-error";
+        }
       } finally {
         setProfileLoading(false);
       }
