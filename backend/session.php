@@ -30,6 +30,7 @@ header("Content-Type: application/json; charset=utf-8");
 echo json_encode([
     "ok" => true,
     "logueado" => isset($_SESSION["usuario_id"]),
+    "autenticado" => isset($_SESSION["usuario_id"]),
     "usuario" => isset($_SESSION["usuario_id"]) ? [
         "id" => $_SESSION["usuario_id"],
         "nombre" => $_SESSION["usuario_nombre"] ?? "",

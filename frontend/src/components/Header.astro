@@ -1,9 +1,10 @@
 ---
 /* Importamos los iconos SVG usados en la cabecera */
 import { searchIcon, userIcon, cartIcon } from "./icons.ts";
+import { fetchCatalogData } from "../lib/catalog-api";
 
-/* Importamos el JSON de productos para alimentar el buscador */
-import productsRaw from "../data/products.json";
+/* Cargamos productos desde la API para alimentar el buscador */
+const { products: productsRaw } = await fetchCatalogData();
 
 /* Transformamos los productos para quedarnos solo con slug y título */
 const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(

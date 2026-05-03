@@ -1,59 +1,24 @@
 ---
 import HomeLayout from "../../layouts/HomeLayout.astro";
-import products from "../../data/products.json";
-import stock from "../../data/stock.json";
-import reviews from "../../data/reviews.json";
-
-type Product = {
-  id: number;
-  slug: string;
-  title: string;
-  category: string;
-  price: number;
-  originalPrice?: number;
-  type: string;
-  color: string;
-  badge?: string;
-  createdAt: string;
-  image: string;
-  images?: string[];
-  sizes?: string[];
-  description: string;
-};
-
-type StockEntry = {
-  productId: number;
-  productSlug: string;
-  totalStock: number;
-  bySize: Record<string, { stock: number; sku: string }>;
-};
-
-type ReviewItem = {
-  id: string;
-  user: string;
-  rating: number;
-  comment: string;
-  date: string;
-  verifiedPurchase: boolean;
-};
-
-type ReviewEntry = {
-  productId: number;
-  productSlug: string;
-  averageRating: number;
-  totalReviews: number;
-  items: ReviewItem[];
-};
+import {
+  fetchCatalogData,
+  type CatalogProduct as Product,
+  type CatalogStockEntry as StockEntry,
+  type CatalogReviewEntry as ReviewEntry,
+  type CatalogReviewItem as ReviewItem,
+} from "../../lib/catalog-api";
 
 export async function getStaticPaths() {
+  const { products } = await fetchCatalogData();
   return (products as Product[]).map((product: Product) => ({
     params: { slug: product.slug },
     props: { slug: product.slug }
   }));
 }
 
+const { products, stock, reviews } = await fetchCatalogData();
 const allProducts = products as Product[];
-const allStock = stock as unknown as StockEntry[];
+const allStock = stock as StockEntry[];
 const allReviews = reviews as ReviewEntry[];
 
 const { slug } = Astro.props;
@@ -79,7 +44,7 @@ const reviewsList = productReviews?.items ?? [];
 const typeLabel = product.type.charAt(0).toUpperCase() + product.type.slice(1);
 const isAccessory = product.type === "accesorio";
 
-const rawSizes = product.sizes ?? [];
+const rawSizes = Object.keys(productStock?.bySize ?? {});
 const sizesArray: string[] = Array.isArray(rawSizes) ? rawSizes : [rawSizes as unknown as string];
 const sizeOptions = sizesArray.map((size: string) => {
   const sizeStock = productStock?.bySize?.[size]?.stock ?? 0;
@@ -252,7 +217,13 @@ const relatedProducts = allProducts
               role="link"
               aria-label={`Ver ${item.title}`}
             >
-              <div class="related-card__image">{item.image}</div>
+              <div class="related-card__image">
+                {item.image.startsWith('/') || item.image.startsWith('http') ? (
+                  <img src={item.image} alt={item.title} loading="lazy" />
+                ) : (
+                  <span class="related-card__image-placeholder">{item.image}</span>
+                )}
+              </div>
               <h3>{item.title}</h3>
               <p>{item.price.toFixed(2)}€</p>
             </article>
@@ -927,9 +898,20 @@ const relatedProducts = allProducts
     min-height: 150px;
     border-radius: var(--border-radius-normal);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
-    color: rgba(255, 255, 255, 0.28);
     display: grid;
     place-items: center;
+    overflow: hidden;
+  }
+
+  .related-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .related-card__image-placeholder {
+    color: rgba(255, 255, 255, 0.28);
     text-transform: uppercase;
     letter-spacing: 0.12em;
   }

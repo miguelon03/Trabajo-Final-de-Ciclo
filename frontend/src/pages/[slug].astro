@@ -1,7 +1,7 @@
 ---
 import HomeLayout from "../layouts/HomeLayout.astro";
 import CatalogSection from "../components/CatalogSection.astro";
-import products from "../data/products.json";
+import { fetchCatalogData } from "../lib/catalog-api";
 import { cartIcon } from "../components/icons.ts";
 
 type Product = {
@@ -25,6 +25,7 @@ export async function getStaticPaths() {
   }));
 }
 
+const { products } = await fetchCatalogData();
 const allProducts = products as Product[];
 const { slug } = Astro.props;
 const isCatalog = slug === "catalogo";
@@ -94,7 +95,13 @@ if (slug === "novedades") {
                     {product.badge && <span class="badge">{product.badge}</span>}
                     <button class="icon-fav" type="button" aria-label="Añadir a favoritos">♡</button>
                   </div>
-                  <div class="product-card__image" aria-hidden="true">{product.image}</div>
+                  <div class="product-card__image" aria-hidden="true">
+                    {product.image.startsWith('/') || product.image.startsWith('http') ? (
+                      <img src={product.image} alt={product.title} loading="lazy" />
+                    ) : (
+                      <span class="product-card__image-placeholder">{product.image}</span>
+                    )}
+                  </div>
                   <div class="product-card__content">
                     <h3>{product.title}</h3>
                     <p class="product-category">{product.category}</p>
@@ -503,6 +510,18 @@ if (slug === "novedades") {
     text-transform: uppercase;
     letter-spacing: 0.15em;
     font-size: 0.95rem;
+    overflow: hidden;
+  }
+
+  .product-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .product-card__image-placeholder {
+    color: rgba(255, 255, 255, 0.28);
   }
 
   .product-card__content {

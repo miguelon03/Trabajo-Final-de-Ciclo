@@ -1,6 +1,6 @@
 ---
 import HomeLayout from "../layouts/HomeLayout.astro";
-import productsRaw from "../data/products.json";
+import { fetchCatalogData } from "../lib/catalog-api";
 
 type Product = {
   id: number;
@@ -14,7 +14,8 @@ type Product = {
   type: string;
 };
 
-const allProducts = productsRaw as unknown as Product[];
+const { products: productsRaw } = await fetchCatalogData();
+const allProducts = productsRaw as Product[];
 ---
 
 <HomeLayout title="DMH - Búsqueda" description="Resultados de búsqueda en DripMode Hood">
@@ -93,6 +94,9 @@ const allProducts = productsRaw as unknown as Product[];
         <article class="srp-card" data-slug="${p.slug}" tabindex="0" role="link" aria-label="Ver ${p.title}">
           <div class="srp-card__img">
             ${p.badge ? `<span class="srp-badge">${p.badge}</span>` : ''}
+            ${String(p.image || '').startsWith('/') || String(p.image || '').startsWith('http')
+              ? `<img src="${p.image}" alt="${p.title}" loading="lazy" />`
+              : ''}
           </div>
           <div class="srp-card__info">
             <p class="srp-card__cat">${p.category}</p>
@@ -312,9 +316,21 @@ const allProducts = productsRaw as unknown as Product[];
       display: flex;
       align-items: flex-start;
       padding: 0.75rem;
+      overflow: hidden;
+    }
+
+    .srp-card__img img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .srp-badge {
+      position: relative;
+      z-index: 1;
       background: #c8ff00;
       color: #0f0f0f;
       font-size: 0.72rem;
