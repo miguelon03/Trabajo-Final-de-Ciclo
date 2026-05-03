@@ -16,6 +16,120 @@ require_once __DIR__ . "/../conexion.php";
 
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : null;
 
+function dmh_try_discount_stock(PDO $conexion, array $item): void {
+    $cantidad = (int)$item["cantidad"];
+    $sku = trim((string)($item["sku"] ?? ""));
+    $slug = trim((string)($item["slug"] ?? ""));
+    $talla = trim((string)($item["talla"] ?? "Única"));
+    $color = trim((string)($item["color"] ?? ""));
+
+    if ($cantidad <= 0 || $slug === "") {
+        return;
+    }
+
+    // Si no hay variantes inventariadas para ese slug, no bloqueamos el pedido.
+    $stmtHasVariants = $conexion->prepare(
+        "SELECT COUNT(*)
+         FROM variantes_producto vp
+         JOIN productos p ON p.id = vp.producto_id
+         WHERE p.slug = :slug"
+    );
+    $stmtHasVariants->execute(["slug" => $slug]);
+    $hasVariants = (int)$stmtHasVariants->fetchColumn() > 0;
+    if (!$hasVariants) {
+        return;
+    }
+
+    if ($sku !== "") {
+        $stmtSku = $conexion->prepare(
+            "UPDATE variantes_producto vp
+             JOIN productos p ON p.id = vp.producto_id
+             SET vp.stock = vp.stock - :cantidad
+             WHERE vp.sku = :sku
+               AND vp.stock >= :cantidad"
+        );
+        $stmtSku->execute([
+            "cantidad" => $cantidad,
+            "sku" => $sku,
+        ]);
+
+        if ($stmtSku->rowCount() > 0) {
+            return;
+        }
+    }
+
+    $stmtVariantColor = $conexion->prepare(
+        "UPDATE variantes_producto vp
+         JOIN productos p ON p.id = vp.producto_id
+         SET vp.stock = vp.stock - :cantidad
+         WHERE p.slug = :slug
+           AND vp.talla = :talla
+           AND (
+             (:color = '' AND (vp.color IS NULL OR vp.color = ''))
+             OR vp.color = :color
+           )
+           AND vp.stock >= :cantidad"
+    );
+
+    $stmtVariantColor->execute([
+        "cantidad" => $cantidad,
+        "slug" => $slug,
+        "talla" => $talla,
+        "color" => $color,
+    ]);
+
+    if ($stmtVariantColor->rowCount() > 0) {
+        return;
+    }
+
+    $stmtVariantSize = $conexion->prepare(
+        "UPDATE variantes_producto vp
+         JOIN productos p ON p.id = vp.producto_id
+         SET vp.stock = vp.stock - :cantidad
+         WHERE p.slug = :slug
+           AND vp.talla = :talla
+           AND vp.stock >= :cantidad
+         ORDER BY vp.stock DESC
+         LIMIT 1"
+    );
+
+    $stmtVariantSize->execute([
+        "cantidad" => $cantidad,
+        "slug" => $slug,
+        "talla" => $talla,
+    ]);
+
+    if ($stmtVariantSize->rowCount() > 0) {
+        return;
+    }
+
+    // Si se pidió una talla concreta, no debemos descontar otra talla distinta.
+    // Esto garantiza que el stock que baja coincide con la talla comprada.
+    $normalizedTalla = mb_strtolower(trim($talla));
+    if ($normalizedTalla !== "" && $normalizedTalla !== "unica" && $normalizedTalla !== "única") {
+        throw new RuntimeException("Sin stock suficiente para la talla seleccionada en " . ($item["nombre_producto"] ?? $slug));
+    }
+
+    $stmtAnyVariant = $conexion->prepare(
+        "UPDATE variantes_producto vp
+         JOIN productos p ON p.id = vp.producto_id
+         SET vp.stock = vp.stock - :cantidad
+         WHERE p.slug = :slug
+           AND vp.stock >= :cantidad
+         ORDER BY vp.stock DESC
+         LIMIT 1"
+    );
+
+    $stmtAnyVariant->execute([
+        "cantidad" => $cantidad,
+        "slug" => $slug,
+    ]);
+
+    if ($stmtAnyVariant->rowCount() === 0) {
+        throw new RuntimeException("Sin stock suficiente para " . ($item["nombre_producto"] ?? $slug));
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET: listar pedidos del usuario autenticado.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST: crear pedido (usuario autenticado o invitado).
+// POST: crear pedido (usuario autenticado o invitado). El cobro se simula aparte.
 // ─────────────────────────────────────────────────────────────────────────────
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {
@@ -97,6 +211,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if (!filter_var($emailInvitado, FILTER_VALIDATE_EMAIL)) {
                 http_response_code(400);
                 echo json_encode(["ok" => false, "error" => "El email no es válido"]);
+                exit;
+            }
+
+            // Solo se permite compra como invitado con emails no registrados.
+            $stmtEmailRegistrado = $conexion->prepare(
+                "SELECT id
+                 FROM usuarios
+                 WHERE email = :email
+                 LIMIT 1"
+            );
+            $stmtEmailRegistrado->execute(["email" => $emailInvitado]);
+            $emailYaRegistrado = $stmtEmailRegistrado->fetchColumn();
+
+            if ($emailYaRegistrado) {
+                http_response_code(409);
+                echo json_encode([
+                    "ok" => false,
+                    "error" => "Este email ya está registrado. Inicia sesión para continuar la compra",
+                    "code" => "EMAIL_ALREADY_REGISTERED",
+                ]);
                 exit;
             }
         }
@@ -150,6 +284,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // ── Insertar pedido ────────────────────────────────────────────────
         $conexion->beginTransaction();
+
+        // Restamos stock en el momento de crear el pedido para evitar sobreventa.
+        foreach ($itemsLimpios as $item) {
+            dmh_try_discount_stock($conexion, $item);
+        }
 
         $stmtPedido = $conexion->prepare("
             INSERT INTO pedidos (usuario_id, nombre_invitado, email_invitado, importe_total, direccion_envio)
