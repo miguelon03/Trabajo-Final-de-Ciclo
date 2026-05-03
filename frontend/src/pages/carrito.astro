@@ -116,12 +116,31 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       </div>
 
       <div class="checkout-modal__paybox">
-        <strong>Método de pago: Bizum</strong>
+        <strong>Método de pago</strong>
+        <p class="checkout-modal__hint">Simulación de pago con tarjeta. Introduce los datos como si fuera una compra real.</p>
+
         <label>
-          <span>Número Bizum (9 dígitos)</span>
-          <input type="tel" id="checkoutBizum" inputmode="numeric" placeholder="600123123" />
+          <span>Titular de la tarjeta</span>
+          <input type="text" id="checkoutCardHolder" autocomplete="cc-name" placeholder="Nombre como aparece en la tarjeta" />
         </label>
-        <p class="checkout-modal__hint">Al confirmar, procesaremos el pedido y te mostraremos el resumen del pago por Bizum.</p>
+
+        <label>
+          <span>Número de tarjeta</span>
+          <input type="text" id="checkoutCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="23" />
+        </label>
+
+        <div class="checkout-modal__grid-2 checkout-modal__grid-2--compact">
+          <label>
+            <span>Caducidad</span>
+            <input type="text" id="checkoutCardExpiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" />
+          </label>
+          <label>
+            <span>CVC</span>
+            <input type="text" id="checkoutCardCvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
+          </label>
+        </div>
+
+        <p class="checkout-modal__hint">No guardamos la tarjeta completa. Solo validamos el formato y registramos el pago como simulado.</p>
       </div>
 
       <p id="checkoutProfileMissing" class="checkout-modal__warn" hidden></p>
@@ -133,7 +152,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       <p id="checkoutError" class="checkout-modal__error" hidden></p>
 
-      <button class="btn-checkout-confirm" id="checkoutConfirm" type="button">Confirmar pedido</button>
+      <button class="btn-checkout-confirm" id="checkoutConfirm" type="button">Pagar ahora</button>
     </div>
   </div>
 
@@ -304,8 +323,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const direccionEl   = document.getElementById('checkoutDireccion');
     const ciudadEl      = document.getElementById('checkoutCiudad');
     const cpEl          = document.getElementById('checkoutCodigoPostal');
-    const bizumEl       = document.getElementById('checkoutBizum');
-
+    const cardHolderEl  = document.getElementById('checkoutCardHolder');
+    const cardNumberEl  = document.getElementById('checkoutCardNumber');
+    const cardExpiryEl  = document.getElementById('checkoutCardExpiry');
+    const cardCvcEl     = document.getElementById('checkoutCardCvc');
     let isLoggedIn = false;
     let profileData = null;
 
@@ -323,6 +344,60 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       return el instanceof HTMLInputElement ? el.value.trim() : '';
     }
 
+    function digitsOnly(value) {
+      return String(value || '').replace(/\D+/g, '');
+    }
+
+    function formatCardNumber(value) {
+      return digitsOnly(value).slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+    }
+
+    function formatExpiry(value) {
+      const digits = digitsOnly(value).slice(0, 4);
+      if (digits.length <= 2) return digits;
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+
+    function isValidCardNumber(value) {
+      const digits = digitsOnly(value);
+      if (digits.length < 13 || digits.length > 19) return false;
+      if (/^(\d)\1+$/.test(digits)) return false;
+
+      let sum = 0;
+      let shouldDouble = false;
+
+      for (let i = digits.length - 1; i >= 0; i -= 1) {
+        let digit = Number(digits[i]);
+        if (shouldDouble) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+
+      // En modo de pago simulado aceptamos tarjetas con formato realista
+      // aunque no pasen Luhn para no bloquear pruebas funcionales.
+      return true;
+    }
+
+    function isValidExpiry(value) {
+      const match = /^([0-1]\d)\/(\d{2})$/.exec(value);
+      if (!match) return false;
+
+      const month = Number(match[1]);
+      const year = Number(`20${match[2]}`);
+      if (month < 1 || month > 12) return false;
+
+      const expiry = new Date(year, month, 0, 23, 59, 59, 999);
+      return expiry >= new Date();
+    }
+
+    function maskedCard(cardNumber) {
+      const last4 = digitsOnly(cardNumber).slice(-4);
+      return `**** **** **** ${last4}`;
+    }
+
     function assignVal(el, value) {
       if (el instanceof HTMLInputElement) {
         el.value = value || '';
@@ -332,7 +407,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     function setModeTexts() {
       if (modeHintEl) {
         modeHintEl.textContent = isLoggedIn
-          ? 'Compra como miembro. Revisa tus datos y paga por Bizum.'
+          ? 'Compra como miembro. Revisa tus datos y simula el pago con tarjeta.'
           : 'Compra como invitado. Te pediremos todos los datos para completar el pedido.';
       }
 
@@ -428,7 +503,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       if (policyEl instanceof HTMLInputElement) {
         policyEl.checked = false;
       }
-      assignVal(bizumEl, '');
+      assignVal(cardHolderEl, '');
+      assignVal(cardNumberEl, '');
+      assignVal(cardExpiryEl, '');
+      assignVal(cardCvcEl, '');
       showMissingFieldsHint();
     }
 
@@ -459,6 +537,18 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       if (e.key === 'Escape' && overlay && !overlay.hidden) closeCheckout();
     });
 
+    cardNumberEl?.addEventListener('input', () => {
+      assignVal(cardNumberEl, formatCardNumber(inputVal(cardNumberEl)));
+    });
+
+    cardExpiryEl?.addEventListener('input', () => {
+      assignVal(cardExpiryEl, formatExpiry(inputVal(cardExpiryEl)));
+    });
+
+    cardCvcEl?.addEventListener('input', () => {
+      assignVal(cardCvcEl, digitsOnly(inputVal(cardCvcEl)).slice(0, 4));
+    });
+
     confirmBtn?.addEventListener('click', async () => {
       if (checkoutError) { checkoutError.hidden = true; checkoutError.textContent = ''; }
 
@@ -468,8 +558,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       const direccion = inputVal(direccionEl);
       const ciudad = inputVal(ciudadEl);
       const codigoPostal = inputVal(cpEl);
-      const bizum = inputVal(bizumEl);
-
+      const cardHolder = inputVal(cardHolderEl);
+      const cardNumber = inputVal(cardNumberEl);
+      const cardExpiry = inputVal(cardExpiryEl);
+      const cardCvc = inputVal(cardCvcEl);
       if (!nombre || !email || !telefono || !direccion || !ciudad || !codigoPostal) {
         showCheckoutError('Completa todos los campos obligatorios para finalizar la compra');
         return;
@@ -480,8 +572,23 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         return;
       }
 
-      if (!/^\d{9}$/.test(bizum)) {
-        showCheckoutError('El número de Bizum debe tener 9 dígitos');
+      if (!cardHolder || cardHolder.length < 5) {
+        showCheckoutError('Introduce el nombre del titular de la tarjeta');
+        return;
+      }
+
+      if (!isValidCardNumber(cardNumber)) {
+        showCheckoutError('El número de tarjeta no es válido');
+        return;
+      }
+
+      if (!isValidExpiry(cardExpiry)) {
+        showCheckoutError('La fecha de caducidad no es válida');
+        return;
+      }
+
+      if (!/^\d{3,4}$/.test(digitsOnly(cardCvc))) {
+        showCheckoutError('El CVC debe tener 3 o 4 dígitos');
         return;
       }
 
@@ -522,7 +629,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       if (confirmBtn instanceof HTMLButtonElement) {
         confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Enviando...';
+        confirmBtn.textContent = 'Procesando pago...';
       }
 
       try {
@@ -533,16 +640,67 @@ import HomeLayout from "../layouts/HomeLayout.astro";
           body: JSON.stringify(payload),
         });
 
-        if (!result.ok) { showCheckoutError(result.error || 'No se pudo realizar el pedido'); return; }
+        if (!result.ok) {
+          const orderError = result.error || 'No se pudo realizar el pedido';
+          showCheckoutError(orderError);
+
+          if (!isLoggedIn && (result.status === 409 || result.data?.code === 'EMAIL_ALREADY_REGISTERED')) {
+            window.showToast?.('Ese email ya tiene cuenta. Inicia sesión para terminar la compra.', 'info');
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 900);
+          }
+
+          return;
+        }
+
+        const paymentResult = await window.dmhFetchJson('pago_simulado.php', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pedido_id: result.data.pedido_id,
+            titular: cardHolder,
+            tarjeta_ultimos4: digitsOnly(cardNumber).slice(-4),
+            tarjeta_mascara: maskedCard(cardNumber),
+            caducidad: cardExpiry,
+          }),
+        });
+
+        if (!paymentResult.ok) {
+          showCheckoutError(paymentResult.error || 'No se pudo procesar el pago');
+          return;
+        }
 
         saveCart([]);
         closeCheckout();
         render();
-        window.showToast?.(`¡Pedido #${result.data.pedido_id} confirmado! Total: ${Number(result.data.total).toFixed(2).replace('.', ',')} €. Te contactaremos en Bizum ${bizum}.`, 'success');
+
+        // Guardamos los datos del pedido para mostrarlos en la confirmación.
+        const orderData = {
+          pedido_id:       result.data.pedido_id,
+          total:           result.data.total,
+          envio:           result.data.envio,
+          importe_total:   result.data.total,
+          tarjeta_mascara: paymentResult.data?.tarjeta_mascara || maskedCard(cardNumber),
+          direccion_envio: `${inputVal(direccionEl)}, ${inputVal(cpEl)} ${inputVal(ciudadEl)}`,
+          fecha:           new Date().toISOString(),
+          isLoggedIn:      isLoggedIn,
+          items:           getCart(), // ya vacío — usamos copia local previa
+        };
+
+        // Recuperamos la copia del carrito antes de vaciarlo (ya la teníamos en payload.items).
+        orderData.items = payload.items || [];
+
+        try {
+          sessionStorage.setItem('dmh:last_order', JSON.stringify(orderData));
+        } catch (_) {}
+
+        window.location.href = '/pedido-completado';
       } finally {
         if (confirmBtn instanceof HTMLButtonElement) {
           confirmBtn.disabled = false;
-          confirmBtn.textContent = 'Confirmar pedido';
+          confirmBtn.textContent = 'Pagar ahora';
         }
       }
     });
@@ -688,6 +846,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.8rem;
+    }
+
+    .checkout-modal__grid-2--compact {
+      align-items: end;
     }
 
     .checkout-modal__paybox {

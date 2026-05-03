@@ -1,0 +1,711 @@
+---
+import HomeLayout from "../../layouts/HomeLayout.astro";
+import { fetchCatalogData } from "../../lib/catalog-api";
+
+const { products } = await fetchCatalogData();
+
+const catalogProducts = products as Array<{
+  slug: string;
+  title: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  badge?: string;
+  image: string;
+}>;
+---
+
+<HomeLayout title="DMH - Mis pedidos">
+  <section class="orders-page">
+    <div class="orders-container">
+      <header class="orders-header">
+        <p class="orders-kicker">Area de usuario</p>
+        <h1>Mis pedidos</h1>
+        <p>Consulta el estado de tus compras y el detalle de cada pedido.</p>
+      </header>
+
+      <div id="ordersGuest" class="orders-card" hidden>
+        <h2>Sesion no iniciada</h2>
+        <p>Para ver tus pedidos necesitas iniciar sesion.</p>
+        <a class="btn-primary" href="/login">Ir a login</a>
+      </div>
+
+      <div id="ordersMessage" class="orders-message" hidden></div>
+
+      <div id="ordersLoading" class="orders-loading" hidden>
+        <span class="orders-spinner" aria-hidden="true"></span>
+        <span>Cargando pedidos...</span>
+      </div>
+
+      <div id="ordersEmpty" class="orders-card" hidden>
+        <h2>Aun no tienes pedidos</h2>
+        <p>Cuando completes una compra, aparecera aqui.</p>
+        <a class="btn-secondary" href="/catalogo">Explorar catalogo</a>
+      </div>
+
+      <div id="ordersList" class="orders-list" hidden></div>
+    </div>
+  </section>
+
+  <script define:vars={{ catalogProducts }}>
+    // @ts-nocheck
+    const guestBox = document.getElementById("ordersGuest");
+    const messageBox = document.getElementById("ordersMessage");
+    const loadingBox = document.getElementById("ordersLoading");
+    const emptyBox = document.getElementById("ordersEmpty");
+    const listBox = document.getElementById("ordersList");
+    const productLookup = new Map(
+      (catalogProducts || []).map((product) => [product.slug, product]),
+    );
+
+    function euro(n) {
+      return Number(n || 0).toFixed(2).replace(".", ",") + " €";
+    }
+
+    function setLoading(loading) {
+      if (loadingBox) loadingBox.hidden = !loading;
+    }
+
+    function showMessage(text, kind = "info") {
+      if (!messageBox) return;
+      messageBox.hidden = !text;
+      messageBox.textContent = text || "";
+      messageBox.className = `orders-message is-${kind}`;
+    }
+
+    function getStatusLabel(status) {
+      switch (String(status || "").toLowerCase()) {
+        case "pagado":
+          return "Pagado";
+        case "enviado":
+          return "Enviado";
+        case "entregado":
+          return "Entregado";
+        case "cancelado":
+          return "Cancelado";
+        case "devuelto":
+          return "Devuelto";
+        default:
+          return "Pendiente";
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    function escapeAttr(value) {
+      return String(value || "").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    }
+
+    function printOrderReceipt(pedido) {
+      const items = Array.isArray(pedido.items) ? pedido.items : [];
+      const total    = Number(pedido.importe_total || 0);
+      const envio    = Number(pedido.envio ?? (total >= 80 ? 0 : 4.95));
+      const subtotal = +(total - envio).toFixed(2);
+
+      const itemsHtml = items.map((item) => {
+        const info = getProductInfo(item);
+        return `
+          <tr>
+            <td>${escapeHtml(info.title)}</td>
+            <td>${escapeHtml(item.talla || "Única")} · ${escapeHtml(item.color || "—")}</td>
+            <td style="text-align:right">${Number(item.cantidad || 1)}× ${euro(item.precio_unitario || info.price)}</td>
+            <td style="text-align:right;font-weight:700">${euro(item.subtotal ?? ((item.precio_unitario || info.price) * (item.cantidad || 1)))}</td>
+          </tr>`;
+      }).join("");
+
+      const html = `<!DOCTYPE html><html lang="es"><head>
+        <meta charset="UTF-8">
+        <title>Recibo DMH #${pedido.id}</title>
+        <style>
+          body{font-family:Arial,sans-serif;background:#fff;color:#111;margin:0;padding:2rem;}
+          .brand{font-size:2.2rem;font-weight:900;letter-spacing:.18em;margin:0 0 .2rem;}
+          .meta{color:#666;font-size:.85rem;margin:0 0 1.5rem;}
+          h2{margin:.5rem 0 .3rem;font-size:1rem;text-transform:uppercase;letter-spacing:.1em;color:#888;}
+          table{width:100%;border-collapse:collapse;margin:.6rem 0 1.2rem;}
+          th{text-align:left;border-bottom:2px solid #ddd;padding:.4rem .3rem;font-size:.82rem;color:#888;text-transform:uppercase;}
+          td{padding:.5rem .3rem;border-bottom:1px solid #eee;font-size:.88rem;}
+          .totals td{border:none;padding:.35rem .3rem;}
+          .totals tr:last-child td{font-weight:900;font-size:1rem;border-top:2px solid #111;padding-top:.6rem;}
+          .badge{display:inline-block;background:#e6ffe6;color:#1a7a1a;border:1px solid #b3e6b3;border-radius:4px;padding:.15rem .5rem;font-size:.78rem;font-weight:700;}
+          .note{margin-top:2rem;font-size:.75rem;color:#999;border-top:1px solid #eee;padding-top:.8rem;}
+          @media print{body{padding:1rem;}}
+        </style>
+      </head><body>
+        <p class="brand">DMH</p>
+        <p class="meta">Recibo de compra · Pedido #${pedido.id} · ${pedido.creado_en ? new Date(pedido.creado_en).toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"}) : new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
+        <p><strong>Estado:</strong> <span class="badge">${getStatusLabel(pedido.estado)}</span></p>
+        <p><strong>Dirección de envío:</strong> ${escapeHtml(pedido.direccion_envio || "-")}</p>
+        <h2>Productos</h2>
+        <table><thead><tr><th>Producto</th><th>Talla / Color</th><th style="text-align:right">Cantidad</th><th style="text-align:right">Subtotal</th></tr></thead>
+        <tbody>${itemsHtml}</tbody></table>
+        <table class="totals">
+          <tbody>
+            <tr><td>Subtotal</td><td style="text-align:right">${euro(subtotal)}</td></tr>
+            <tr><td>Envío</td><td style="text-align:right">${envio === 0 ? "Gratis" : euro(envio)}</td></tr>
+            <tr><td>Total</td><td style="text-align:right">${euro(total)}</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Este recibo es una confirmación de pago simulado generado por DripMode Hood (DMH) con fines de demostración.</p>
+        <script>window.onload=function(){window.print();}<\/script>
+      </body></html>`;
+
+      const win = window.open("", "_blank", "width=760,height=900");
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+      }
+    }
+
+    function getProductInfo(item) {
+      const product = productLookup.get(item.slug) || null;
+      return {
+        slug: item.slug || product?.slug || "",
+        title: product?.title || item.nombre_producto || "Producto",
+        category: product?.category || "Pedido",
+        image: product?.image || "",
+        price: Number(product?.price ?? item.precio_unitario ?? 0),
+        originalPrice: product?.originalPrice,
+        badge: product?.badge || null,
+      };
+    }
+
+    function renderOrders(pedidos) {
+      if (!Array.isArray(pedidos) || pedidos.length === 0) {
+        if (emptyBox) emptyBox.hidden = false;
+        if (listBox) {
+          listBox.hidden = true;
+          listBox.innerHTML = "";
+        }
+        return;
+      }
+
+      if (emptyBox) emptyBox.hidden = true;
+      if (!listBox) return;
+
+      listBox.innerHTML = pedidos.map((pedido) => {
+        const items = Array.isArray(pedido.items) ? pedido.items : [];
+        const itemsHtml = items.map((item) => {
+          const product = getProductInfo(item);
+          const imageHtml = (String(product.image || "").startsWith("/") || String(product.image || "").startsWith("http"))
+            ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" loading="lazy" />`
+            : `<span class="order-product-card__image-placeholder">IMG</span>`;
+
+          return `
+            <article class="order-product-card" data-slug="${escapeHtml(product.slug)}" tabindex="0" role="link" aria-label="Ver ${escapeHtml(product.title)}">
+              <div class="order-product-card__top">
+                ${product.badge ? `<span class="order-badge">${escapeHtml(product.badge)}</span>` : ""}
+                <span class="order-qty">x${Number(item.cantidad || 1)}</span>
+              </div>
+              <div class="order-product-card__image">
+                ${imageHtml}
+              </div>
+              <div class="order-product-card__content">
+                <h3>${escapeHtml(product.title)}</h3>
+                <p class="order-product-card__category">${escapeHtml(product.category)}</p>
+                <p class="order-product-card__meta">${escapeHtml(item.talla || "Unica")} · ${escapeHtml(item.color || "-")}</p>
+                <div class="order-product-card__footer">
+                  <div class="order-product-card__prices">
+                    ${product.originalPrice ? `<span class="order-price-original">${euro(product.originalPrice)}</span>` : ""}
+                    <span class="order-price">${euro(item.precio_unitario ?? product.price)}</span>
+                  </div>
+                  <strong class="order-subtotal">${euro(item.subtotal)}</strong>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join("");
+
+        return `
+          <article class="order-card" data-order-id="${Number(pedido.id)}">
+            <header class="order-card__head">
+              <div>
+                <p class="order-kicker">Numero de pedido</p>
+                <p class="order-id">#${Number(pedido.id)}</p>
+                <p class="order-date">${escapeHtml(pedido.creado_en || "")}</p>
+              </div>
+              <div class="order-meta">
+                <span class="order-status">${getStatusLabel(pedido.estado)}</span>
+                <strong>${euro(pedido.importe_total)}</strong>
+              </div>
+            </header>
+            <p class="order-address">Envio: ${escapeHtml(pedido.direccion_envio || "-")}</p>
+            <div class="order-products-row">${itemsHtml}</div>
+            <div class="order-card__footer">
+              <button class="order-receipt-btn" type="button"
+                data-order='${escapeAttr(JSON.stringify({
+                  id: pedido.id,
+                  importe_total: pedido.importe_total,
+                  envio: 0,
+                  direccion_envio: pedido.direccion_envio,
+                  creado_en: pedido.creado_en,
+                  estado: pedido.estado,
+                  items: pedido.items
+                }))}'>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Descargar recibo
+              </button>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      listBox.querySelectorAll(".order-receipt-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          try {
+            const pedido = JSON.parse(btn.getAttribute("data-order") || "{}");
+            printOrderReceipt(pedido);
+          } catch (_) {}
+        });
+      });
+
+      listBox.querySelectorAll(".order-product-card").forEach((card) => {
+        const slug = card.getAttribute("data-slug");
+        if (!slug) return;
+
+        const openProduct = () => {
+          window.location.href = `/producto/${slug}`;
+        };
+
+        card.addEventListener("click", openProduct);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openProduct();
+          }
+        });
+      });
+
+      listBox.hidden = false;
+    }
+
+    async function loadOrders() {
+      setLoading(true);
+      showMessage("");
+
+      try {
+        const result = await window.dmhFetchJson("pedidos.php", {
+          credentials: "include",
+        });
+
+        if (!result.ok && result.status === 401) {
+          if (guestBox) guestBox.hidden = false;
+          if (listBox) listBox.hidden = true;
+          if (emptyBox) emptyBox.hidden = true;
+          return;
+        }
+
+        if (!result.ok) {
+          throw new Error(result.error || "No se pudieron cargar los pedidos");
+        }
+
+        if (guestBox) guestBox.hidden = true;
+        renderOrders(result.data?.pedidos || []);
+      } catch (error) {
+        showMessage(error?.message || "Error cargando pedidos", "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadOrders();
+  </script>
+
+  <style is:global>
+    .orders-page {
+      padding: 2.2rem 1rem 3rem;
+      color: #fff;
+    }
+
+    .orders-container {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .orders-header {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 1.7rem;
+      background: linear-gradient(150deg, rgba(200, 255, 0, 0.12), rgba(255, 255, 255, 0.04));
+    }
+
+    .orders-kicker {
+      margin: 0 0 0.6rem;
+      color: #c8ff00;
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      font-size: 0.76rem;
+    }
+
+    .orders-header h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+    }
+
+    .orders-header p {
+      margin: 0.85rem 0 0;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .orders-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.3rem;
+      background: #1b1b1b;
+    }
+
+    .orders-message {
+      border-radius: 12px;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.92rem;
+    }
+
+    .orders-message.is-warn {
+      color: #ffd174;
+      border-color: rgba(255, 209, 116, 0.34);
+      background: rgba(255, 209, 116, 0.1);
+    }
+
+    .orders-message.is-error {
+      color: #ff8484;
+      border-color: rgba(255, 132, 132, 0.35);
+      background: rgba(255, 132, 132, 0.08);
+    }
+
+    .orders-message.is-success {
+      color: #8bff97;
+      border-color: rgba(139, 255, 151, 0.35);
+      background: rgba(139, 255, 151, 0.08);
+    }
+
+    .orders-loading {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.2rem;
+      background: #1b1b1b;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .orders-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(200, 255, 0, 0.3);
+      border-top-color: #c8ff00;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .orders-list {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .order-card {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1.2rem;
+      background: #1b1b1b;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .order-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .order-kicker {
+      margin: 0 0 0.35rem;
+      color: #c8ff00;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.72rem;
+    }
+
+    .order-id {
+      margin: 0;
+      font-weight: 800;
+      font-size: 1.45rem;
+    }
+
+    .order-date {
+      margin: 0.3rem 0 0;
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 0.88rem;
+    }
+
+    .order-meta {
+      display: grid;
+      gap: 0.45rem;
+      text-align: right;
+    }
+
+    .order-status {
+      border-radius: 999px;
+      padding: 0.28rem 0.65rem;
+      background: rgba(200, 255, 0, 0.15);
+      color: #d7ff5a;
+      font-size: 0.78rem;
+      font-weight: 700;
+      justify-self: end;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .order-address {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 0.9rem;
+    }
+
+    .order-products-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 280px;
+      gap: 1.2rem;
+      overflow-x: auto;
+      padding: 0.2rem 0 0.55rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(200, 255, 0, 0.45) rgba(255, 255, 255, 0.06);
+    }
+
+    .order-products-row::-webkit-scrollbar {
+      height: 9px;
+    }
+
+    .order-products-row::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 999px;
+    }
+
+    .order-products-row::-webkit-scrollbar-thumb {
+      background: rgba(200, 255, 0, 0.38);
+      border-radius: 999px;
+    }
+
+    .order-product-card {
+      background: #111111;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 1rem;
+      padding: 1rem;
+      min-height: 420px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .order-product-card:hover,
+    .order-product-card:focus-visible {
+      border-color: rgba(200, 255, 0, 0.34);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .order-product-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      min-height: 38px;
+    }
+
+    .order-badge,
+    .order-qty {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.36rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .order-badge {
+      background: #c8ff00;
+      color: #090909;
+    }
+
+    .order-qty {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f5f5f5;
+      margin-left: auto;
+    }
+
+    .order-product-card__image {
+      height: 260px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .order-product-card__image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .order-product-card__image-placeholder {
+      color: rgba(255, 255, 255, 0.32);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-size: 0.92rem;
+    }
+
+    .order-product-card__content {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .order-product-card__content h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.4;
+    }
+
+    .order-product-card__category {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .order-product-card__meta {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.88rem;
+    }
+
+    .order-product-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      margin-top: auto;
+    }
+
+    .order-product-card__prices {
+      display: grid;
+      gap: 0.18rem;
+    }
+
+    .order-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #c8ff00;
+    }
+
+    .order-price-original {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.5);
+      text-decoration: line-through;
+    }
+
+    .order-subtotal {
+      font-size: 1rem;
+      color: #fff;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      border: none;
+      border-radius: 999px;
+      padding: 0.65rem 1rem;
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+    }
+
+    .btn-primary {
+      background: #c8ff00;
+      color: #111;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: #f5f5f5;
+    }
+
+    .order-card__footer {
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding-top: .75rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .order-receipt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      background: rgba(200,255,0,.12);
+      color: #d6ff59;
+      border: 1px solid rgba(200,255,0,.25);
+      border-radius: 8px;
+      padding: .45rem .85rem;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+
+    .order-receipt-btn:hover {
+      background: rgba(200,255,0,.22);
+      border-color: rgba(200,255,0,.45);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 680px) {
+      .order-card__head {
+        flex-direction: column;
+      }
+
+      .order-meta {
+        text-align: left;
+      }
+
+      .order-status {
+        justify-self: start;
+      }
+
+      .order-products-row {
+        grid-auto-columns: minmax(250px, 82vw);
+      }
+    }
+  </style>
+</HomeLayout>

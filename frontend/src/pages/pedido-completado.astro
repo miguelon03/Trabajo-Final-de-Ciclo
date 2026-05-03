@@ -1,0 +1,511 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - Pedido completado">
+  <section class="confirm-page">
+    <div class="confirm-container">
+
+      <!-- Estado: cargando (mientras leemos sessionStorage) -->
+      <div id="confirmLoading" class="confirm-card confirm-card--center">
+        <span class="confirm-spinner" aria-hidden="true"></span>
+        <span>Cargando confirmación...</span>
+      </div>
+
+      <!-- Estado: sin datos (acceso directo sin pago previo) -->
+      <div id="confirmNoData" class="confirm-card confirm-card--center" hidden>
+        <p class="confirm-icon confirm-icon--warn">⚠</p>
+        <h2>No se encontró información de pedido</h2>
+        <p>Esta página solo es accesible justo después de completar una compra.</p>
+        <a class="btn-primary" href="/catalogo">Explorar catálogo</a>
+      </div>
+
+      <!-- Confirmación real -->
+      <div id="confirmContent" hidden>
+
+        <!-- Encabezado éxito -->
+        <div class="confirm-success-head">
+          <span class="confirm-icon confirm-icon--ok" aria-hidden="true">✓</span>
+          <div>
+            <h1>¡Pedido realizado!</h1>
+            <p id="confirmSubtitle">Tu compra se ha completado correctamente.</p>
+          </div>
+        </div>
+
+        <!-- Aviso para miembro -->
+        <div id="confirmMemberNote" class="confirm-member-note" hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <span>Como miembro también puedes descargar el recibo desde <a href="/usuario/pedidos">Mis pedidos</a>.</span>
+        </div>
+
+        <!-- Recibo -->
+        <div class="receipt" id="receipt">
+          <header class="receipt__head">
+            <div class="receipt__brand">DMH</div>
+            <div class="receipt__meta">
+              <p class="receipt__label">Recibo de compra</p>
+              <p id="receiptDate" class="receipt__date"></p>
+            </div>
+          </header>
+
+          <div class="receipt__row receipt__row--highlight">
+            <span>Número de pedido</span>
+            <strong id="receiptId"></strong>
+          </div>
+          <div class="receipt__row">
+            <span>Estado</span>
+            <span class="receipt__badge">Pagado</span>
+          </div>
+          <div class="receipt__row">
+            <span>Tarjeta</span>
+            <span id="receiptCard"></span>
+          </div>
+
+          <hr class="receipt__divider" />
+
+          <p class="receipt__section-title">Dirección de envío</p>
+          <p id="receiptAddress" class="receipt__address"></p>
+
+          <hr class="receipt__divider" />
+
+          <p class="receipt__section-title">Productos</p>
+          <div id="receiptItems" class="receipt__items"></div>
+
+          <hr class="receipt__divider" />
+
+          <div class="receipt__totals">
+            <div class="receipt__row">
+              <span>Subtotal</span>
+              <span id="receiptSubtotal"></span>
+            </div>
+            <div class="receipt__row">
+              <span>Envío</span>
+              <span id="receiptShipping"></span>
+            </div>
+            <div class="receipt__row receipt__row--total">
+              <strong>Total</strong>
+              <strong id="receiptTotal"></strong>
+            </div>
+          </div>
+
+          <p class="receipt__footer-note">
+            Gracias por tu compra en DripMode Hood (DMH).<br />
+            Este recibo es una confirmación de pago simulado con fines de demostración.
+          </p>
+        </div>
+
+        <!-- Acciones -->
+        <div class="confirm-actions" id="confirmActions">
+          <button class="btn-download" id="btnDownloadPdf" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Descargar recibo (PDF)
+          </button>
+          <a id="confirmCta" class="btn-primary" href="/catalogo">Seguir comprando</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // @ts-nocheck
+    const ORDER_SESSION_KEY = "dmh:last_order";
+
+    const loadingEl  = document.getElementById("confirmLoading");
+    const noDataEl   = document.getElementById("confirmNoData");
+    const contentEl  = document.getElementById("confirmContent");
+    const memberNote = document.getElementById("confirmMemberNote");
+    const ctaBtn     = document.getElementById("confirmCta");
+
+    function euro(n) {
+      return Number(n || 0).toFixed(2).replace(".", ",") + " €";
+    }
+
+    function escHtml(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleDateString("es-ES", {
+          day: "2-digit", month: "long", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    function populateReceipt(order) {
+      document.getElementById("receiptId").textContent = "#" + order.pedido_id;
+      document.getElementById("receiptDate").textContent = formatDate(order.fecha || new Date().toISOString());
+      document.getElementById("receiptCard").textContent = order.tarjeta_mascara || "****";
+      document.getElementById("receiptAddress").textContent = order.direccion_envio || "-";
+
+      const itemsEl = document.getElementById("receiptItems");
+      if (itemsEl && Array.isArray(order.items)) {
+        itemsEl.innerHTML = order.items.map((item) => `
+          <div class="receipt__item">
+            <span class="receipt__item-name">${escHtml(item.title || item.nombre_producto || "Producto")}</span>
+            <span class="receipt__item-meta">${escHtml(item.size || item.talla || "—")} · ${escHtml(item.color || "—")} × ${item.quantity || item.cantidad || 1}</span>
+            <span class="receipt__item-price">${euro((item.price || item.precio_unitario || 0) * (item.quantity || item.cantidad || 1))}</span>
+          </div>
+        `).join("");
+      }
+
+      const shipping = Number(order.envio ?? order.shipping ?? 0);
+      const total    = Number(order.total || order.importe_total || 0);
+      const subtotal = total - shipping;
+
+      document.getElementById("receiptSubtotal").textContent = euro(subtotal);
+      document.getElementById("receiptShipping").textContent = shipping === 0 ? "Gratis" : euro(shipping);
+      document.getElementById("receiptTotal").textContent = euro(total);
+
+      document.getElementById("confirmSubtitle").textContent =
+        `Pedido #${order.pedido_id} · ${euro(total)}`;
+    }
+
+    function init() {
+      let order = null;
+
+      try {
+        const raw = sessionStorage.getItem(ORDER_SESSION_KEY);
+        if (raw) order = JSON.parse(raw);
+      } catch (_) {}
+
+      if (loadingEl) loadingEl.hidden = true;
+
+      if (!order || !order.pedido_id) {
+        if (noDataEl) noDataEl.hidden = false;
+        return;
+      }
+
+      populateReceipt(order);
+
+      if (contentEl) contentEl.hidden = false;
+
+      // Nota de miembro + ajuste del CTA
+      if (order.isLoggedIn) {
+        if (memberNote) memberNote.hidden = false;
+        if (ctaBtn) {
+          ctaBtn.textContent = "Ver mis pedidos";
+          ctaBtn.href = "/usuario/pedidos";
+        }
+      }
+
+      // No limpiamos sessionStorage aquí para que el usuario pueda recargar
+      // y volver a ver/imprimir. Se limpiará al salir al catálogo.
+      document.getElementById("confirmCta")?.addEventListener("click", () => {
+        sessionStorage.removeItem(ORDER_SESSION_KEY);
+      });
+    }
+
+    document.getElementById("btnDownloadPdf")?.addEventListener("click", () => {
+      window.print();
+    });
+
+    init();
+  </script>
+
+  <!-- Estilos pantalla + print -->
+  <style is:global>
+    /* ── Página de confirmación ───────────────────── */
+    .confirm-page {
+      min-height: 80vh;
+      padding: 2.5rem 1.2rem 4rem;
+      background: #101010;
+      color: #fff;
+    }
+
+    .confirm-container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: grid;
+      gap: 1.4rem;
+    }
+
+    .confirm-card {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      padding: 1.6rem;
+      background: #1b1b1b;
+    }
+
+    .confirm-card--center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .confirm-spinner {
+      display: block;
+      width: 26px;
+      height: 26px;
+      border: 2px solid rgba(200,255,0,.3);
+      border-top-color: #c8ff00;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .confirm-success-head {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      border: 1px solid rgba(139,255,151,.25);
+      border-radius: 18px;
+      padding: 1.4rem 1.6rem;
+      background: linear-gradient(140deg, rgba(139,255,151,.08), rgba(255,255,255,.03));
+    }
+
+    .confirm-icon {
+      font-style: normal;
+      font-size: 2.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .confirm-icon--ok  { color: #8bff97; }
+    .confirm-icon--warn { color: #ffd174; }
+
+    .confirm-success-head h1 {
+      margin: 0 0 .35rem;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+    }
+
+    .confirm-success-head p {
+      margin: 0;
+      color: rgba(255,255,255,.72);
+      font-size: .95rem;
+    }
+
+    .confirm-member-note {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      border: 1px solid rgba(200,255,0,.2);
+      border-radius: 12px;
+      padding: .7rem 1rem;
+      background: rgba(200,255,0,.07);
+      font-size: .88rem;
+      color: rgba(255,255,255,.82);
+    }
+
+    .confirm-member-note a {
+      color: #c8ff00;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .confirm-member-note svg {
+      flex-shrink: 0;
+      color: #c8ff00;
+    }
+
+    /* ── Recibo ─────────────────────────────────── */
+    .receipt {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 18px;
+      padding: 1.6rem;
+      background: #181818;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .receipt__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .receipt__brand {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: .18em;
+      color: #c8ff00;
+    }
+
+    .receipt__meta { text-align: right; }
+
+    .receipt__label {
+      margin: 0;
+      color: rgba(255,255,255,.55);
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .receipt__date {
+      margin: .3rem 0 0;
+      font-size: .88rem;
+      color: rgba(255,255,255,.7);
+    }
+
+    .receipt__section-title {
+      margin: 0;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: rgba(255,255,255,.45);
+      font-weight: 700;
+    }
+
+    .receipt__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      font-size: .9rem;
+      color: rgba(255,255,255,.8);
+    }
+
+    .receipt__row--highlight { color: #fff; font-weight: 600; }
+
+    .receipt__row--total {
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: .6rem;
+      margin-top: .2rem;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .receipt__badge {
+      background: rgba(139,255,151,.15);
+      color: #8bff97;
+      border: 1px solid rgba(139,255,151,.28);
+      border-radius: 999px;
+      padding: .2rem .65rem;
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .receipt__divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,.09);
+      margin: 0;
+    }
+
+    .receipt__address {
+      margin: 0;
+      font-size: .88rem;
+      color: rgba(255,255,255,.7);
+    }
+
+    .receipt__items {
+      display: grid;
+      gap: .55rem;
+    }
+
+    .receipt__item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: .5rem;
+      align-items: baseline;
+      font-size: .88rem;
+    }
+
+    .receipt__item-name { color: #fff; font-weight: 600; }
+    .receipt__item-meta { color: rgba(255,255,255,.55); font-size: .8rem; }
+    .receipt__item-price { color: rgba(255,255,255,.85); font-weight: 600; white-space: nowrap; }
+
+    .receipt__totals { display: grid; gap: .4rem; }
+
+    .receipt__footer-note {
+      margin: 0;
+      font-size: .78rem;
+      color: rgba(255,255,255,.4);
+      line-height: 1.6;
+      border-top: 1px solid rgba(255,255,255,.07);
+      padding-top: .9rem;
+    }
+
+    /* ── Acciones ───────────────────────────────── */
+    .confirm-actions {
+      display: flex;
+      gap: .8rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: rgba(200,255,0,.15);
+      color: #d6ff59;
+      border: 1px solid rgba(200,255,0,.3);
+      border-radius: 10px;
+      padding: .7rem 1.1rem;
+      font-size: .92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+
+    .btn-download:hover {
+      background: rgba(200,255,0,.24);
+      border-color: rgba(200,255,0,.5);
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: #c8ff00;
+      color: #111;
+      border: none;
+      border-radius: 10px;
+      padding: .7rem 1.4rem;
+      font-size: .92rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity .15s;
+    }
+
+    .btn-primary:hover { opacity: .9; }
+
+    /* ── Print ─────────────────────────────────── */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+
+      .confirm-page { background: #fff !important; padding: 0 !important; min-height: unset !important; }
+      .confirm-success-head, .confirm-member-note, .confirm-actions,
+      header, footer, nav { display: none !important; }
+
+      .receipt {
+        border: 1px solid #ddd !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        padding: 1.5rem !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+      }
+
+      .receipt__brand { color: #000 !important; }
+      .receipt__label, .receipt__date, .receipt__address,
+      .receipt__item-meta, .receipt__footer-note,
+      .receipt__section-title { color: #555 !important; }
+      .receipt__row, .receipt__item, .receipt__item-name,
+      .receipt__item-price { color: #000 !important; }
+      .receipt__badge { background: #eee !important; color: #000 !important; border-color: #ccc !important; }
+      .receipt__divider, .receipt__row--total { border-color: #ccc !important; }
+    }
+  </style>
+</HomeLayout>

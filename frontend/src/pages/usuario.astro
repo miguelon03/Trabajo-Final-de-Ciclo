@@ -26,7 +26,6 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
           <div class="profile-card__head">
             <h2>Datos personales</h2>
-            <a class="btn-secondary" href="/usuario/favoritos">Ver wishlist</a>
           </div>
 
           <p id="profileMessage" class="profile-message"></p>
@@ -222,6 +221,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
             profileMessage.className = "profile-message is-error";
           }
 
+          window.showToast?.(result.error || data.error || "No se pudo actualizar el perfil", "error");
+
           if (result.status === 401) {
             setTimeout(() => {
               window.location.href = "/login";
@@ -232,15 +233,13 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         }
 
         fillForm(data.usuario);
-        if (profileMessage) {
-          profileMessage.textContent = "Perfil actualizado correctamente";
-          profileMessage.className = "profile-message is-success";
-        }
+        window.showToast?.("Perfil actualizado correctamente", "success");
       } catch (error) {
         if (profileMessage) {
           profileMessage.textContent = error?.message || "Error de conexión al guardar";
           profileMessage.className = "profile-message is-error";
         }
+        window.showToast?.(error?.message || "Error de conexión al guardar", "error");
       } finally {
         setProfileLoading(false);
       }

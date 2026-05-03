@@ -394,6 +394,7 @@
             // Si el login es correcto, mostramos éxito y redirigimos
             loginMessage.textContent = "Inicio de sesión correcto";
             loginMessage.className = "message success";
+            (window as any).showToast?.("Sesión iniciada correctamente", "success");
 
             setTimeout(() => {
               window.location.href = data.redirect || "/";
@@ -403,12 +404,14 @@
             loginMessage.textContent =
               data.error || "Error al iniciar sesión";
             loginMessage.className = "message error";
+            (window as any).showToast?.(data.error || "Error al iniciar sesión", "error");
           }
         } catch (error) {
           // Error de red o de conexión con el servidor
           loginMessage.textContent =
             "Error de conexión con el servidor";
           loginMessage.className = "message error";
+          (window as any).showToast?.("Error de conexión con el servidor", "error");
         }
       });
     }

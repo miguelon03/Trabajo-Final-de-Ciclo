@@ -265,6 +265,7 @@
   </div>
 
   <script>
+    // @ts-nocheck
     // Referencias al formulario y al contenedor de mensajes
     const registerForm = document.getElementById("registerForm");
     const registerMessage = document.getElementById("registerMessage");
@@ -304,6 +305,7 @@
               // Si el registro fue correcto, mostramos éxito y redirigimos
               registerMessage.textContent = "Cuenta creada correctamente";
               registerMessage.className = "message success";
+              (window as any).showToast?.("Cuenta creada correctamente", "success");
 
               setTimeout(() => {
                 window.location.href = "/";
@@ -313,17 +315,20 @@
               registerMessage.textContent =
                 data.error || "Error al crear la cuenta";
               registerMessage.className = "message error";
+              (window as any).showToast?.(data.error || "Error al crear la cuenta", "error");
             }
           } catch {
             // Si la respuesta no era JSON válido, mostramos el texto recibido
             registerMessage.textContent = text || "Respuesta no válida del servidor";
             registerMessage.className = "message error";
+            (window as any).showToast?.(text || "Respuesta no válida del servidor", "error");
             console.error("Respuesta PHP no válida:", text);
           }
         } catch (error) {
           // Error de conexión con el servidor
           registerMessage.textContent = "Error de conexión con el servidor";
           registerMessage.className = "message error";
+          (window as any).showToast?.("Error de conexión con el servidor", "error");
           console.error(error);
         }
       });

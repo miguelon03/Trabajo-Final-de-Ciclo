@@ -55,33 +55,19 @@ function getCatalogApiUrl(): string {
   return "http://tfc.local/backend/api/catalogo.php";
 }
 
-let catalogCachePromise: Promise<CatalogApiResponse> | null = null;
-
 export async function fetchCatalogData(slug?: string): Promise<CatalogApiResponse> {
-  if (!slug && catalogCachePromise) {
-    return catalogCachePromise;
-  }
-
   const baseUrl = getCatalogApiUrl();
   const url = slug ? `${baseUrl}?slug=${encodeURIComponent(slug)}` : baseUrl;
 
-  const loader = (async () => {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`No se pudo cargar catálogo (HTTP ${res.status})`);
-    }
-
-    const data = (await res.json()) as CatalogApiResponse;
-    if (!data.ok) {
-      throw new Error(data.error || "Error al cargar catálogo");
-    }
-
-    return data;
-  })();
-
-  if (!slug) {
-    catalogCachePromise = loader;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`No se pudo cargar catálogo (HTTP ${res.status})`);
   }
 
-  return loader;
+  const data = (await res.json()) as CatalogApiResponse;
+  if (!data.ok) {
+    throw new Error(data.error || "Error al cargar catálogo");
+  }
+
+  return data;
 }

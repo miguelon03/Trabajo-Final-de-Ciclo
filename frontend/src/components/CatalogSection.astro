@@ -2,8 +2,9 @@
 import { fetchCatalogData, type CatalogProduct } from "../lib/catalog-api";
 import { cartIcon } from "./icons.ts";
 
-const { products } = await fetchCatalogData();
+const { products, stock } = await fetchCatalogData();
 const catalogProducts = products as CatalogProduct[];
+const stockBySlug = new Map((stock || []).map((entry) => [entry.productSlug, entry]));
 ---
 
 <section class="catalog">
@@ -117,9 +118,18 @@ const catalogProducts = products as CatalogProduct[];
           <button class="pagination__side pagination__prev" id="prevPage" aria-label="Página anterior">←</button>
 
           <div class="products-grid" id="productsGrid" data-quick-add-icon={cartIcon}>
-            {catalogProducts.map((product) => (
-              <article 
-                class="product-card" 
+            {catalogProducts.map((product) => {
+              const stockEntry = stockBySlug.get(product.slug);
+              const totalStock = stockEntry?.totalStock ?? 0;
+              const sizeOptions = Object.entries(stockEntry?.bySize ?? {}).map(([size, info]) => ({
+                size,
+                stock: Number((info as { stock?: number }).stock ?? 0),
+                sku: (info as { sku?: string }).sku ?? `DMH-${product.id}-${size}`,
+              }));
+
+              return (
+              <article
+                class="product-card"
                 data-product-id={product.id}
                 data-product-slug={product.slug}
                 data-product-title={product.title}
@@ -128,6 +138,8 @@ const catalogProducts = products as CatalogProduct[];
                 data-color={product.color}
                 data-price={product.price}
                 data-created-at={product.createdAt}
+                data-product-total-stock={totalStock}
+                data-size-options={JSON.stringify(sizeOptions)}
                 tabindex="0"
                 role="link"
                 aria-label={`Ver ${product.title}`}
@@ -154,7 +166,7 @@ const catalogProducts = products as CatalogProduct[];
                   </div>
                 </div>
               </article>
-            ))}
+            )})}
           </div>
 
           <button class="pagination__side pagination__next" id="nextPage" aria-label="Página siguiente">→</button>
