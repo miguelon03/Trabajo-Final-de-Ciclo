@@ -405,17 +405,98 @@ try {
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS devoluciones (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            slug VARCHAR(40) NOT NULL UNIQUE,
             pedido_id INT NOT NULL,
+            item_pedido_id INT NOT NULL,
             usuario_id INT NOT NULL,
-            estado ENUM('solicitada','aprobada','rechazada','procesada') NOT NULL DEFAULT 'solicitada',
-            motivo TEXT NOT NULL,
+            cantidad_devuelta INT NOT NULL DEFAULT 1,
+            estado ENUM('pendiente','aceptada','rechazada') NOT NULL DEFAULT 'pendiente',
+            motivo TEXT NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
+            FOREIGN KEY (item_pedido_id) REFERENCES items_pedido(id),
             FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
         )
     ");
     $pasos[] = "Tabla devoluciones creada";
+
+    $stmtHasColumn = $conexion->prepare(" 
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'devoluciones'
+          AND COLUMN_NAME = :columna
+    ");
+
+    $stmtHasColumn->execute(['schema' => $basedatos, 'columna' => 'slug']);
+    if ((int)$stmtHasColumn->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE devoluciones ADD COLUMN slug VARCHAR(40) NULL AFTER id");
+        $pasos[] = "Columna devoluciones.slug añadida";
+    }
+
+    $stmtHasColumn->execute(['schema' => $basedatos, 'columna' => 'item_pedido_id']);
+    if ((int)$stmtHasColumn->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE devoluciones ADD COLUMN item_pedido_id INT NULL AFTER pedido_id");
+        $pasos[] = "Columna devoluciones.item_pedido_id añadida";
+    }
+
+    $stmtHasColumn->execute(['schema' => $basedatos, 'columna' => 'cantidad_devuelta']);
+    if ((int)$stmtHasColumn->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE devoluciones ADD COLUMN cantidad_devuelta INT NOT NULL DEFAULT 1 AFTER usuario_id");
+        $pasos[] = "Columna devoluciones.cantidad_devuelta añadida";
+    }
+
+    $stmtHasUniqueSlug = $conexion->prepare(" 
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'devoluciones'
+          AND INDEX_NAME = 'uq_devoluciones_slug'
+    ");
+    $stmtHasUniqueSlug->execute(['schema' => $basedatos]);
+    if ((int)$stmtHasUniqueSlug->fetchColumn() === 0) {
+        $conexion->exec("UPDATE devoluciones SET slug = CONCAT('DEV-', UPPER(HEX(id + 4096))) WHERE slug IS NULL OR slug = ''");
+        $conexion->exec("ALTER TABLE devoluciones MODIFY COLUMN slug VARCHAR(40) NOT NULL");
+        $conexion->exec("ALTER TABLE devoluciones ADD UNIQUE KEY uq_devoluciones_slug (slug)");
+        $pasos[] = "Índice único devoluciones.slug creado";
+    }
+
+    $conexion->exec("ALTER TABLE devoluciones MODIFY COLUMN estado ENUM('solicitada','aprobada','rechazada','procesada','pendiente','aceptada') NOT NULL DEFAULT 'pendiente'");
+
+    $conexion->exec(" 
+        UPDATE devoluciones
+        SET estado = CASE
+            WHEN estado IN ('solicitada', 'procesada') THEN 'pendiente'
+            WHEN estado = 'aprobada' THEN 'aceptada'
+            WHEN estado = 'rechazada' THEN 'rechazada'
+            ELSE 'pendiente'
+        END
+    ");
+
+    $conexion->exec("ALTER TABLE devoluciones MODIFY COLUMN estado ENUM('pendiente','aceptada','rechazada') NOT NULL DEFAULT 'pendiente'");
+
+    $stmtHasItemFk = $conexion->prepare(" 
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'devoluciones'
+          AND COLUMN_NAME = 'item_pedido_id'
+          AND REFERENCED_TABLE_NAME = 'items_pedido'
+    ");
+    $stmtHasItemFk->execute(['schema' => $basedatos]);
+    if ((int)$stmtHasItemFk->fetchColumn() === 0) {
+        $conexion->exec(" 
+            UPDATE devoluciones d
+            LEFT JOIN items_pedido i ON i.pedido_id = d.pedido_id
+            SET d.item_pedido_id = COALESCE(d.item_pedido_id, i.id)
+            WHERE d.item_pedido_id IS NULL
+        ");
+
+        $conexion->exec("ALTER TABLE devoluciones MODIFY COLUMN item_pedido_id INT NOT NULL");
+        $conexion->exec("ALTER TABLE devoluciones ADD CONSTRAINT fk_devoluciones_item_pedido FOREIGN KEY (item_pedido_id) REFERENCES items_pedido(id)");
+        $pasos[] = "FK devoluciones.item_pedido_id creada";
+    }
     //Tabla de contenido
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS contenido (
@@ -548,6 +629,22 @@ try {
         $seedStock = is_array($seed['stock'] ?? null) ? $seed['stock'] : [];
         $seedReviews = is_array($seed['reviews'] ?? null) ? $seed['reviews'] : [];
 
+        $catalogLimit = 6;
+        $seedProducts = array_slice($seedProducts, 0, $catalogLimit);
+        $allowedSlugs = array_values(array_filter(array_map(
+            static fn($product) => trim((string)($product['slug'] ?? '')),
+            $seedProducts
+        )));
+        $allowedSlugMap = array_fill_keys($allowedSlugs, true);
+        $seedStock = array_values(array_filter(
+            $seedStock,
+            static fn($entry) => isset($allowedSlugMap[(string)($entry['productSlug'] ?? '')])
+        ));
+        $seedReviews = array_values(array_filter(
+            $seedReviews,
+            static fn($entry) => isset($allowedSlugMap[(string)($entry['productSlug'] ?? '')])
+        ));
+
         $stmtCategoria = $conexion->prepare("INSERT INTO categorias (nombre, slug) VALUES (:nombre, :slug) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)");
         $stmtProducto = $conexion->prepare("
             INSERT INTO productos (nombre, slug, descripcion, precio_base, precio_original, tipo, color, badge, fecha_catalogo, estado)
@@ -565,6 +662,9 @@ try {
         ");
         $stmtGetCategoria = $conexion->prepare("SELECT id FROM categorias WHERE slug = :slug LIMIT 1");
         $stmtGetProducto = $conexion->prepare("SELECT id FROM productos WHERE slug = :slug LIMIT 1");
+        $stmtDeleteOpinionesProducto = $conexion->prepare("DELETE FROM opiniones WHERE producto_id = :pid");
+        $stmtDeleteProdCat = $conexion->prepare("DELETE FROM productos_categorias WHERE producto_id = :pid");
+        $stmtDeleteProducto = $conexion->prepare("DELETE FROM productos WHERE id = :pid");
         $stmtProdCat = $conexion->prepare("INSERT IGNORE INTO productos_categorias (producto_id, categoria_id) VALUES (:pid, :cid)");
         $stmtDeleteImgs = $conexion->prepare("DELETE FROM imagenes_productos WHERE producto_id = :pid");
         $stmtInsertImg = $conexion->prepare("INSERT INTO imagenes_productos (producto_id, url_imagen, posicion) VALUES (:pid, :url, :pos)");
@@ -591,6 +691,25 @@ try {
                 comentario = VALUES(comentario),
                 creado_en = VALUES(creado_en)
         ");
+        $stmtProductosSobrantes = $conexion->query("SELECT id, slug FROM productos");
+
+        foreach ($stmtProductosSobrantes->fetchAll(PDO::FETCH_ASSOC) as $productoExistente) {
+            $slugExistente = trim((string)($productoExistente['slug'] ?? ''));
+            if ($slugExistente === '' || isset($allowedSlugMap[$slugExistente])) {
+                continue;
+            }
+
+            $productoIdSobrante = (int)($productoExistente['id'] ?? 0);
+            if ($productoIdSobrante <= 0) {
+                continue;
+            }
+
+            $stmtDeleteOpinionesProducto->execute(['pid' => $productoIdSobrante]);
+            $stmtDeleteImgs->execute(['pid' => $productoIdSobrante]);
+            $stmtDeleteVariantes->execute(['pid' => $productoIdSobrante]);
+            $stmtDeleteProdCat->execute(['pid' => $productoIdSobrante]);
+            $stmtDeleteProducto->execute(['pid' => $productoIdSobrante]);
+        }
 
         $productoIdBySlug = [];
         $colorBySlug = [];

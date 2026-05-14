@@ -1,0 +1,499 @@
+<section class="returns-admin">
+	<div class="returns-admin__head">
+		<h1>DEVOLUCIONES</h1>
+		<p>Gestiona las solicitudes de devolucion y actualiza su estado.</p>
+	</div>
+
+	<div class="returns-admin__controls">
+		<input id="returnsSearch" type="text" placeholder="Buscar por ref, cliente o producto" />
+		<select id="returnsStatusFilter">
+			<option value="all">Todos los estados</option>
+			<option value="pendiente">Pendiente</option>
+			<option value="aceptada">Aceptada</option>
+			<option value="rechazada">Rechazada</option>
+		</select>
+	</div>
+
+	<div id="returnsMessage" class="returns-admin__message" hidden></div>
+
+	<div id="returnsLoading" class="returns-admin__loading" hidden>
+		<span class="returns-admin__spinner" aria-hidden="true"></span>
+		<span>Cargando devoluciones...</span>
+	</div>
+
+	<div id="returnsList" class="returns-admin__list" hidden></div>
+	<div id="returnsEmpty" class="returns-admin__empty" hidden>
+		<h2>No hay devoluciones para mostrar</h2>
+		<p>Prueba con otros filtros o espera nuevas solicitudes.</p>
+	</div>
+</section>
+
+<script>
+	// @ts-nocheck
+	const searchInput = document.getElementById("returnsSearch");
+	const statusFilter = document.getElementById("returnsStatusFilter");
+	const messageBox = document.getElementById("returnsMessage");
+	const loadingBox = document.getElementById("returnsLoading");
+	const listBox = document.getElementById("returnsList");
+	const emptyBox = document.getElementById("returnsEmpty");
+
+	let allReturns = [];
+
+	async function requestApi(endpoint, options) {
+		if (typeof window.dmhFetchJson === "function") {
+			return window.dmhFetchJson(endpoint, options || {});
+		}
+
+		const response = await fetch(`/backend/api/${String(endpoint || "").replace(/^\/+/, "")}`, options || {});
+		let data = null;
+		try {
+			data = await response.json();
+		} catch (_error) {
+			data = null;
+		}
+
+		return {
+			ok: response.ok,
+			status: response.status,
+			data,
+			error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+		};
+	}
+
+	function setLoading(loading) {
+		if (loadingBox) loadingBox.hidden = !loading;
+	}
+
+	function showMessage(text, kind = "info") {
+		if (!messageBox) return;
+		messageBox.hidden = !text;
+		messageBox.className = `returns-admin__message is-${kind}`;
+		messageBox.textContent = text || "";
+	}
+
+	function escapeHtml(value) {
+		return String(value || "")
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/\"/g, "&quot;")
+			.replace(/'/g, "&#39;");
+	}
+
+	function euro(value) {
+		return Number(value || 0).toFixed(2).replace(".", ",") + " €";
+	}
+
+	function getStatusLabel(status) {
+		switch (String(status || "").toLowerCase()) {
+			case "aceptada":
+				return "Aceptada";
+			case "rechazada":
+				return "Rechazada";
+			default:
+				return "Pendiente";
+		}
+	}
+
+	function getStatusClass(status) {
+		switch (String(status || "").toLowerCase()) {
+			case "aceptada":
+				return "is-success";
+			case "rechazada":
+				return "is-error";
+			default:
+				return "is-pending";
+		}
+	}
+
+	function formatDate(value) {
+		if (!value) return "-";
+		const dt = new Date(value);
+		if (Number.isNaN(dt.getTime())) return String(value);
+		return dt.toLocaleString("es-ES", {
+			day: "2-digit",
+			month: "short",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	}
+
+	function applyFilters(items) {
+		const query = String(searchInput?.value || "").trim().toLowerCase();
+		const status = String(statusFilter?.value || "all").toLowerCase();
+
+		return (Array.isArray(items) ? items : []).filter((entry) => {
+			const entryStatus = String(entry?.estado || "").toLowerCase();
+			if (status !== "all" && entryStatus !== status) {
+				return false;
+			}
+
+			if (!query) {
+				return true;
+			}
+
+			const text = [
+				entry?.slug,
+				entry?.usuario_nombre,
+				entry?.usuario_email,
+				entry?.nombre_producto,
+				entry?.producto_slug,
+				`#${Number(entry?.pedido_id || 0)}`,
+			].join(" ").toLowerCase();
+
+			return text.includes(query);
+		});
+	}
+
+	function renderReturns() {
+		if (!listBox || !emptyBox) return;
+
+		const filtered = applyFilters(allReturns);
+		if (!filtered.length) {
+			listBox.hidden = true;
+			listBox.innerHTML = "";
+			emptyBox.hidden = false;
+			return;
+		}
+
+		emptyBox.hidden = true;
+
+		listBox.innerHTML = filtered.map((entry) => {
+			const status = String(entry?.estado || "pendiente").toLowerCase();
+			const statusClass = getStatusClass(status);
+			const actions = status === "pendiente"
+				? `
+					<div class="return-actions">
+						<button type="button" class="btn-action is-accept" data-id="${Number(entry.id)}" data-state="aceptada">Aceptar</button>
+						<button type="button" class="btn-action is-reject" data-id="${Number(entry.id)}" data-state="rechazada">Rechazar</button>
+					</div>
+				`
+				: "";
+
+			return `
+				<article class="return-card">
+					<header class="return-card__head">
+						<div>
+							<p class="return-card__slug">${escapeHtml(entry.slug || "DEV-")}</p>
+							<p class="return-card__meta">Pedido #${Number(entry.pedido_id || 0)} · ${formatDate(entry.creado_en)}</p>
+						</div>
+						<span class="return-status ${statusClass}">${getStatusLabel(status)}</span>
+					</header>
+
+					<div class="return-card__grid">
+						<div>
+							<p class="return-card__label">Cliente</p>
+							<p class="return-card__value">${escapeHtml(entry.usuario_nombre || "-")}</p>
+							<p class="return-card__hint">${escapeHtml(entry.usuario_email || "-")}</p>
+						</div>
+						<div>
+							<p class="return-card__label">Producto</p>
+							<p class="return-card__value">${escapeHtml(entry.nombre_producto || "Producto")}</p>
+							<p class="return-card__hint">${escapeHtml(entry.talla || "Unica")} · ${escapeHtml(entry.color || "-")}</p>
+						</div>
+						<div>
+							<p class="return-card__label">Cantidad</p>
+							<p class="return-card__value">${Number(entry.cantidad_devuelta || 0)} ud</p>
+							<p class="return-card__hint">Compradas: ${Number(entry.cantidad_comprada || 0)}</p>
+						</div>
+						<div>
+							<p class="return-card__label">Importe orientativo</p>
+							<p class="return-card__value">${euro(Number(entry.precio_unitario || 0) * Number(entry.cantidad_devuelta || 0))}</p>
+							<p class="return-card__hint">Unitario: ${euro(entry.precio_unitario)}</p>
+						</div>
+					</div>
+
+					${entry.motivo ? `<p class="return-card__reason">Motivo: ${escapeHtml(entry.motivo)}</p>` : ""}
+					${actions}
+				</article>
+			`;
+		}).join("");
+
+		listBox.querySelectorAll(".btn-action").forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const devolucionId = Number(btn.getAttribute("data-id") || 0);
+				const estado = btn.getAttribute("data-state") || "";
+				if (!devolucionId || !estado) return;
+
+				try {
+					const result = await requestApi("devoluciones.php", {
+						method: "PATCH",
+						credentials: "include",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ devolucion_id: devolucionId, estado }),
+					});
+
+					if (!result.ok) {
+						throw new Error(result.error || "No se pudo actualizar la devolucion");
+					}
+
+					showMessage(`Devolucion #${devolucionId} actualizada a ${getStatusLabel(estado)}`, "success");
+					await loadReturns();
+				} catch (error) {
+					showMessage(error instanceof Error ? error.message : "No se pudo actualizar la devolucion", "error");
+				}
+			});
+		});
+
+		listBox.hidden = false;
+	}
+
+	async function loadReturns() {
+		setLoading(true);
+		showMessage("");
+
+		try {
+			const result = await requestApi("devoluciones.php", {
+				credentials: "include",
+			});
+
+			if (!result.ok) {
+				throw new Error(result.error || "No se pudieron cargar las devoluciones");
+			}
+
+			allReturns = result.data?.devoluciones || [];
+			renderReturns();
+		} catch (error) {
+			allReturns = [];
+			renderReturns();
+			showMessage(error instanceof Error ? error.message : "No se pudieron cargar las devoluciones", "error");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	searchInput?.addEventListener("input", renderReturns);
+	statusFilter?.addEventListener("change", renderReturns);
+
+	loadReturns();
+</script>
+
+<style>
+	.returns-admin {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.returns-admin__head h1 {
+		font-size: 2.1rem;
+		letter-spacing: 0.04em;
+	}
+
+	.returns-admin__head p {
+		margin-top: 0.45rem;
+		color: #8f8f8f;
+	}
+
+	.returns-admin__controls {
+		display: flex;
+		gap: 0.7rem;
+		flex-wrap: wrap;
+	}
+
+	.returns-admin__controls input,
+	.returns-admin__controls select {
+		min-height: 42px;
+		border: 1px solid #2a2a2a;
+		background: #151515;
+		border-radius: 10px;
+		color: #f5f5f5;
+		padding: 0 0.8rem;
+	}
+
+	.returns-admin__controls input {
+		min-width: 260px;
+		flex: 1;
+	}
+
+	.returns-admin__message {
+		border-radius: 10px;
+		border: 1px solid #2a2a2a;
+		padding: 0.7rem 0.85rem;
+		background: #171717;
+		font-size: 0.92rem;
+	}
+
+	.returns-admin__message.is-error {
+		border-color: rgba(255, 102, 102, 0.34);
+		background: rgba(255, 102, 102, 0.08);
+		color: #ff8e8e;
+	}
+
+	.returns-admin__message.is-success {
+		border-color: rgba(139, 255, 151, 0.35);
+		background: rgba(139, 255, 151, 0.1);
+		color: #8bff97;
+	}
+
+	.returns-admin__loading,
+	.returns-admin__empty {
+		background: #111;
+		border: 1px solid #222;
+		border-radius: 14px;
+		padding: 1rem;
+	}
+
+	.returns-admin__spinner {
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		border: 2px solid rgba(215, 255, 0, 0.28);
+		border-top-color: #d7ff00;
+		display: inline-block;
+		margin-right: 0.55rem;
+		animation: returns-spin 0.9s linear infinite;
+	}
+
+	.returns-admin__list {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.return-card {
+		border: 1px solid #242424;
+		border-radius: 14px;
+		background: #111;
+		padding: 1rem;
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.return-card__head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 0.8rem;
+	}
+
+	.return-card__slug {
+		margin: 0;
+		color: #d7ff00;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+	}
+
+	.return-card__meta {
+		margin: 0.3rem 0 0;
+		color: #8a8a8a;
+		font-size: 0.84rem;
+	}
+
+	.return-status {
+		border-radius: 999px;
+		padding: 0.28rem 0.68rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+	}
+
+	.return-status.is-pending {
+		background: rgba(255, 196, 71, 0.14);
+		border: 1px solid rgba(255, 196, 71, 0.35);
+		color: #ffc447;
+	}
+
+	.return-status.is-success {
+		background: rgba(139, 255, 151, 0.14);
+		border: 1px solid rgba(139, 255, 151, 0.4);
+		color: #8bff97;
+	}
+
+	.return-status.is-error {
+		background: rgba(255, 132, 132, 0.14);
+		border: 1px solid rgba(255, 132, 132, 0.4);
+		color: #ff8484;
+	}
+
+	.return-card__grid {
+		display: grid;
+		gap: 0.8rem;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.return-card__label {
+		margin: 0;
+		color: #717171;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.68rem;
+	}
+
+	.return-card__value {
+		margin: 0.25rem 0 0;
+		color: #f3f3f3;
+		font-weight: 700;
+	}
+
+	.return-card__hint {
+		margin: 0.25rem 0 0;
+		color: #8a8a8a;
+		font-size: 0.82rem;
+	}
+
+	.return-card__reason {
+		margin: 0;
+		color: #d1d1d1;
+		background: #161616;
+		border: 1px solid #282828;
+		border-radius: 10px;
+		padding: 0.65rem 0.8rem;
+		font-size: 0.9rem;
+		line-height: 1.45;
+	}
+
+	.return-actions {
+		display: flex;
+		gap: 0.55rem;
+	}
+
+	.btn-action {
+		border-radius: 10px;
+		border: 1px solid transparent;
+		font-weight: 700;
+		cursor: pointer;
+		padding: 0.52rem 0.85rem;
+		transition: all 0.15s ease;
+	}
+
+	.btn-action.is-accept {
+		background: rgba(139, 255, 151, 0.16);
+		border-color: rgba(139, 255, 151, 0.45);
+		color: #8bff97;
+	}
+
+	.btn-action.is-accept:hover {
+		background: rgba(139, 255, 151, 0.24);
+	}
+
+	.btn-action.is-reject {
+		background: rgba(255, 132, 132, 0.14);
+		border-color: rgba(255, 132, 132, 0.4);
+		color: #ff8f8f;
+	}
+
+	.btn-action.is-reject:hover {
+		background: rgba(255, 132, 132, 0.22);
+	}
+
+	@keyframes returns-spin {
+		to { transform: rotate(360deg); }
+	}
+
+	@media (max-width: 1080px) {
+		.return-card__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 640px) {
+		.return-card__head {
+			flex-direction: column;
+		}
+
+		.return-card__grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

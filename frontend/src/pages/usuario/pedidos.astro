@@ -44,6 +44,32 @@ const catalogProducts = products as Array<{
       </div>
 
       <div id="ordersList" class="orders-list" hidden></div>
+
+      <div id="returnModal" class="return-modal" hidden>
+        <div class="return-modal__backdrop" data-close="return-modal"></div>
+        <div class="return-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="returnModalTitle">
+          <div class="return-modal__header">
+            <p class="orders-kicker">Devoluciones</p>
+            <h2 id="returnModalTitle">Solicitar devolucion</h2>
+            <button type="button" class="return-modal__close" id="closeReturnModalBtn" aria-label="Cerrar">×</button>
+          </div>
+          <form id="returnForm" class="return-form">
+            <p id="returnModalProduct" class="return-form__product"></p>
+            <label>
+              <span>Cantidad a devolver</span>
+              <input id="returnQtyInput" name="cantidad" type="number" min="1" step="1" required />
+            </label>
+            <label>
+              <span>Motivo (opcional)</span>
+              <textarea id="returnReasonInput" name="motivo" maxlength="500" rows="4" placeholder="Cuentanos brevemente el motivo"></textarea>
+            </label>
+            <div class="return-form__actions">
+              <button type="button" class="btn-secondary" id="cancelReturnBtn">Cancelar</button>
+              <button type="submit" class="btn-primary">Enviar solicitud</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -54,9 +80,23 @@ const catalogProducts = products as Array<{
     const loadingBox = document.getElementById("ordersLoading");
     const emptyBox = document.getElementById("ordersEmpty");
     const listBox = document.getElementById("ordersList");
+    const returnModal = document.getElementById("returnModal");
+    const returnForm = document.getElementById("returnForm");
+    const returnQtyInput = document.getElementById("returnQtyInput");
+    const returnReasonInput = document.getElementById("returnReasonInput");
+    const returnModalProduct = document.getElementById("returnModalProduct");
+    const closeReturnModalBtn = document.getElementById("closeReturnModalBtn");
+    const cancelReturnBtn = document.getElementById("cancelReturnBtn");
     const productLookup = new Map(
       (catalogProducts || []).map((product) => [product.slug, product]),
     );
+
+    const returnModalState = {
+      pedidoId: 0,
+      itemPedidoId: 0,
+      maxQty: 1,
+      productName: "",
+    };
 
     function euro(n) {
       return Number(n || 0).toFixed(2).replace(".", ",") + " €";
@@ -64,6 +104,56 @@ const catalogProducts = products as Array<{
 
     function setLoading(loading) {
       if (loadingBox) loadingBox.hidden = !loading;
+    }
+
+    function getReturnStatusLabel(status) {
+      switch (String(status || "").toLowerCase()) {
+        case "aceptada":
+          return "Aceptada";
+        case "rechazada":
+          return "Rechazada";
+        default:
+          return "Pendiente";
+      }
+    }
+
+    function getReturnStatusClass(status) {
+      switch (String(status || "").toLowerCase()) {
+        case "aceptada":
+          return "is-success";
+        case "rechazada":
+          return "is-error";
+        default:
+          return "is-pending";
+      }
+    }
+
+    function sumReturnQty(returns, allowedStatuses) {
+      if (!Array.isArray(returns) || !Array.isArray(allowedStatuses)) {
+        return 0;
+      }
+
+      return returns.reduce((sum, entry) => {
+        const status = String(entry?.estado || "").toLowerCase();
+        if (!allowedStatuses.includes(status)) {
+          return sum;
+        }
+        return sum + Number(entry?.cantidad_devuelta || 0);
+      }, 0);
+    }
+
+    function groupReturnsByItem(devoluciones) {
+      const grouped = new Map();
+
+      (Array.isArray(devoluciones) ? devoluciones : []).forEach((entry) => {
+        const itemId = Number(entry?.item_pedido_id || 0);
+        if (itemId <= 0) return;
+        const current = grouped.get(itemId) || [];
+        current.push(entry);
+        grouped.set(itemId, current);
+      });
+
+      return grouped;
     }
 
     function showMessage(text, kind = "info") {
@@ -175,7 +265,7 @@ const catalogProducts = products as Array<{
       };
     }
 
-    function renderOrders(pedidos) {
+    function renderOrders(pedidos, devoluciones) {
       if (!Array.isArray(pedidos) || pedidos.length === 0) {
         if (emptyBox) emptyBox.hidden = false;
         if (listBox) {
@@ -188,13 +278,44 @@ const catalogProducts = products as Array<{
       if (emptyBox) emptyBox.hidden = true;
       if (!listBox) return;
 
+      const devolucionesPorItem = groupReturnsByItem(devoluciones);
+
       listBox.innerHTML = pedidos.map((pedido) => {
+        const pedidoEstado = String(pedido.estado || "").toLowerCase();
         const items = Array.isArray(pedido.items) ? pedido.items : [];
         const itemsHtml = items.map((item) => {
+          const itemPedidoId = Number(item.item_pedido_id || 0);
           const product = getProductInfo(item);
           const imageHtml = (String(product.image || "").startsWith("/") || String(product.image || "").startsWith("http"))
             ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" loading="lazy" />`
             : `<span class="order-product-card__image-placeholder">IMG</span>`;
+
+          const itemReturns = devolucionesPorItem.get(itemPedidoId) || [];
+          const pendingQty = sumReturnQty(itemReturns, ["pendiente"]);
+          const reservedQty = sumReturnQty(itemReturns, ["pendiente", "aceptada"]);
+          const qtyBought = Number(item.cantidad || 0);
+          const availableQty = Math.max(0, qtyBought - reservedQty);
+          const canReturn = pedidoEstado === "entregado" && itemPedidoId > 0 && availableQty > 0 && pendingQty === 0;
+
+          const returnBadges = itemReturns.length
+            ? itemReturns.map((entry) => {
+                const statusClass = getReturnStatusClass(entry.estado);
+                const statusLabel = getReturnStatusLabel(entry.estado);
+                return `<span class="return-chip ${statusClass}">Devolucion ${escapeHtml(entry.slug || "")} · ${Number(entry.cantidad_devuelta || 0)} ud · ${statusLabel}</span>`;
+              }).join("")
+            : `<span class="return-chip">Sin devoluciones</span>`;
+
+          const returnAction = canReturn
+            ? `<button class="order-return-btn" type="button" data-order-id="${Number(pedido.id)}" data-item-id="${itemPedidoId}" data-max-qty="${availableQty}" data-product-name="${escapeAttr(product.title)}">Solicitar devolucion</button>`
+            : "";
+
+          const returnHint = pedidoEstado !== "entregado"
+            ? "Disponible cuando el pedido este entregado"
+            : availableQty <= 0
+              ? "No quedan unidades disponibles para devolver"
+              : pendingQty > 0
+                ? "Ya tienes una devolucion pendiente para este articulo"
+                : "";
 
           return `
             <article class="order-product-card" data-slug="${escapeHtml(product.slug)}" tabindex="0" role="link" aria-label="Ver ${escapeHtml(product.title)}">
@@ -215,6 +336,12 @@ const catalogProducts = products as Array<{
                     <span class="order-price">${euro(item.precio_unitario ?? product.price)}</span>
                   </div>
                   <strong class="order-subtotal">${euro(item.subtotal)}</strong>
+                </div>
+
+                <div class="order-product-card__returns">
+                  <div class="order-product-card__returns-list">${returnBadges}</div>
+                  ${returnHint ? `<p class="order-product-card__returns-hint">${escapeHtml(returnHint)}</p>` : ""}
+                  ${returnAction}
                 </div>
               </div>
             </article>
@@ -270,6 +397,19 @@ const catalogProducts = products as Array<{
         });
       });
 
+      listBox.querySelectorAll(".order-return-btn").forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+          event.stopPropagation();
+
+          const pedidoId = Number(btn.getAttribute("data-order-id") || 0);
+          const itemPedidoId = Number(btn.getAttribute("data-item-id") || 0);
+          const maxQty = Math.max(1, Number(btn.getAttribute("data-max-qty") || 1));
+          const productName = btn.getAttribute("data-product-name") || "Producto";
+
+          openReturnModal({ pedidoId, itemPedidoId, maxQty, productName });
+        });
+      });
+
       listBox.querySelectorAll(".order-product-card").forEach((card) => {
         const slug = card.getAttribute("data-slug");
         if (!slug) return;
@@ -289,6 +429,87 @@ const catalogProducts = products as Array<{
 
       listBox.hidden = false;
     }
+
+    function closeReturnModal() {
+      if (!returnModal) return;
+      returnModal.hidden = true;
+
+      if (returnForm instanceof HTMLFormElement) {
+        returnForm.reset();
+      }
+    }
+
+    function openReturnModal(data) {
+      if (!returnModal || !(returnQtyInput instanceof HTMLInputElement)) return;
+
+      returnModalState.pedidoId = Number(data?.pedidoId || 0);
+      returnModalState.itemPedidoId = Number(data?.itemPedidoId || 0);
+      returnModalState.maxQty = Math.max(1, Number(data?.maxQty || 1));
+      returnModalState.productName = String(data?.productName || "Producto");
+
+      if (returnModalProduct instanceof HTMLElement) {
+        returnModalProduct.textContent = `${returnModalState.productName} · Maximo ${returnModalState.maxQty} ud`;
+      }
+
+      returnQtyInput.min = "1";
+      returnQtyInput.max = String(returnModalState.maxQty);
+      returnQtyInput.value = "1";
+
+      if (returnReasonInput instanceof HTMLTextAreaElement) {
+        returnReasonInput.value = "";
+      }
+
+      returnModal.hidden = false;
+      returnQtyInput.focus();
+    }
+
+    closeReturnModalBtn?.addEventListener("click", closeReturnModal);
+    cancelReturnBtn?.addEventListener("click", closeReturnModal);
+
+    returnModal?.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.dataset.close === "return-modal") {
+        closeReturnModal();
+      }
+    });
+
+    returnForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const cantidad = Math.max(1, Number(returnQtyInput instanceof HTMLInputElement ? returnQtyInput.value : 1));
+      const maxQty = Math.max(1, Number(returnModalState.maxQty || 1));
+      const motivo = returnReasonInput instanceof HTMLTextAreaElement ? returnReasonInput.value.trim() : "";
+
+      if (cantidad > maxQty) {
+        window.showToast?.("La cantidad supera el maximo permitido para este articulo", "error");
+        return;
+      }
+
+      try {
+        const result = await window.dmhFetchJson("devoluciones.php", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pedido_id: returnModalState.pedidoId,
+            item_pedido_id: returnModalState.itemPedidoId,
+            cantidad,
+            motivo,
+          }),
+        });
+
+        if (!result.ok) {
+          throw new Error(result.error || "No se pudo registrar la devolucion");
+        }
+
+        closeReturnModal();
+        window.showToast?.("Solicitud enviada. Estado: pendiente", "success");
+        await loadOrders();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "No se pudo registrar la devolucion";
+        window.showToast?.(message, "error");
+      }
+    });
 
     async function loadOrders() {
       setLoading(true);
@@ -310,8 +531,17 @@ const catalogProducts = products as Array<{
           throw new Error(result.error || "No se pudieron cargar los pedidos");
         }
 
+        const returnsResult = await window.dmhFetchJson("devoluciones.php", {
+          credentials: "include",
+        });
+
+        const devoluciones = returnsResult.ok ? (returnsResult.data?.devoluciones || []) : [];
+        if (!returnsResult.ok && returnsResult.status !== 403 && returnsResult.status !== 401) {
+          showMessage("Se cargaron los pedidos, pero no se pudo cargar el estado de devoluciones", "warn");
+        }
+
         if (guestBox) guestBox.hidden = true;
-        renderOrders(result.data?.pedidos || []);
+        renderOrders(result.data?.pedidos || [], devoluciones);
       } catch (error) {
         showMessage(error?.message || "Error cargando pedidos", "error");
       } finally {
@@ -614,6 +844,74 @@ const catalogProducts = products as Array<{
       margin-top: auto;
     }
 
+    .order-product-card__returns {
+      margin-top: 0.6rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .order-product-card__returns-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .return-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.82);
+      padding: 0.2rem 0.52rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .return-chip.is-pending {
+      border-color: rgba(255, 196, 71, 0.38);
+      background: rgba(255, 196, 71, 0.14);
+      color: #ffc447;
+    }
+
+    .return-chip.is-success {
+      border-color: rgba(139, 255, 151, 0.42);
+      background: rgba(139, 255, 151, 0.12);
+      color: #8bff97;
+    }
+
+    .return-chip.is-error {
+      border-color: rgba(255, 132, 132, 0.42);
+      background: rgba(255, 132, 132, 0.12);
+      color: #ff8484;
+    }
+
+    .order-product-card__returns-hint {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 0.78rem;
+    }
+
+    .order-return-btn {
+      width: fit-content;
+      border: 1px solid rgba(200, 255, 0, 0.32);
+      background: rgba(200, 255, 0, 0.12);
+      color: #d6ff59;
+      border-radius: 10px;
+      padding: 0.46rem 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .order-return-btn:hover {
+      background: rgba(200, 255, 0, 0.2);
+      border-color: rgba(200, 255, 0, 0.55);
+      transform: translateY(-1px);
+    }
+
     .order-product-card__prices {
       display: grid;
       gap: 0.18rem;
@@ -684,6 +982,102 @@ const catalogProducts = products as Array<{
     .order-receipt-btn:hover {
       background: rgba(200,255,0,.22);
       border-color: rgba(200,255,0,.45);
+    }
+
+    .return-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+
+    .return-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.62);
+      backdrop-filter: blur(3px);
+    }
+
+    .return-modal__dialog {
+      position: relative;
+      width: min(560px, 100%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
+      padding: 1.2rem;
+      background: #141414;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      display: grid;
+      gap: 1rem;
+    }
+
+    .return-modal__header {
+      display: grid;
+      gap: 0.2rem;
+      padding-right: 2rem;
+      position: relative;
+    }
+
+    .return-modal__header h2 {
+      margin: 0;
+      font-size: 1.38rem;
+    }
+
+    .return-modal__close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      border: none;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .return-form {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .return-form__product {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+
+    .return-form label {
+      display: grid;
+      gap: 0.45rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .return-form input,
+    .return-form textarea {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+      padding: 0.65rem 0.8rem;
+      font: inherit;
+    }
+
+    .return-form textarea {
+      resize: vertical;
+      min-height: 88px;
+    }
+
+    .return-form__actions {
+      margin-top: 0.3rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      flex-wrap: wrap;
     }
 
     @keyframes spin {

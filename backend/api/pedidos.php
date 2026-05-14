@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
         foreach ($pedidos as &$pedido) {
             $stmtItems = $conexion->prepare("
-                SELECT slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal
+                SELECT id AS item_pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal
                 FROM items_pedido
                 WHERE pedido_id = :pid
             ");
