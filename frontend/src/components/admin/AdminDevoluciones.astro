@@ -1,499 +1,593 @@
 <section class="returns-admin">
-	<div class="returns-admin__head">
-		<h1>DEVOLUCIONES</h1>
-		<p>Gestiona las solicitudes de devolucion y actualiza su estado.</p>
-	</div>
+  <div class="returns-admin__head">
+    <h1>DEVOLUCIONES</h1>
+  </div>
 
-	<div class="returns-admin__controls">
-		<input id="returnsSearch" type="text" placeholder="Buscar por ref, cliente o producto" />
-		<select id="returnsStatusFilter">
-			<option value="all">Todos los estados</option>
-			<option value="pendiente">Pendiente</option>
-			<option value="aceptada">Aceptada</option>
-			<option value="rechazada">Rechazada</option>
-		</select>
-	</div>
+  <div class="returns-admin__tabs" id="returnsTabs">
+    <button type="button" class="returns-tab is-active" data-filter="pendiente">
+      Pendientes (<span id="tabCountPending">0</span>)
+    </button>
+    <button type="button" class="returns-tab" data-filter="all">Todas</button>
+    <button type="button" class="returns-tab" data-filter="aceptada">Aceptadas</button>
+    <button type="button" class="returns-tab" data-filter="rechazada">Rechazadas</button>
+  </div>
 
-	<div id="returnsMessage" class="returns-admin__message" hidden></div>
+  <div id="returnsMessage" class="returns-admin__message" hidden></div>
 
-	<div id="returnsLoading" class="returns-admin__loading" hidden>
-		<span class="returns-admin__spinner" aria-hidden="true"></span>
-		<span>Cargando devoluciones...</span>
-	</div>
+  <div id="returnsLoading" class="returns-admin__loading" hidden>
+    <span class="returns-admin__spinner" aria-hidden="true"></span>
+    <span>Cargando devoluciones...</span>
+  </div>
 
-	<div id="returnsList" class="returns-admin__list" hidden></div>
-	<div id="returnsEmpty" class="returns-admin__empty" hidden>
-		<h2>No hay devoluciones para mostrar</h2>
-		<p>Prueba con otros filtros o espera nuevas solicitudes.</p>
-	</div>
+  <div class="returns-admin__table-wrap" id="returnsTableWrap" hidden>
+    <table class="returns-table">
+      <thead>
+        <tr>
+          <th>Referencia</th>
+          <th>Cliente / Pedido</th>
+          <th>Producto</th>
+          <th>Motivo</th>
+          <th>Cant.</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="returnsTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="returnsEmpty" class="returns-admin__empty" hidden>
+    <h2>No hay devoluciones para mostrar</h2>
+    <p>Prueba con otro filtro o espera nuevas solicitudes.</p>
+  </div>
 </section>
 
 <script>
-	// @ts-nocheck
-	const searchInput = document.getElementById("returnsSearch");
-	const statusFilter = document.getElementById("returnsStatusFilter");
-	const messageBox = document.getElementById("returnsMessage");
-	const loadingBox = document.getElementById("returnsLoading");
-	const listBox = document.getElementById("returnsList");
-	const emptyBox = document.getElementById("returnsEmpty");
+  // @ts-nocheck
+  const tabsWrap = document.getElementById("returnsTabs");
+  const messageBox = document.getElementById("returnsMessage");
+  const loadingBox = document.getElementById("returnsLoading");
+  const tableWrap = document.getElementById("returnsTableWrap");
+  const tableBody = document.getElementById("returnsTableBody");
+  const emptyBox = document.getElementById("returnsEmpty");
+  const pendingCount = document.getElementById("tabCountPending");
 
-	let allReturns = [];
+  let allReturns = [];
+  let currentFilter = "pendiente";
+  const stickyVisibleIds = new Set();
 
-	async function requestApi(endpoint, options) {
-		if (typeof window.dmhFetchJson === "function") {
-			return window.dmhFetchJson(endpoint, options || {});
-		}
+  async function requestApi(endpoint, options) {
+    if (typeof window.dmhFetchJson === "function") {
+      return window.dmhFetchJson(endpoint, options || {});
+    }
 
-		const response = await fetch(`/backend/api/${String(endpoint || "").replace(/^\/+/, "")}`, options || {});
-		let data = null;
-		try {
-			data = await response.json();
-		} catch (_error) {
-			data = null;
-		}
+    const response = await fetch(`/backend/api/${String(endpoint || "").replace(/^\/+/, "")}`, options || {});
+    let data = null;
 
-		return {
-			ok: response.ok,
-			status: response.status,
-			data,
-			error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
-		};
-	}
+    try {
+      data = await response.json();
+    } catch (_error) {
+      data = null;
+    }
 
-	function setLoading(loading) {
-		if (loadingBox) loadingBox.hidden = !loading;
-	}
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+      error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+    };
+  }
 
-	function showMessage(text, kind = "info") {
-		if (!messageBox) return;
-		messageBox.hidden = !text;
-		messageBox.className = `returns-admin__message is-${kind}`;
-		messageBox.textContent = text || "";
-	}
+  function setLoading(loading) {
+    if (loadingBox) loadingBox.hidden = !loading;
+  }
 
-	function escapeHtml(value) {
-		return String(value || "")
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/\"/g, "&quot;")
-			.replace(/'/g, "&#39;");
-	}
+  function showMessage(text, kind = "info") {
+    if (!messageBox) return;
+    messageBox.hidden = !text;
+    messageBox.className = `returns-admin__message is-${kind}`;
+    messageBox.textContent = text || "";
+  }
 
-	function euro(value) {
-		return Number(value || 0).toFixed(2).replace(".", ",") + " €";
-	}
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
-	function getStatusLabel(status) {
-		switch (String(status || "").toLowerCase()) {
-			case "aceptada":
-				return "Aceptada";
-			case "rechazada":
-				return "Rechazada";
-			default:
-				return "Pendiente";
-		}
-	}
+  function getStatusLabel(status) {
+    switch (String(status || "").toLowerCase()) {
+      case "aceptada":
+        return "Aceptada";
+      case "rechazada":
+        return "Rechazada";
+      default:
+        return "Pendiente";
+    }
+  }
 
-	function getStatusClass(status) {
-		switch (String(status || "").toLowerCase()) {
-			case "aceptada":
-				return "is-success";
-			case "rechazada":
-				return "is-error";
-			default:
-				return "is-pending";
-		}
-	}
+  function getStatusClass(status) {
+    switch (String(status || "").toLowerCase()) {
+      case "aceptada":
+        return "is-success";
+      case "rechazada":
+        return "is-error";
+      default:
+        return "is-pending";
+    }
+  }
 
-	function formatDate(value) {
-		if (!value) return "-";
-		const dt = new Date(value);
-		if (Number.isNaN(dt.getTime())) return String(value);
-		return dt.toLocaleString("es-ES", {
-			day: "2-digit",
-			month: "short",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	}
+  function formatDate(value) {
+    if (!value) return "-";
 
-	function applyFilters(items) {
-		const query = String(searchInput?.value || "").trim().toLowerCase();
-		const status = String(statusFilter?.value || "all").toLowerCase();
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return String(value);
 
-		return (Array.isArray(items) ? items : []).filter((entry) => {
-			const entryStatus = String(entry?.estado || "").toLowerCase();
-			if (status !== "all" && entryStatus !== status) {
-				return false;
-			}
+    return dt.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
 
-			if (!query) {
-				return true;
-			}
+  function formatPedidoRef(value) {
+    const id = Number(value || 0);
+    if (!id) return "PED-—";
+    return `PED-${String(id).padStart(6, "0")}`;
+  }
 
-			const text = [
-				entry?.slug,
-				entry?.usuario_nombre,
-				entry?.usuario_email,
-				entry?.nombre_producto,
-				entry?.producto_slug,
-				`#${Number(entry?.pedido_id || 0)}`,
-			].join(" ").toLowerCase();
+  function updateTabs() {
+    const countPending = allReturns.filter(
+      (entry) => String(entry?.estado || "").toLowerCase() === "pendiente",
+    ).length;
 
-			return text.includes(query);
-		});
-	}
+    if (pendingCount) {
+      pendingCount.textContent = String(countPending);
+    }
 
-	function renderReturns() {
-		if (!listBox || !emptyBox) return;
+    tabsWrap?.querySelectorAll("[data-filter]").forEach((button) => {
+      const isActive = button.getAttribute("data-filter") === currentFilter;
+      button.classList.toggle("is-active", isActive);
+    });
+  }
 
-		const filtered = applyFilters(allReturns);
-		if (!filtered.length) {
-			listBox.hidden = true;
-			listBox.innerHTML = "";
-			emptyBox.hidden = false;
-			return;
-		}
+  function getFilteredReturns() {
+    if (currentFilter === "all") {
+      return [...allReturns];
+    }
 
-		emptyBox.hidden = true;
+    return allReturns.filter((entry) => {
+      const status = String(entry?.estado || "").toLowerCase();
+      const id = Number(entry?.id || 0);
 
-		listBox.innerHTML = filtered.map((entry) => {
-			const status = String(entry?.estado || "pendiente").toLowerCase();
-			const statusClass = getStatusClass(status);
-			const actions = status === "pendiente"
-				? `
-					<div class="return-actions">
-						<button type="button" class="btn-action is-accept" data-id="${Number(entry.id)}" data-state="aceptada">Aceptar</button>
-						<button type="button" class="btn-action is-reject" data-id="${Number(entry.id)}" data-state="rechazada">Rechazar</button>
-					</div>
-				`
-				: "";
+      if (status === currentFilter) {
+        return true;
+      }
 
-			return `
-				<article class="return-card">
-					<header class="return-card__head">
-						<div>
-							<p class="return-card__slug">${escapeHtml(entry.slug || "DEV-")}</p>
-							<p class="return-card__meta">Pedido #${Number(entry.pedido_id || 0)} · ${formatDate(entry.creado_en)}</p>
-						</div>
-						<span class="return-status ${statusClass}">${getStatusLabel(status)}</span>
-					</header>
+      if (currentFilter === "pendiente" && stickyVisibleIds.has(id)) {
+        return true;
+      }
 
-					<div class="return-card__grid">
-						<div>
-							<p class="return-card__label">Cliente</p>
-							<p class="return-card__value">${escapeHtml(entry.usuario_nombre || "-")}</p>
-							<p class="return-card__hint">${escapeHtml(entry.usuario_email || "-")}</p>
-						</div>
-						<div>
-							<p class="return-card__label">Producto</p>
-							<p class="return-card__value">${escapeHtml(entry.nombre_producto || "Producto")}</p>
-							<p class="return-card__hint">${escapeHtml(entry.talla || "Unica")} · ${escapeHtml(entry.color || "-")}</p>
-						</div>
-						<div>
-							<p class="return-card__label">Cantidad</p>
-							<p class="return-card__value">${Number(entry.cantidad_devuelta || 0)} ud</p>
-							<p class="return-card__hint">Compradas: ${Number(entry.cantidad_comprada || 0)}</p>
-						</div>
-						<div>
-							<p class="return-card__label">Importe orientativo</p>
-							<p class="return-card__value">${euro(Number(entry.precio_unitario || 0) * Number(entry.cantidad_devuelta || 0))}</p>
-							<p class="return-card__hint">Unitario: ${euro(entry.precio_unitario)}</p>
-						</div>
-					</div>
+      return false;
+    });
+  }
 
-					${entry.motivo ? `<p class="return-card__reason">Motivo: ${escapeHtml(entry.motivo)}</p>` : ""}
-					${actions}
-				</article>
-			`;
-		}).join("");
+  function renderActions(entry) {
+    const status = String(entry?.estado || "").toLowerCase();
 
-		listBox.querySelectorAll(".btn-action").forEach((btn) => {
-			btn.addEventListener("click", async () => {
-				const devolucionId = Number(btn.getAttribute("data-id") || 0);
-				const estado = btn.getAttribute("data-state") || "";
-				if (!devolucionId || !estado) return;
+    if (status === "pendiente") {
+      return `
+        <div class="return-actions">
+          <button type="button" class="btn-action is-accept" data-id="${Number(entry.id)}" data-state="aceptada">
+            Aceptar
+          </button>
+          <button type="button" class="btn-action is-reject" data-id="${Number(entry.id)}" data-state="rechazada">
+            Rechazar
+          </button>
+        </div>
+      `;
+    }
 
-				try {
-					const result = await requestApi("devoluciones.php", {
-						method: "PATCH",
-						credentials: "include",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ devolucion_id: devolucionId, estado }),
-					});
+    if (status === "aceptada") {
+      return `<span class="return-action-text is-stock">Stock +${Number(entry.cantidad_devuelta || 0)} ✓</span>`;
+    }
 
-					if (!result.ok) {
-						throw new Error(result.error || "No se pudo actualizar la devolucion");
-					}
+    return `<span class="return-action-text is-muted">—</span>`;
+  }
 
-					showMessage(`Devolucion #${devolucionId} actualizada a ${getStatusLabel(estado)}`, "success");
-					await loadReturns();
-				} catch (error) {
-					showMessage(error instanceof Error ? error.message : "No se pudo actualizar la devolucion", "error");
-				}
-			});
-		});
+  function renderReturns() {
+    if (!tableWrap || !tableBody || !emptyBox) return;
 
-		listBox.hidden = false;
-	}
+    updateTabs();
+    const filtered = getFilteredReturns();
 
-	async function loadReturns() {
-		setLoading(true);
-		showMessage("");
+    if (!filtered.length) {
+      tableWrap.hidden = true;
+      tableBody.innerHTML = "";
+      emptyBox.hidden = false;
+      return;
+    }
 
-		try {
-			const result = await requestApi("devoluciones.php", {
-				credentials: "include",
-			});
+    emptyBox.hidden = true;
 
-			if (!result.ok) {
-				throw new Error(result.error || "No se pudieron cargar las devoluciones");
-			}
+    tableBody.innerHTML = filtered.map((entry) => {
+      const status = String(entry?.estado || "pendiente").toLowerCase();
+      const rowClass = status === "pendiente" ? "" : "is-dimmed";
+      const productLabel = entry?.talla
+        ? `${entry?.nombre_producto || "Producto"} · ${entry.talla}`
+        : `${entry?.nombre_producto || "Producto"} · Única`;
 
-			allReturns = result.data?.devoluciones || [];
-			renderReturns();
-		} catch (error) {
-			allReturns = [];
-			renderReturns();
-			showMessage(error instanceof Error ? error.message : "No se pudieron cargar las devoluciones", "error");
-		} finally {
-			setLoading(false);
-		}
-	}
+      return `
+        <tr class="${rowClass}">
+          <td>
+            <p class="cell-ref">${escapeHtml(entry.slug || "DEV-")}</p>
+            <span class="cell-sub">${escapeHtml(formatDate(entry.creado_en))}</span>
+          </td>
+          <td>
+            <p class="cell-main">${escapeHtml(entry.usuario_nombre || "-")}</p>
+            <span class="cell-sub">${escapeHtml(formatPedidoRef(entry.pedido_id))}</span>
+          </td>
+          <td>
+            <p class="cell-main">${escapeHtml(productLabel)}</p>
+          </td>
+          <td>
+            <p class="cell-reason">${escapeHtml(entry.motivo || "—")}</p>
+          </td>
+          <td>
+            <p class="cell-main">×${Number(entry.cantidad_devuelta || 0)}</p>
+          </td>
+          <td>
+            <span class="return-status ${getStatusClass(status)}">${getStatusLabel(status)}</span>
+          </td>
+          <td>
+            ${renderActions(entry)}
+          </td>
+        </tr>
+      `;
+    }).join("");
 
-	searchInput?.addEventListener("input", renderReturns);
-	statusFilter?.addEventListener("change", renderReturns);
+    tableBody.querySelectorAll(".btn-action").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const devolucionId = Number(btn.getAttribute("data-id") || 0);
+        const estado = btn.getAttribute("data-state") || "";
+        if (!devolucionId || !estado) return;
 
-	loadReturns();
+        try {
+          const result = await requestApi("devoluciones.php", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              devolucion_id: devolucionId,
+              estado,
+            }),
+          });
+
+          if (!result.ok) {
+            throw new Error(result.error || "No se pudo actualizar la devolución");
+          }
+
+          if (currentFilter === "pendiente") {
+            stickyVisibleIds.add(devolucionId);
+          }
+
+          await loadReturns();
+          showMessage(`Devolución actualizada a ${getStatusLabel(estado)}`, "success");
+        } catch (error) {
+          showMessage(error instanceof Error ? error.message : "No se pudo actualizar la devolución", "error");
+        }
+      });
+    });
+
+    tableWrap.hidden = false;
+  }
+
+  async function loadReturns() {
+    setLoading(true);
+    showMessage("");
+
+    try {
+      const result = await requestApi("devoluciones.php", {
+        credentials: "include",
+      });
+
+      if (!result.ok) {
+        throw new Error(result.error || "No se pudieron cargar las devoluciones");
+      }
+
+      allReturns = result.data?.devoluciones || [];
+      renderReturns();
+    } catch (error) {
+      allReturns = [];
+      renderReturns();
+      showMessage(error instanceof Error ? error.message : "No se pudieron cargar las devoluciones", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  tabsWrap?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+
+    const nextFilter = target.getAttribute("data-filter");
+    if (!nextFilter) return;
+
+    currentFilter = nextFilter;
+
+    if (currentFilter !== "pendiente") {
+      stickyVisibleIds.clear();
+    }
+
+    renderReturns();
+  });
+
+  loadReturns();
 </script>
 
-<style>
-	.returns-admin {
-		display: grid;
-		gap: 1rem;
-	}
+<style is:global>
+  .returns-admin {
+    display: grid;
+    gap: 10px;
+  }
 
-	.returns-admin__head h1 {
-		font-size: 2.1rem;
-		letter-spacing: 0.04em;
-	}
+  .returns-admin__head h1 {
+    font-size: 1.04rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f4f4f4;
+  }
 
-	.returns-admin__head p {
-		margin-top: 0.45rem;
-		color: #8f8f8f;
-	}
+  .returns-admin__tabs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
 
-	.returns-admin__controls {
-		display: flex;
-		gap: 0.7rem;
-		flex-wrap: wrap;
-	}
+  .returns-tab {
+    min-height: 20px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid #272727;
+    background: #1a1a1a;
+    color: #707070;
+    font-size: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
 
-	.returns-admin__controls input,
-	.returns-admin__controls select {
-		min-height: 42px;
-		border: 1px solid #2a2a2a;
-		background: #151515;
-		border-radius: 10px;
-		color: #f5f5f5;
-		padding: 0 0.8rem;
-	}
+  .returns-tab:hover {
+    border-color: #313131;
+    color: #9a9a9a;
+  }
 
-	.returns-admin__controls input {
-		min-width: 260px;
-		flex: 1;
-	}
+  .returns-tab.is-active {
+    background: #d7ff00;
+    border-color: #d7ff00;
+    color: #111;
+  }
 
-	.returns-admin__message {
-		border-radius: 10px;
-		border: 1px solid #2a2a2a;
-		padding: 0.7rem 0.85rem;
-		background: #171717;
-		font-size: 0.92rem;
-	}
+  .returns-admin__message {
+    border-radius: 7px;
+    border: 1px solid #232323;
+    padding: 8px 10px;
+    background: #161616;
+    font-size: 0.68rem;
+  }
 
-	.returns-admin__message.is-error {
-		border-color: rgba(255, 102, 102, 0.34);
-		background: rgba(255, 102, 102, 0.08);
-		color: #ff8e8e;
-	}
+  .returns-admin__message.is-error {
+    border-color: rgba(116, 38, 38, 0.32);
+    color: #c56b6b;
+  }
 
-	.returns-admin__message.is-success {
-		border-color: rgba(139, 255, 151, 0.35);
-		background: rgba(139, 255, 151, 0.1);
-		color: #8bff97;
-	}
+  .returns-admin__message.is-success {
+    border-color: rgba(19, 108, 58, 0.28);
+    color: #63c78d;
+  }
 
-	.returns-admin__loading,
-	.returns-admin__empty {
-		background: #111;
-		border: 1px solid #222;
-		border-radius: 14px;
-		padding: 1rem;
-	}
+  .returns-admin__loading,
+  .returns-admin__empty {
+    background: #111;
+    border: 1px solid #1b1b1b;
+    border-radius: 8px;
+    padding: 12px;
+  }
 
-	.returns-admin__spinner {
-		width: 16px;
-		height: 16px;
-		border-radius: 50%;
-		border: 2px solid rgba(215, 255, 0, 0.28);
-		border-top-color: #d7ff00;
-		display: inline-block;
-		margin-right: 0.55rem;
-		animation: returns-spin 0.9s linear infinite;
-	}
+  .returns-admin__spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(215, 255, 0, 0.22);
+    border-top-color: #d7ff00;
+    display: inline-block;
+    margin-right: 7px;
+    animation: returns-spin 0.9s linear infinite;
+  }
 
-	.returns-admin__list {
-		display: grid;
-		gap: 0.85rem;
-	}
+  .returns-admin__table-wrap {
+    overflow: hidden;
+    border: 1px solid #171717;
+    background: transparent;
+  }
 
-	.return-card {
-		border: 1px solid #242424;
-		border-radius: 14px;
-		background: #111;
-		padding: 1rem;
-		display: grid;
-		gap: 0.85rem;
-	}
+  .returns-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
 
-	.return-card__head {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		gap: 0.8rem;
-	}
+  .returns-table thead th {
+    background: #101010;
+    color: #59606a;
+    font-size: 0.44rem;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid #171717;
+  }
 
-	.return-card__slug {
-		margin: 0;
-		color: #d7ff00;
-		font-weight: 800;
-		letter-spacing: 0.05em;
-	}
+  .returns-table tbody tr {
+    background: #121212;
+  }
 
-	.return-card__meta {
-		margin: 0.3rem 0 0;
-		color: #8a8a8a;
-		font-size: 0.84rem;
-	}
+  .returns-table tbody tr:nth-child(even) {
+    background: #101010;
+  }
 
-	.return-status {
-		border-radius: 999px;
-		padding: 0.28rem 0.68rem;
-		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
-	}
+  .returns-table tbody tr.is-dimmed {
+    opacity: 0.42;
+  }
 
-	.return-status.is-pending {
-		background: rgba(255, 196, 71, 0.14);
-		border: 1px solid rgba(255, 196, 71, 0.35);
-		color: #ffc447;
-	}
+  .returns-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #141414;
+    vertical-align: middle;
+    font-size: 0.58rem;
+  }
 
-	.return-status.is-success {
-		background: rgba(139, 255, 151, 0.14);
-		border: 1px solid rgba(139, 255, 151, 0.4);
-		color: #8bff97;
-	}
+  .returns-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
 
-	.return-status.is-error {
-		background: rgba(255, 132, 132, 0.14);
-		border: 1px solid rgba(255, 132, 132, 0.4);
-		color: #ff8484;
-	}
+  .cell-ref,
+  .cell-main,
+  .cell-reason {
+    margin: 0;
+  }
 
-	.return-card__grid {
-		display: grid;
-		gap: 0.8rem;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
+  .cell-ref {
+    color: #d7ff00;
+    font-weight: 900;
+    font-size: 0.62rem;
+    line-height: 1.2;
+  }
 
-	.return-card__label {
-		margin: 0;
-		color: #717171;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		font-size: 0.68rem;
-	}
+  .cell-main {
+    color: #d7d7d7;
+    font-weight: 700;
+    line-height: 1.28;
+  }
 
-	.return-card__value {
-		margin: 0.25rem 0 0;
-		color: #f3f3f3;
-		font-weight: 700;
-	}
+  .cell-reason {
+    color: #626262;
+    line-height: 1.28;
+    font-style: italic;
+  }
 
-	.return-card__hint {
-		margin: 0.25rem 0 0;
-		color: #8a8a8a;
-		font-size: 0.82rem;
-	}
+  .cell-sub {
+    display: block;
+    margin-top: 3px;
+    color: #4b4b4b;
+    font-size: 0.42rem;
+    line-height: 1.25;
+  }
 
-	.return-card__reason {
-		margin: 0;
-		color: #d1d1d1;
-		background: #161616;
-		border: 1px solid #282828;
-		border-radius: 10px;
-		padding: 0.65rem 0.8rem;
-		font-size: 0.9rem;
-		line-height: 1.45;
-	}
+  .return-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    min-height: 17px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.42rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
 
-	.return-actions {
-		display: flex;
-		gap: 0.55rem;
-	}
+  .return-status.is-pending {
+    background: rgba(122, 86, 10, 0.34);
+    border-color: rgba(141, 98, 12, 0.22);
+    color: #d0a021;
+  }
 
-	.btn-action {
-		border-radius: 10px;
-		border: 1px solid transparent;
-		font-weight: 700;
-		cursor: pointer;
-		padding: 0.52rem 0.85rem;
-		transition: all 0.15s ease;
-	}
+  .return-status.is-success {
+    background: rgba(11, 74, 39, 0.4);
+    border-color: rgba(18, 105, 57, 0.2);
+    color: #20bc63;
+  }
 
-	.btn-action.is-accept {
-		background: rgba(139, 255, 151, 0.16);
-		border-color: rgba(139, 255, 151, 0.45);
-		color: #8bff97;
-	}
+  .return-status.is-error {
+    background: rgba(76, 21, 21, 0.38);
+    border-color: rgba(111, 33, 33, 0.22);
+    color: #b44d4d;
+  }
 
-	.btn-action.is-accept:hover {
-		background: rgba(139, 255, 151, 0.24);
-	}
+  .return-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
 
-	.btn-action.is-reject {
-		background: rgba(255, 132, 132, 0.14);
-		border-color: rgba(255, 132, 132, 0.4);
-		color: #ff8f8f;
-	}
+  .btn-action {
+    appearance: none;
+    -webkit-appearance: none;
+    min-height: 20px;
+    padding: 0 10px;
+    border-radius: 3px;
+    border: 1px solid #2c2c2c;
+    background: #151515;
+    font-size: 0.46rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ddd;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
 
-	.btn-action.is-reject:hover {
-		background: rgba(255, 132, 132, 0.22);
-	}
+  .btn-action.is-accept {
+    color: #23bb64;
+    border-color: rgba(17, 114, 61, 0.28);
+    background: rgba(11, 74, 39, 0.28);
+  }
 
-	@keyframes returns-spin {
-		to { transform: rotate(360deg); }
-	}
+  .btn-action.is-accept:hover {
+    background: rgba(11, 74, 39, 0.42);
+  }
 
-	@media (max-width: 1080px) {
-		.return-card__grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
+  .btn-action.is-reject {
+    color: #b34d4d;
+    border-color: rgba(111, 33, 33, 0.28);
+    background: rgba(76, 21, 21, 0.22);
+  }
 
-	@media (max-width: 640px) {
-		.return-card__head {
-			flex-direction: column;
-		}
+  .btn-action.is-reject:hover {
+    background: rgba(76, 21, 21, 0.36);
+  }
 
-		.return-card__grid {
-			grid-template-columns: 1fr;
-		}
-	}
+  .return-action-text {
+    font-size: 0.47rem;
+    font-weight: 700;
+  }
+
+  .return-action-text.is-stock {
+    color: #23bb64;
+  }
+
+  .return-action-text.is-muted {
+    color: #505050;
+  }
+
+  @keyframes returns-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .returns-admin__table-wrap {
+      overflow-x: auto;
+    }
+
+    .returns-table {
+      min-width: 760px;
+    }
+  }
 </style>

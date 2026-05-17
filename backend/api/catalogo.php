@@ -98,18 +98,19 @@ try {
 
     $stmtOpiniones = $conexion->prepare(
         "
-        SELECT
-            o.id,
-            o.producto_id,
-            o.puntuacion,
-            o.comentario,
-            o.creado_en,
-            u.nombre AS usuario_nombre
-        FROM opiniones o
-        INNER JOIN usuarios u ON u.id = o.usuario_id
-        WHERE o.producto_id IN ($inClause)
-        ORDER BY o.producto_id ASC, o.creado_en DESC, o.id DESC
-        "
+    SELECT
+        o.id,
+        o.producto_id,
+        o.puntuacion,
+        o.comentario,
+        o.creado_en,
+        u.nombre AS usuario_nombre
+    FROM opiniones o
+    INNER JOIN usuarios u ON u.id = o.usuario_id
+    WHERE o.producto_id IN ($inClause)
+      AND o.estado = 'aprobada'
+    ORDER BY o.producto_id ASC, o.creado_en DESC, o.id DESC
+    "
     );
     $stmtOpiniones->execute($productIds);
     $rowsOpiniones = $stmtOpiniones->fetchAll();

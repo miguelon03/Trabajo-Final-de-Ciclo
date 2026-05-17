@@ -1,7 +1,9 @@
 ---
-import AdminLayout from "../../layouts/AdminLayout.astro";
----
+export const prerender = false;
 
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import AdminOpiniones from "../../components/admin/AdminOpiniones.astro";
+---
 <AdminLayout title="DMH Admin - Opiniones" adminName="Juan García">
-  <h1>OPINIONES</h1>
+  <AdminOpiniones />
 </AdminLayout>

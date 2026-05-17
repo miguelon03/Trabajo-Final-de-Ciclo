@@ -1,88 +1,198 @@
+---
+import {
+  fetchAdminProductos,
+  type AdminProducto,
+} from "../../lib/admin-productos-api";
+
+let productos: AdminProducto[] = [];
+let error = "";
+
+try {
+  const cookieHeader = Astro.request.headers.get("cookie") ?? "";
+  productos = await fetchAdminProductos(cookieHeader);
+} catch (e) {
+  error = e instanceof Error ? e.message : "Error al cargar productos";
+}
+---
+
 <section class="admin-section">
   <div class="title-row">
     <h1>PRODUCTOS</h1>
-    <button class="new-btn">+ Nuevo producto</button>
+    <button class="new-btn" id="newProductBtn">+ Nuevo producto</button>
   </div>
 
-  <div class="filters">
-    <input type="text" placeholder="Buscar producto..." />
-    <select>
-      <option>Categoría</option>
-    </select>
-    <select>
-      <option>Estado</option>
-    </select>
-    <select>
-      <option>Stock</option>
-    </select>
-  </div>
+  {
+    error ? (
+      <p class="error-message">{error}</p>
+    ) : (
+      <>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productos.map((p: any) => (
+                <tr>
+                  <td>
+                    {p.nombre}
+                    <span class="muted">{p.slug}</span>
+                  </td>
+                  <td>{p.categoria}</td>
+                  <td>{Number(p.precio_base).toFixed(2)}€</td>
+                  <td
+                    class={
+                      p.stock_total <= 0
+                        ? "stock-out"
+                        : p.stock_total <= 5
+                          ? "stock-low"
+                          : "stock-ok"
+                    }
+                  >
+                    {p.stock_total} ud.
+                  </td>
+                  <td>
+                    <span
+                      class:list={[
+                        "badge",
+                        p.estado === "publicado" && "published",
+                        p.estado === "borrador" && "draft",
+                        p.stock_total <= 0 &&
+                          p.estado === "publicado" &&
+                          "soldout",
+                      ]}
+                    >
+                      {p.stock_total <= 0 && p.estado === "publicado"
+                        ? "Agotado"
+                        : p.estado.charAt(0).toUpperCase() + p.estado.slice(1)}
+                    </span>
+                  </td>
+                  <td class="actions">
+                    <button
+                      class="btn-edit"
+                      data-id={p.id}
+                      data-nombre={p.nombre}
+                      data-slug={p.slug}
+                      data-descripcion={p.descripcion ?? ""}
+                      data-precio-base={p.precio_base}
+                      data-precio-original={p.precio_original ?? ""}
+                      data-tipo={p.tipo ?? ""}
+                      data-color={p.color ?? ""}
+                      data-badge={p.badge ?? ""}
+                      data-estado={p.estado}
+                    >
+                      Editar
+                    </button>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Categoría</th>
-          <th>Precio</th>
-          <th>Stock</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>DMH Logo Tee Black <span class="muted">dmh-logo-tee-black</span></td>
-          <td>Camisetas</td>
-          <td>34,99€</td>
-          <td class="stock-ok">18 ud.</td>
-          <td><span class="badge published">Publicado</span></td>
-          <td class="actions">
-            <button class="btn-edit">Editar</button>
-            <button class="btn-delete">Eliminar</button>
-          </td>
-        </tr>
+                    <button class="btn-delete" data-id={p.id}>
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        <tr>
-          <td>DMH Oversized Hoodie <span class="muted">dmh-oversized-hoodie</span></td>
-          <td>Sudaderas</td>
-          <td>59,99€</td>
-          <td class="stock-low">2 ud.</td>
-          <td><span class="badge published">Publicado</span></td>
-          <td class="actions">
-            <button class="btn-edit">Editar</button>
-            <button class="btn-delete">Eliminar</button>
-          </td>
-        </tr>
-
-        <tr>
-          <td>DMH Cargo Pant <span class="muted">dmh-cargo-pant</span></td>
-          <td>Pantalones</td>
-          <td>79,99€</td>
-          <td class="stock-out">0 ud.</td>
-          <td><span class="badge soldout">Agotado</span></td>
-          <td class="actions">
-            <button class="btn-edit">Editar</button>
-            <button class="btn-delete">Eliminar</button>
-          </td>
-        </tr>
-
-        <tr>
-          <td>DMH Cap Logo <span class="muted">dmh-cap-logo</span></td>
-          <td>Accesorios</td>
-          <td>24,99€</td>
-          <td class="stock-ok">32 ud.</td>
-          <td><span class="badge draft">Borrador</span></td>
-          <td class="actions">
-            <button class="btn-edit">Editar</button>
-            <button class="btn-delete">Eliminar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="footer-row">Mostrando 4 productos</div>
+        <div class="footer-row">Mostrando {productos.length} productos</div>
+      </>
+    )
+  }
 </section>
+
+<div class="modal-backdrop" id="productModalBackdrop">
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="productModalTitle"
+  >
+    <div class="modal-header">
+      <h2 id="productModalTitle">Nuevo producto</h2>
+      <button class="modal-close" id="closeProductModal" type="button">×</button
+      >
+    </div>
+
+    <form id="productForm" class="modal-form">
+      <input type="hidden" id="productId" />
+
+      <div class="form-grid">
+        <div class="field field-full">
+          <label for="productNombre">Nombre</label>
+          <input id="productNombre" type="text" required />
+        </div>
+
+        <div class="field">
+          <label for="productSlug">Slug</label>
+          <input id="productSlug" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="productEstado">Estado</label>
+          <select id="productEstado">
+            <option value="borrador">Borrador</option>
+            <option value="publicado">Publicado</option>
+            <option value="archivado">Archivado</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="productPrecioBase">Precio base</label>
+          <input
+            id="productPrecioBase"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="productPrecioOriginal">Precio original</label>
+          <input id="productPrecioOriginal" type="number" min="0" step="0.01" />
+        </div>
+
+        <div class="field">
+          <label for="productTipo">Tipo</label>
+          <input id="productTipo" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="productColor">Color</label>
+          <input id="productColor" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="productBadge">Badge</label>
+          <input id="productBadge" type="text" />
+        </div>
+
+        <div class="field field-full">
+          <label for="productDescripcion">Descripción</label>
+          <textarea id="productDescripcion" rows="5"></textarea>
+        </div>
+      </div>
+
+      <p id="productFormMessage" class="form-message"></p>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelProductModal"
+          >Cancelar</button
+        >
+        <button type="submit" class="btn-primary" id="saveProductBtn"
+          >Guardar</button
+        >
+      </div>
+    </form>
+  </div>
+</div>
 
 <style>
   .admin-section h1 {
@@ -108,26 +218,6 @@
     cursor: pointer;
   }
 
-  .filters {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-  }
-
-  .filters input,
-  .filters select {
-    background: #171717;
-    border: 1px solid #232323;
-    color: white;
-    border-radius: 8px;
-    padding: 12px 14px;
-  }
-
-  .filters input {
-    min-width: 260px;
-  }
-
   .table-wrap {
     background: #0f0f0f;
     border: 1px solid #232323;
@@ -144,7 +234,8 @@
     background: #0b0b0b;
   }
 
-  th, td {
+  th,
+  td {
     padding: 16px 14px;
     text-align: left;
     border-bottom: 1px solid #181818;
@@ -167,9 +258,18 @@
     margin-top: 4px;
   }
 
-  .stock-ok { color: #1ecb70; font-weight: 700; }
-  .stock-low { color: #ffb800; font-weight: 700; }
-  .stock-out { color: #ff4d4d; font-weight: 700; }
+  .stock-ok {
+    color: #1ecb70;
+    font-weight: 700;
+  }
+  .stock-low {
+    color: #ffb800;
+    font-weight: 700;
+  }
+  .stock-out {
+    color: #ff4d4d;
+    font-weight: 700;
+  }
 
   .badge {
     display: inline-block;
@@ -179,9 +279,18 @@
     font-weight: 700;
   }
 
-  .published { background: rgba(30,203,112,0.12); color: #1ecb70; }
-  .draft { background: rgba(255,255,255,0.08); color: #a7a7a7; }
-  .soldout { background: rgba(255,77,77,0.12); color: #ff4d4d; }
+  .published {
+    background: rgba(30, 203, 112, 0.12);
+    color: #1ecb70;
+  }
+  .draft {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a7a7a7;
+  }
+  .soldout {
+    background: rgba(255, 77, 77, 0.12);
+    color: #ff4d4d;
+  }
 
   .actions {
     display: flex;
@@ -213,4 +322,392 @@
     color: #666;
     font-size: 0.9rem;
   }
+
+  .error-message {
+    color: #ff4d4d;
+    font-size: 1rem;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+  }
+
+  .modal-backdrop.is-open {
+    display: flex;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 760px;
+    background: #121212;
+    border: 1px solid #232323;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 24px;
+    border-bottom: 1px solid #232323;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #f5f5f5;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal-form {
+    padding: 24px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-full {
+    grid-column: 1 / -1;
+  }
+
+  .field label {
+    color: #8d8d8d;
+    font-size: 0.92rem;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    background: #171717;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    color: #f5f5f5;
+    padding: 12px 14px;
+    font-size: 0.96rem;
+    outline: none;
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: rgba(215, 255, 0, 0.5);
+  }
+
+  .form-message {
+    min-height: 24px;
+    margin: 18px 0 0;
+    color: #ff6b6b;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: #d7ff00;
+    color: #111;
+    border: none;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: #ddd;
+    border: 1px solid #303030;
+  }
+
+  @media (max-width: 720px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+      flex-direction: column;
+    }
+
+    .modal-actions button {
+      width: 100%;
+    }
+  }
 </style>
+<script>
+  import {
+    createAdminProducto,
+    updateAdminProducto,
+    deleteAdminProducto,
+  } from "../../lib/admin-productos-api";
+
+  const modalBackdrop = document.getElementById("productModalBackdrop");
+  const modalTitle = document.getElementById("productModalTitle");
+  const productForm = document.getElementById("productForm");
+  const productFormMessage = document.getElementById("productFormMessage");
+
+  const productId = document.getElementById("productId");
+  const productNombre = document.getElementById("productNombre");
+  const productSlug = document.getElementById("productSlug");
+  const productDescripcion = document.getElementById("productDescripcion");
+  const productPrecioBase = document.getElementById("productPrecioBase");
+  const productPrecioOriginal = document.getElementById(
+    "productPrecioOriginal",
+  );
+  const productTipo = document.getElementById("productTipo");
+  const productColor = document.getElementById("productColor");
+  const productBadge = document.getElementById("productBadge");
+  const productEstado = document.getElementById("productEstado");
+
+  function asField(
+    el: Element | null,
+  ): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
+    if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement
+    ) {
+      return el;
+    }
+
+    return null;
+  }
+
+  function openModal() {
+    modalBackdrop?.classList.add("is-open");
+  }
+
+  function closeModal() {
+    modalBackdrop?.classList.remove("is-open");
+  }
+
+  function resetForm() {
+    if (!(productId instanceof HTMLInputElement)) return;
+
+    const nombreInput = asField(productNombre);
+    const slugInput = asField(productSlug);
+    const descripcionInput = asField(productDescripcion);
+    const precioBaseInput = asField(productPrecioBase);
+    const precioOriginalInput = asField(productPrecioOriginal);
+    const tipoInput = asField(productTipo);
+    const colorInput = asField(productColor);
+    const badgeInput = asField(productBadge);
+    const estadoInput = asField(productEstado);
+
+    if (
+      !nombreInput ||
+      !slugInput ||
+      !descripcionInput ||
+      !precioBaseInput ||
+      !precioOriginalInput ||
+      !tipoInput ||
+      !colorInput ||
+      !badgeInput ||
+      !estadoInput
+    ) {
+      return;
+    }
+
+    productId.value = "";
+    nombreInput.value = "";
+    slugInput.value = "";
+    descripcionInput.value = "";
+    precioBaseInput.value = "";
+    precioOriginalInput.value = "";
+    tipoInput.value = "";
+    colorInput.value = "";
+    badgeInput.value = "";
+    estadoInput.value = "borrador";
+
+    if (productFormMessage instanceof HTMLElement) {
+      productFormMessage.textContent = "";
+    }
+  }
+
+  function fillEditForm(button: HTMLButtonElement) {
+    if (!(button instanceof HTMLButtonElement)) return;
+    if (!(productId instanceof HTMLInputElement)) return;
+
+    const nombreInput = asField(productNombre);
+    const slugInput = asField(productSlug);
+    const descripcionInput = asField(productDescripcion);
+    const precioBaseInput = asField(productPrecioBase);
+    const precioOriginalInput = asField(productPrecioOriginal);
+    const tipoInput = asField(productTipo);
+    const colorInput = asField(productColor);
+    const badgeInput = asField(productBadge);
+    const estadoInput = asField(productEstado);
+
+    if (
+      !nombreInput ||
+      !slugInput ||
+      !descripcionInput ||
+      !precioBaseInput ||
+      !precioOriginalInput ||
+      !tipoInput ||
+      !colorInput ||
+      !badgeInput ||
+      !estadoInput
+    ) {
+      return;
+    }
+
+    productId.value = button.dataset.id || "";
+    nombreInput.value = button.dataset.nombre || "";
+    slugInput.value = button.dataset.slug || "";
+    descripcionInput.value = button.dataset.descripcion || "";
+    precioBaseInput.value = button.dataset.precioBase || "";
+    precioOriginalInput.value = button.dataset.precioOriginal || "";
+    tipoInput.value = button.dataset.tipo || "";
+    colorInput.value = button.dataset.color || "";
+    badgeInput.value = button.dataset.badge || "";
+    estadoInput.value = button.dataset.estado || "borrador";
+  }
+
+  document.getElementById("newProductBtn")?.addEventListener("click", () => {
+    resetForm();
+
+    if (modalTitle instanceof HTMLElement) {
+      modalTitle.textContent = "Nuevo producto";
+    }
+
+    openModal();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>(".btn-edit").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    fillEditForm(btn);
+
+      if (modalTitle instanceof HTMLElement) {
+        modalTitle.textContent = "Editar producto";
+      }
+
+      openModal();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>(".btn-delete").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const id = Number(btn.dataset.id);
+      if (!id) return;
+
+      const ok = confirm("¿Seguro que quieres eliminar este producto?");
+      if (!ok) return;
+
+      try {
+        await deleteAdminProducto(id);
+        window.location.reload();
+      } catch (error) {
+        alert(
+          error instanceof Error ? error.message : "Error al eliminar producto",
+        );
+      }
+    });
+  });
+
+  document
+    .getElementById("closeProductModal")
+    ?.addEventListener("click", closeModal);
+
+  document
+    .getElementById("cancelProductModal")
+    ?.addEventListener("click", closeModal);
+
+  modalBackdrop?.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) {
+      closeModal();
+    }
+  });
+
+  productForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (
+      !(productId instanceof HTMLInputElement) ||
+      !(productNombre instanceof HTMLInputElement) ||
+      !(productSlug instanceof HTMLInputElement) ||
+      !(productDescripcion instanceof HTMLTextAreaElement) ||
+      !(productPrecioBase instanceof HTMLInputElement) ||
+      !(productPrecioOriginal instanceof HTMLInputElement) ||
+      !(productTipo instanceof HTMLInputElement) ||
+      !(productColor instanceof HTMLInputElement) ||
+      !(productBadge instanceof HTMLInputElement) ||
+      !(productEstado instanceof HTMLSelectElement)
+    ) {
+      return;
+    }
+
+    if (productFormMessage instanceof HTMLElement) {
+      productFormMessage.textContent = "";
+    }
+
+    const payload = {
+      nombre: productNombre.value.trim(),
+      slug: productSlug.value.trim(),
+      descripcion: productDescripcion.value.trim(),
+      precio_base: Number(productPrecioBase.value),
+      precio_original: productPrecioOriginal.value.trim(),
+      tipo: productTipo.value.trim(),
+      color: productColor.value.trim(),
+      badge: productBadge.value.trim(),
+      estado: productEstado.value,
+    };
+
+    try {
+      if (productId.value) {
+        await updateAdminProducto({
+          id: Number(productId.value),
+          ...payload,
+        });
+      } else {
+        await createAdminProducto(payload);
+      }
+
+      closeModal();
+      window.location.reload();
+    } catch (error) {
+      if (productFormMessage instanceof HTMLElement) {
+        productFormMessage.textContent =
+          error instanceof Error ? error.message : "Error al guardar producto";
+      }
+    }
+  });
+</script>

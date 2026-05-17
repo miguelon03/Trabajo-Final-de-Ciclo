@@ -5,69 +5,155 @@ const currentPath = Astro.url.pathname;
 <aside class="sidebar">
   <div class="brand">DMH — ADMIN</div>
 
-  <div class="section-label">Panel</div>
+  <div class="section-label">PANEL</div>
   <nav class="nav">
-    <a href="/admin" class={currentPath === "/admin" ? "active" : ""}>Dashboard</a>
+    <a href="/admin" class={currentPath === "/admin" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z" />
+        </svg>
+      </span>
+      <span>Dashboard</span>
+    </a>
   </nav>
 
-  <div class="section-label">Tienda</div>
+  <div class="section-label">TIENDA</div>
   <nav class="nav">
-    <a href="/admin/productos" class={currentPath === "/admin/productos" ? "active" : ""}>Productos</a>
-    <a href="/admin/pedidos" class={currentPath === "/admin/pedidos" ? "active" : ""}>Pedidos</a>
-    <a href="/admin/devoluciones" class={currentPath === "/admin/devoluciones" ? "active" : ""}>Devoluciones</a>
-    <a href="/admin/opiniones" class={currentPath === "/admin/opiniones" ? "active" : ""}>Opiniones</a>
-    <a href="/admin/usuarios" class={currentPath === "/admin/usuarios" ? "active" : ""}>Usuarios</a>
+    <a href="/admin/productos" class={currentPath === "/admin/productos" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 6h10l1 3v9H6V9l1-3zm1.3 2L8 9h8l-.3-1zM9 12h6v2H9z" />
+        </svg>
+      </span>
+      <span>Productos</span>
+    </a>
+
+    <a href="/admin/pedidos" class={currentPath === "/admin/pedidos" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 5h10v14H7zM9 8h6v1.8H9zm0 3h6v1.8H9zm0 3h4v1.8H9z" />
+        </svg>
+      </span>
+      <span>Pedidos</span>
+    </a>
+
+    <a href="/admin/devoluciones" class={currentPath === "/admin/devoluciones" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 11H4l4-4 4 4H9c0 2.8 2.2 5 5 5a5 5 0 0 0 4.6-3h2A7 7 0 0 1 14 18c-3.9 0-7-3.1-7-7z" />
+        </svg>
+      </span>
+      <span>Devoluciones</span>
+    </a>
+
+    <a href="/admin/opiniones" class={currentPath === "/admin/opiniones" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m12 17.3-5.2 3 1.4-5.9L3.6 10l6.1-.5L12 4l2.3 5.5 6.1.5-4.6 4.4 1.4 5.9z" />
+        </svg>
+      </span>
+      <span>Opiniones</span>
+    </a>
+
+    <a href="/admin/usuarios" class={currentPath === "/admin/usuarios" ? "active" : ""}>
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.2 0-7 2.1-7 5v1h14v-1c0-2.9-2.8-5-7-5z" />
+        </svg>
+      </span>
+      <span>Usuarios</span>
+    </a>
   </nav>
 </aside>
 
 <style>
   .sidebar {
-    background: #141414;
-    border-right: 1px solid #232323;
-    padding: 22px 18px;
+    background: #1a1a1a;
+    border-right: 1px solid #272727;
+    padding: 0;
   }
 
   .brand {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 13px;
     color: #d7ff00;
-    font-size: 1.9rem;
+    font-size: 0.78rem;
     font-weight: 900;
     letter-spacing: 0.22em;
-    margin-bottom: 36px;
+    border-bottom: 1px solid #252525;
+    white-space: nowrap;
   }
 
   .section-label {
-    color: #5e5e5e;
-    font-size: 0.72rem;
-    letter-spacing: 0.15em;
+    color: #4f4f4f;
+    font-size: 0.46rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    margin: 24px 0 10px;
+    margin: 13px 10px 6px;
   }
 
   .nav {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    gap: 2px;
+    padding: 0 6px;
   }
 
   .nav a {
+    min-height: 27px;
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
-    color: #d8d8d8;
-    padding: 12px 14px;
-    border-radius: 10px;
-    display: block;
-    transition: background 0.2s ease, color 0.2s ease;
+    color: #8a8a8a;
+    padding: 0 10px;
+    border-radius: 5px;
+    font-size: 0.58rem;
+    transition: background 0.16s ease, color 0.16s ease;
   }
 
-  .nav a:hover,
+  .nav a:hover {
+    background: #202020;
+    color: #d3d3d3;
+  }
+
   .nav a.active {
-    background: #1f1f1f;
-    color: white;
+    background: #252525;
+    color: #f2f2f2;
+  }
+
+  .nav-icon {
+    width: 12px;
+    height: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon svg {
+    width: 11px;
+    height: 11px;
+    fill: currentColor;
   }
 
   @media (max-width: 980px) {
     .sidebar {
-      border-right: none;
-      border-bottom: 1px solid #232323;
+      border-right: 0;
+      border-bottom: 1px solid #272727;
+      padding-bottom: 8px;
+    }
+
+    .nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .nav {
+      grid-template-columns: 1fr;
     }
   }
 </style>

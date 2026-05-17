@@ -1,91 +1,180 @@
+---
+import {
+  fetchAdminPedidos,
+  type AdminPedido,
+} from "../../lib/admin-pedidos-api";
+
+let pedidos: AdminPedido[] = [];
+let error = "";
+
+try {
+  const cookieHeader = Astro.request.headers.get("cookie") ?? "";
+  pedidos = await fetchAdminPedidos(cookieHeader);
+} catch (e) {
+  error = e instanceof Error ? e.message : "Error cargando pedidos";
+}
+---
+
 <section class="admin-section">
   <div class="title-row">
     <h1>PEDIDOS</h1>
   </div>
 
-  <div class="filters">
-    <input type="text" placeholder="Buscar ref. o cliente..." />
-    <select>
-      <option>Estado</option>
-    </select>
-    <select>
-      <option>Fecha</option>
-    </select>
-  </div>
+  {
+    error ? (
+      <p class="error-message">{error}</p>
+    ) : (
+      <>
+        <div class="filters">
+          <input
+            id="ordersSearchInput"
+            type="text"
+            placeholder="Buscar ref. o cliente..."
+          />
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Referencia</th>
-          <th>Cliente</th>
-          <th>Artículos</th>
-          <th>Total</th>
-          <th>Estado</th>
-          <th>Fecha</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="ref">PED-8F2K9M</td>
-          <td>Juan García <span class="muted">juan@email.com</span></td>
-          <td>3</td>
-          <td>154,97€</td>
-          <td><span class="badge shipped">Enviado</span></td>
-          <td>28 mar 2026</td>
-          <td><button class="btn-view">Ver detalle</button></td>
-        </tr>
+          <select id="ordersStatusFilter">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="pagado">Pagado</option>
+            <option value="enviado">Enviado</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="devuelto">Devuelto</option>
+          </select>
 
-        <tr>
-          <td class="ref">PED-3X9QR2</td>
-          <td>Ana Martínez <span class="muted">ana@email.com</span></td>
-          <td>1</td>
-          <td>49,99€</td>
-          <td><span class="badge pending">Pendiente</span></td>
-          <td>15 mar 2026</td>
-          <td><button class="btn-view">Ver detalle</button></td>
-        </tr>
-
-        <tr>
-          <td class="ref">PED-9KL2PR</td>
-          <td>Carlos Ruiz <span class="muted">carlos@email.com</span></td>
-          <td>2</td>
-          <td>79,98€</td>
-          <td><span class="badge pending">Pendiente</span></td>
-          <td>10 mar 2026</td>
-          <td><button class="btn-view">Ver detalle</button></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="detail-grid">
-    <div class="detail-card">
-      <h2>DETALLE — PED-3X9QR2</h2>
-      <div class="detail-item">
-        <div>
-          <strong>DMH Cap Logo — Talla única × 1</strong>
+          <select id="ordersDateSort">
+            <option value="recent">Mas recientes</option>
+            <option value="oldest">Mas antiguos</option>
+          </select>
         </div>
-        <div>49,99€</div>
-      </div>
-      <div class="detail-total">
-        <strong>Total</strong>
-        <strong>49,99€</strong>
-      </div>
-    </div>
 
-    <div class="detail-card">
-      <h2>CAMBIAR ESTADO</h2>
-      <div class="status-actions">
-        <button>Pendiente</button>
-        <button class="active">Pagado ✓</button>
-        <button>Enviado</button>
-        <button>Entregado</button>
-        <button class="danger">Cancelado</button>
-      </div>
-    </div>
-  </div>
+        {
+          pedidos.length === 0 ? (
+            <div class="empty-state">
+              <h2>No hay pedidos todavia</h2>
+              <p>Cuando entren compras nuevas apareceran en esta tabla.</p>
+            </div>
+          ) : (
+            <>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Cliente</th>
+                      <th>Articulos</th>
+                      <th>Total</th>
+                      <th>Estado</th>
+                      <th>Fecha</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="ordersTableBody">
+                    {pedidos.map((pedido: AdminPedido) => (
+                      <tr
+                        data-pedido-row
+                        data-id={pedido.id}
+                        data-estado={pedido.estado}
+                        data-fecha={pedido.fecha}
+                        data-search={`${pedido.referencia} ${pedido.cliente_nombre} ${pedido.cliente_email}`}
+                      >
+                        <td class="ref">{pedido.referencia}</td>
+                        <td>
+                          {pedido.cliente_nombre}
+                          <span class="muted">{pedido.cliente_email}</span>
+                        </td>
+                        <td>{pedido.articulos}</td>
+                        <td>{Number(pedido.total).toFixed(2)}€</td>
+                        <td>
+                          <span
+                            class:list={[
+                              "badge",
+                              pedido.estado === "pendiente" && "pending",
+                              pedido.estado === "pagado" && "paid",
+                              pedido.estado === "enviado" && "shipped",
+                              pedido.estado === "entregado" && "delivered",
+                              pedido.estado === "cancelado" && "cancelled",
+                              pedido.estado === "devuelto" && "returned",
+                            ]}
+                            data-order-badge
+                          >
+                            {pedido.estado === "pendiente" && "Pendiente"}
+                            {pedido.estado === "pagado" && "Pagado"}
+                            {pedido.estado === "enviado" && "Enviado"}
+                            {pedido.estado === "entregado" && "Entregado"}
+                            {pedido.estado === "cancelado" && "Cancelado"}
+                            {pedido.estado === "devuelto" && "Devuelto"}
+                          </span>
+                        </td>
+                        <td>{new Date(pedido.fecha).toLocaleDateString("es-ES")}</td>
+                        <td>
+                          <button class="btn-view" type="button" data-view-detail={pedido.id}>
+                            Ver detalle
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p id="ordersNoResults" class="empty-inline" hidden>
+                No hay pedidos que coincidan con el filtro actual.
+              </p>
+
+              <div class="footer-row">
+                <span id="ordersCountLabel">Mostrando {pedidos.length} pedidos</span>
+              </div>
+            </>
+          )
+        }
+
+        <section id="orderDetailSection" class="detail-shell" hidden>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-header">
+                <h2 id="orderDetailTitle">DETALLE</h2>
+                <button id="closeOrderDetail" class="btn-detail-close" type="button">
+                  Cerrar
+                </button>
+              </div>
+
+              <div class="detail-meta">
+                <p><strong>Cliente:</strong> <span id="orderDetailClient"></span></p>
+                <p><strong>Email:</strong> <span id="orderDetailEmail"></span></p>
+                <p><strong>Direccion:</strong> <span id="orderDetailAddress"></span></p>
+                <p><strong>Fecha:</strong> <span id="orderDetailDate"></span></p>
+              </div>
+
+              <div id="orderDetailItems" class="detail-items"></div>
+
+              <div class="detail-total">
+                <strong>Total</strong>
+                <strong id="orderDetailTotal">0,00 €</strong>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <h2>CAMBIAR ESTADO</h2>
+              <div id="orderStatusActions" class="status-actions">
+                <button type="button" data-estado="pendiente">Pendiente</button>
+                <button type="button" data-estado="pagado">Pagado</button>
+                <button type="button" data-estado="enviado">Enviado</button>
+                <button type="button" data-estado="entregado">Entregado</button>
+                <button type="button" data-estado="cancelado" class="danger">
+                  Cancelado
+                </button>
+                <button type="button" data-estado="devuelto">Devuelto</button>
+              </div>
+
+              <p id="orderDetailMessage" class="detail-message"></p>
+            </div>
+          </div>
+        </section>
+      </>
+    )
+  }
 </section>
 
 <style>
@@ -117,6 +206,7 @@
 
   .filters input {
     min-width: 260px;
+    flex: 1 1 280px;
   }
 
   .table-wrap {
@@ -124,7 +214,6 @@
     border: 1px solid #232323;
     border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 24px;
   }
 
   table {
@@ -136,7 +225,8 @@
     background: #0b0b0b;
   }
 
-  th, td {
+  th,
+  td {
     padding: 16px 14px;
     text-align: left;
     border-bottom: 1px solid #181818;
@@ -150,6 +240,10 @@
 
   td {
     color: #eaeaea;
+  }
+
+  tr.is-active {
+    background: rgba(215, 255, 0, 0.04);
   }
 
   .muted {
@@ -172,10 +266,38 @@
     font-weight: 700;
   }
 
-  .shipped { background: rgba(66,133,244,0.15); color: #63a4ff; }
-  .pending { background: rgba(255,184,0,0.15); color: #ffb800; }
+  .pending {
+    background: rgba(255, 184, 0, 0.15);
+    color: #ffb800;
+  }
 
-  .btn-view {
+  .paid {
+    background: rgba(30, 203, 112, 0.12);
+    color: #1ecb70;
+  }
+
+  .shipped {
+    background: rgba(66, 133, 244, 0.15);
+    color: #63a4ff;
+  }
+
+  .delivered {
+    background: rgba(0, 196, 140, 0.14);
+    color: #4de0b4;
+  }
+
+  .cancelled {
+    background: rgba(255, 77, 77, 0.12);
+    color: #ff6b6b;
+  }
+
+  .returned {
+    background: rgba(177, 110, 255, 0.18);
+    color: #c79dff;
+  }
+
+  .btn-view,
+  .btn-detail-close {
     background: #d7ff00;
     color: #111;
     border: none;
@@ -185,37 +307,92 @@
     font-weight: 700;
   }
 
+  .btn-view.is-active {
+    background: #2d2d2d;
+    color: #f5f5f5;
+  }
+
+  .footer-row {
+    padding: 16px 4px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .detail-shell {
+    margin-top: 24px;
+  }
+
   .detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr;
     gap: 18px;
   }
 
-  .detail-card {
+  .detail-card,
+  .empty-state {
     background: #121212;
     border: 1px solid #232323;
     border-radius: 14px;
     padding: 18px;
   }
 
-  .detail-card h2 {
+  .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .detail-card h2,
+  .empty-state h2 {
     color: #d7ff00;
     font-size: 1rem;
-    margin-bottom: 16px;
     letter-spacing: 0.08em;
   }
 
-  .detail-item,
-  .detail-total {
+  .detail-meta {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: #d9d9d9;
+  }
+
+  .detail-items {
+    display: grid;
+    gap: 12px;
+  }
+
+  .detail-item {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 0;
+    padding: 14px 0;
+    border-top: 1px solid #232323;
+  }
+
+  .detail-item:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .detail-item strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .detail-item span {
+    color: #8a8a8a;
+    font-size: 0.9rem;
   }
 
   .detail-total {
     border-top: 1px solid #232323;
-    margin-top: 10px;
+    margin-top: 18px;
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .status-actions {
@@ -241,7 +418,32 @@
   }
 
   .status-actions button.danger {
-    color: #ff4d4d;
+    color: #ff6b6b;
+  }
+
+  .status-actions button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+
+  .detail-message,
+  .error-message,
+  .empty-inline,
+  .empty-state p {
+    color: #8a8a8a;
+  }
+
+  .detail-message.is-error,
+  .error-message {
+    color: #ff6b6b;
+  }
+
+  .detail-message.is-success {
+    color: #1ecb70;
+  }
+
+  .empty-inline {
+    padding: 16px 4px 0;
   }
 
   @media (max-width: 980px) {
@@ -249,4 +451,388 @@
       grid-template-columns: 1fr;
     }
   }
+
+  @media (max-width: 720px) {
+    .filters {
+      flex-direction: column;
+    }
+
+    .filters input,
+    .filters select {
+      width: 100%;
+    }
+
+    th,
+    td {
+      padding: 14px 10px;
+      font-size: 0.9rem;
+    }
+
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
 </style>
+
+<script>
+  import {
+  fetchPedidoDetalle,
+  updatePedidoEstado,
+  type PedidoDetalle,
+} from "../../lib/admin-pedidos-api";
+  const tableBody = document.getElementById("ordersTableBody");
+const searchInput = document.getElementById("ordersSearchInput");
+const statusFilter = document.getElementById("ordersStatusFilter");
+const dateSort = document.getElementById("ordersDateSort");
+const noResults = document.getElementById("ordersNoResults");
+const countLabel = document.getElementById("ordersCountLabel");
+
+const detailSection = document.getElementById("orderDetailSection");
+const detailTitle = document.getElementById("orderDetailTitle");
+const detailClient = document.getElementById("orderDetailClient");
+const detailEmail = document.getElementById("orderDetailEmail");
+const detailAddress = document.getElementById("orderDetailAddress");
+const detailDate = document.getElementById("orderDetailDate");
+const detailItems = document.getElementById("orderDetailItems");
+const detailTotal = document.getElementById("orderDetailTotal");
+const detailMessage = document.getElementById("orderDetailMessage");
+const closeDetailButton = document.getElementById("closeOrderDetail");
+const statusActions = document.getElementById("orderStatusActions");
+
+const rows = Array.from(
+  document.querySelectorAll<HTMLTableRowElement>("[data-pedido-row]"),
+);
+const viewButtons = Array.from(
+  document.querySelectorAll<HTMLButtonElement>("[data-view-detail]"),
+);
+
+let activeOrderId: number | null = null;
+let activeOrderDetail: PedidoDetalle | null = null;
+let isUpdatingStatus = false;
+
+  function euro(value: number | string | null | undefined) {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+    }).format(Number(value || 0));
+  }
+
+  function escapeHtml(value: string | number | null | undefined) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(value: string | null | undefined) {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  }
+
+  function getStatusLabel(status: string) {
+    switch (String(status || "").toLowerCase()) {
+      case "pagado":
+        return "Pagado";
+      case "enviado":
+        return "Enviado";
+      case "entregado":
+        return "Entregado";
+      case "cancelado":
+        return "Cancelado";
+      case "devuelto":
+        return "Devuelto";
+      default:
+        return "Pendiente";
+    }
+  }
+
+  function getStatusClass(status: string) {
+    switch (String(status || "").toLowerCase()) {
+      case "pagado":
+        return "paid";
+      case "enviado":
+        return "shipped";
+      case "entregado":
+        return "delivered";
+      case "cancelado":
+        return "cancelled";
+      case "devuelto":
+        return "returned";
+      default:
+        return "pending";
+    }
+  }
+
+  function setDetailMessage(text = "", kind = "") {
+    if (!detailMessage) return;
+
+    detailMessage.textContent = text;
+    detailMessage.className = "detail-message";
+
+    if (kind) {
+      detailMessage.classList.add(`is-${kind}`);
+    }
+  }
+
+  function updateActiveControls() {
+    rows.forEach((row) => {
+      const isActive = Number(row.getAttribute("data-id")) === activeOrderId;
+      row.classList.toggle("is-active", isActive);
+    });
+
+    viewButtons.forEach((button) => {
+      const isActive = Number(button.getAttribute("data-view-detail")) === activeOrderId;
+      button.classList.toggle("is-active", isActive);
+      button.textContent = isActive ? "Ocultar detalle" : "Ver detalle";
+    });
+  }
+
+  function hideDetail() {
+    activeOrderId = null;
+    activeOrderDetail = null;
+    if (detailSection) detailSection.hidden = true;
+    setDetailMessage("");
+    updateActiveControls();
+  }
+
+  function renderStatusButtons(status: string) {
+    if (!statusActions) return;
+
+    statusActions.querySelectorAll("button").forEach((button) => {
+      const isActive = button.getAttribute("data-estado") === status;
+      button.classList.toggle("active", isActive);
+      button.disabled = isUpdatingStatus;
+    });
+  }
+
+  function renderDetail(detail: PedidoDetalle) {
+    activeOrderDetail = detail;
+
+    if (detailTitle) detailTitle.textContent = `DETALLE - ${detail.referencia}`;
+    if (detailClient) detailClient.textContent = detail.cliente_nombre || "-";
+    if (detailEmail) detailEmail.textContent = detail.cliente_email || "-";
+    if (detailAddress) detailAddress.textContent = detail.direccion_envio || "-";
+    if (detailDate) detailDate.textContent = formatDate(detail.fecha);
+    if (detailTotal) detailTotal.textContent = euro(detail.total);
+
+    if (detailItems) {
+      detailItems.innerHTML =
+        (detail.items || []).length > 0
+          ? (detail.items || [])
+              .map((item: PedidoDetalle["items"][number]) => {
+                const talla = item.talla || "Unica";
+                const color = item.color || "Sin color";
+                return `
+                  <div class="detail-item">
+                    <div>
+                      <strong>${escapeHtml(item.nombre)} x ${Number(item.cantidad || 0)}</strong>
+                      <span>${escapeHtml(talla)} · ${escapeHtml(color)}</span>
+                    </div>
+                    <strong>${euro(item.subtotal ?? item.precio)}</strong>
+                  </div>
+                `;
+              })
+              .join("")
+          : `
+              <div class="detail-item">
+                <div>
+                  <strong>Sin articulos</strong>
+                  <span>Este pedido no tiene productos asociados.</span>
+                </div>
+                <strong>${euro(0)}</strong>
+              </div>
+            `;
+    }
+
+    renderStatusButtons(detail.estado);
+    setDetailMessage("");
+
+    if (detailSection) {
+      detailSection.hidden = false;
+      detailSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function updateRowStatus(orderId: number, estado: string) {
+    const row = rows.find((item) => Number(item.getAttribute("data-id")) === orderId);
+    if (!row) return;
+
+    row.setAttribute("data-estado", estado);
+
+    const badge = row.querySelector("[data-order-badge]");
+    if (badge) {
+      badge.textContent = getStatusLabel(estado);
+      badge.className = `badge ${getStatusClass(estado)}`;
+    }
+  }
+
+  function sortRows() {
+    if (!(tableBody instanceof HTMLElement)) return;
+
+    const direction = dateSort instanceof HTMLSelectElement ? dateSort.value : "recent";
+    const sorted = [...rows].sort((a, b) => {
+      const aDate = new Date(a.getAttribute("data-fecha") || "").getTime();
+      const bDate = new Date(b.getAttribute("data-fecha") || "").getTime();
+
+      return direction === "oldest" ? aDate - bDate : bDate - aDate;
+    });
+
+    sorted.forEach((row) => tableBody.appendChild(row));
+  }
+
+  function applyFilters() {
+    const searchTerm =
+      searchInput instanceof HTMLInputElement
+        ? searchInput.value.trim().toLowerCase()
+        : "";
+    const statusValue =
+      statusFilter instanceof HTMLSelectElement ? statusFilter.value : "";
+
+    let visibleCount = 0;
+    let activeRowVisible = false;
+
+    rows.forEach((row) => {
+      const haystack = (row.getAttribute("data-search") || "").toLowerCase();
+      const estado = row.getAttribute("data-estado") || "";
+
+      const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+      const matchesStatus = !statusValue || estado === statusValue;
+      const visible = matchesSearch && matchesStatus;
+
+      row.hidden = !visible;
+
+      if (visible) {
+        visibleCount += 1;
+        if (Number(row.getAttribute("data-id")) === activeOrderId) {
+          activeRowVisible = true;
+        }
+      }
+    });
+
+    if (countLabel) {
+      countLabel.textContent = `Mostrando ${visibleCount} pedido${visibleCount === 1 ? "" : "s"}`;
+    }
+
+    if (noResults) {
+      noResults.hidden = visibleCount > 0;
+    }
+
+    if (!activeRowVisible && activeOrderId !== null) {
+      hideDetail();
+    } else {
+      updateActiveControls();
+    }
+  }
+
+  async function openDetail(orderId: number) {
+    if (!Number.isFinite(orderId) || orderId <= 0) return;
+
+    if (activeOrderId === orderId && detailSection && !detailSection.hidden) {
+      hideDetail();
+      return;
+    }
+
+    activeOrderId = orderId;
+    updateActiveControls();
+    setDetailMessage("Cargando detalle...");
+
+    const currentButton = viewButtons.find(
+      (button) => Number(button.getAttribute("data-view-detail")) === orderId,
+    );
+
+    if (currentButton instanceof HTMLButtonElement) {
+      currentButton.disabled = true;
+    }
+
+    try {
+      const detail = await fetchPedidoDetalle(orderId);
+      renderDetail(detail);
+    } catch (error) {
+      setDetailMessage(
+        error instanceof Error ? error.message : "No se pudo cargar el detalle",
+        "error",
+      );
+      hideDetail();
+    } finally {
+      if (currentButton instanceof HTMLButtonElement) {
+        currentButton.disabled = false;
+      }
+    }
+  }
+
+  if (searchInput instanceof HTMLInputElement) {
+    searchInput.addEventListener("input", applyFilters);
+  }
+
+  if (statusFilter instanceof HTMLSelectElement) {
+    statusFilter.addEventListener("change", applyFilters);
+  }
+
+  if (dateSort instanceof HTMLSelectElement) {
+    dateSort.addEventListener("change", () => {
+      sortRows();
+      applyFilters();
+    });
+  }
+
+  viewButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      openDetail(Number(button.getAttribute("data-view-detail")));
+    });
+  });
+
+  closeDetailButton?.addEventListener("click", hideDetail);
+
+  statusActions?.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement) || isUpdatingStatus) return;
+    if (!activeOrderDetail || activeOrderId === null) return;
+
+    const nextStatus = target.getAttribute("data-estado");
+    if (!nextStatus || nextStatus === activeOrderDetail.estado) return;
+    const currentStatus = activeOrderDetail.estado;
+
+    isUpdatingStatus = true;
+    renderStatusButtons(currentStatus);
+    setDetailMessage("Actualizando estado...");
+
+    try {
+      await updatePedidoEstado(activeOrderId, nextStatus);
+      activeOrderDetail = {
+        ...activeOrderDetail,
+        estado: nextStatus,
+      };
+      renderStatusButtons(nextStatus);
+      updateRowStatus(activeOrderId, nextStatus);
+      applyFilters();
+      setDetailMessage("Estado actualizado correctamente", "success");
+    } catch (error) {
+      if (activeOrderDetail) {
+        renderStatusButtons(activeOrderDetail.estado);
+      }
+      setDetailMessage(
+        error instanceof Error ? error.message : "No se pudo actualizar el estado",
+        "error",
+      );
+    } finally {
+      isUpdatingStatus = false;
+      if (activeOrderDetail) {
+        renderStatusButtons(activeOrderDetail.estado);
+      }
+    }
+  });
+
+  sortRows();
+  applyFilters();
+</script>

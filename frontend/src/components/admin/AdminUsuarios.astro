@@ -1,0 +1,640 @@
+<section class="users-admin">
+  <div class="users-admin__head">
+    <h1>USUARIOS</h1>
+  </div>
+
+  <div id="usersMessage" class="users-admin__message" hidden></div>
+
+  <div id="usersLoading" class="users-admin__loading" hidden>
+    <span class="users-admin__spinner" aria-hidden="true"></span>
+    <span>Cargando usuarios...</span>
+  </div>
+
+  <div class="users-admin__table-wrap" id="usersTableWrap" hidden>
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Ciudad</th>
+          <th>Puntos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="usersEmpty" class="users-admin__empty" hidden>
+    <h2>No hay usuarios para mostrar</h2>
+    <p>Cuando se registren aparecerán aquí.</p>
+  </div>
+
+  <section id="userDetailSection" class="user-detail-shell" hidden>
+    <div class="user-detail-card">
+      <div class="user-detail__header">
+        <div>
+          <p class="user-detail__eyebrow">Detalle de usuario</p>
+          <h2 id="userDetailName">Usuario</h2>
+        </div>
+        <button id="closeUserDetail" class="user-detail__close" type="button">Cerrar</button>
+      </div>
+
+      <div class="user-detail__stats" id="userDetailStats"></div>
+
+      <div class="user-detail__grid">
+        <div class="user-detail__block">
+          <h3>Información general</h3>
+          <div id="userDetailInfo" class="user-detail__meta"></div>
+        </div>
+
+        <div class="user-detail__block">
+          <h3>Últimos pedidos</h3>
+          <div id="userDetailOrders" class="user-detail__orders"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
+<script>
+  // @ts-nocheck
+  const usersMessage = document.getElementById("usersMessage");
+  const usersLoading = document.getElementById("usersLoading");
+  const usersTableWrap = document.getElementById("usersTableWrap");
+  const usersTableBody = document.getElementById("usersTableBody");
+  const usersEmpty = document.getElementById("usersEmpty");
+  const userDetailSection = document.getElementById("userDetailSection");
+  const userDetailName = document.getElementById("userDetailName");
+  const userDetailStats = document.getElementById("userDetailStats");
+  const userDetailInfo = document.getElementById("userDetailInfo");
+  const userDetailOrders = document.getElementById("userDetailOrders");
+  const closeUserDetail = document.getElementById("closeUserDetail");
+
+  let allUsers = [];
+
+  async function requestAdminApi(endpoint, options) {
+    const response = await fetch(`/backend/api/admin/${String(endpoint || "").replace(/^\/+/, "")}`, {
+      credentials: "include",
+      ...(options || {}),
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_error) {
+      data = null;
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+      error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+    };
+  }
+
+  function setLoading(isLoading) {
+    if (usersLoading) {
+      usersLoading.hidden = !isLoading;
+    }
+  }
+
+  function showMessage(text, kind = "info") {
+    if (!usersMessage) return;
+    usersMessage.hidden = !text;
+    usersMessage.className = `users-admin__message is-${kind}`;
+    usersMessage.textContent = text || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return String(value);
+
+    return dt.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function roleLabel(value) {
+    return String(value || "").toLowerCase() === "admin" ? "Admin" : "Cliente";
+  }
+
+  function roleClass(value) {
+    return String(value || "").toLowerCase() === "admin" ? "is-admin" : "is-client";
+  }
+
+  function statusLabel(value) {
+    return String(value || "").toLowerCase() === "activo" ? "Activo" : "Desactivado";
+  }
+
+  function statusClass(value) {
+    return String(value || "").toLowerCase() === "activo" ? "is-active" : "is-inactive";
+  }
+
+  function renderUsers() {
+    if (!usersTableWrap || !usersTableBody || !usersEmpty) return;
+
+    if (!allUsers.length) {
+      usersTableWrap.hidden = true;
+      usersTableBody.innerHTML = "";
+      usersEmpty.hidden = false;
+      return;
+    }
+
+    usersEmpty.hidden = true;
+    usersTableWrap.hidden = false;
+
+    usersTableBody.innerHTML = allUsers.map((user) => `
+      <tr>
+        <td>
+          <p class="user-main">${escapeHtml(user.nombre || "-")}</p>
+          <span class="user-sub">Alta ${escapeHtml(formatDate(user.creado_en))}</span>
+        </td>
+        <td>
+          <p class="user-main">${escapeHtml(user.email || "-")}</p>
+          <span class="user-sub">${escapeHtml(user.telefono || "Sin teléfono")}</span>
+        </td>
+        <td>
+          <span class="user-pill ${roleClass(user.rol)}">${roleLabel(user.rol)}</span>
+        </td>
+        <td>
+          <span class="user-pill ${statusClass(user.estado)}">${statusLabel(user.estado)}</span>
+        </td>
+        <td>
+          <p class="user-main">${escapeHtml(user.ciudad || "Sin ciudad")}</p>
+        </td>
+        <td>
+          <p class="user-main">${Number(user.puntos || 0)}</p>
+          <span class="user-sub">${Number(user.pedidos || 0)} pedidos</span>
+        </td>
+        <td>
+          <button type="button" class="user-btn" data-view-user="${Number(user.id || 0)}">Ver detalle</button>
+        </td>
+      </tr>
+    `).join("");
+
+    usersTableBody.querySelectorAll("[data-view-user]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const userId = Number(button.getAttribute("data-view-user") || 0);
+        if (!userId) return;
+        await loadUserDetail(userId);
+      });
+    });
+  }
+
+  async function loadUsers() {
+    setLoading(true);
+    showMessage("");
+
+    try {
+      const result = await requestAdminApi("usuarios-list.php");
+
+      if (!result.ok) {
+        throw new Error(result.error || "No se pudieron cargar los usuarios");
+      }
+
+      allUsers = Array.isArray(result.data?.usuarios) ? result.data.usuarios : [];
+      renderUsers();
+    } catch (error) {
+      allUsers = [];
+      renderUsers();
+      showMessage(error instanceof Error ? error.message : "No se pudieron cargar los usuarios", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUserDetail(userId) {
+    showMessage("");
+
+    try {
+      const result = await requestAdminApi(`usuario-detalle.php?id=${encodeURIComponent(userId)}`);
+
+      if (!result.ok) {
+        throw new Error(result.error || "No se pudo cargar el detalle del usuario");
+      }
+
+      const detalle = result.data?.detalle || {};
+      const usuario = detalle.usuario || {};
+      const resumen = detalle.resumen || {};
+      const pedidos = Array.isArray(detalle.pedidos_recientes) ? detalle.pedidos_recientes : [];
+
+      if (userDetailName) {
+        userDetailName.textContent = usuario.nombre || "Usuario";
+      }
+
+      if (userDetailStats) {
+        userDetailStats.innerHTML = `
+          <article class="user-stat">
+            <span class="user-stat__label">Pedidos</span>
+            <strong>${Number(resumen.pedidos || 0)}</strong>
+          </article>
+          <article class="user-stat">
+            <span class="user-stat__label">Devoluciones</span>
+            <strong>${Number(resumen.devoluciones || 0)}</strong>
+          </article>
+          <article class="user-stat">
+            <span class="user-stat__label">Opiniones</span>
+            <strong>${Number(resumen.opiniones || 0)}</strong>
+          </article>
+          <article class="user-stat">
+            <span class="user-stat__label">Favoritos</span>
+            <strong>${Number(resumen.favoritos || 0)}</strong>
+          </article>
+          <article class="user-stat">
+            <span class="user-stat__label">Gasto total</span>
+            <strong>${Number(resumen.gasto_total || 0).toFixed(2)} €</strong>
+          </article>
+          <article class="user-stat">
+            <span class="user-stat__label">Puntos</span>
+            <strong>${Number(usuario.puntos || 0)}</strong>
+          </article>
+        `;
+      }
+
+      if (userDetailInfo) {
+        userDetailInfo.innerHTML = `
+          <p><strong>ID</strong><span>${escapeHtml(usuario.id)}</span></p>
+          <p><strong>Email</strong><span>${escapeHtml(usuario.email)}</span></p>
+          <p><strong>Rol</strong><span>${escapeHtml(roleLabel(usuario.rol))}</span></p>
+          <p><strong>Estado</strong><span>${escapeHtml(statusLabel(usuario.estado))}</span></p>
+          <p><strong>Teléfono</strong><span>${escapeHtml(usuario.telefono)}</span></p>
+          <p><strong>Dirección</strong><span>${escapeHtml(usuario.direccion)}</span></p>
+          <p><strong>Ciudad</strong><span>${escapeHtml(usuario.ciudad)}</span></p>
+          <p><strong>Código postal</strong><span>${escapeHtml(usuario.codigo_postal)}</span></p>
+          <p><strong>Alta</strong><span>${escapeHtml(formatDate(usuario.creado_en))}</span></p>
+          <p><strong>Última actualización</strong><span>${escapeHtml(formatDate(usuario.actualizado_en))}</span></p>
+        `;
+      }
+
+      if (userDetailOrders) {
+        userDetailOrders.innerHTML = pedidos.length
+          ? pedidos.map((pedido) => `
+              <article class="user-order">
+                <div>
+                  <p class="user-order__ref">${escapeHtml(pedido.referencia || "-")}</p>
+                  <span class="user-order__date">${escapeHtml(formatDate(pedido.fecha))}</span>
+                </div>
+                <div>
+                  <p class="user-order__total">${Number(pedido.total || 0).toFixed(2)} €</p>
+                  <span class="user-order__state">${escapeHtml(pedido.estado || "-")}</span>
+                </div>
+              </article>
+            `).join("")
+          : `<p class="user-detail__none">Este usuario no tiene pedidos todavía.</p>`;
+      }
+
+      if (userDetailSection) {
+        userDetailSection.hidden = false;
+      }
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : "No se pudo cargar el detalle del usuario", "error");
+    }
+  }
+
+  closeUserDetail?.addEventListener("click", () => {
+    if (userDetailSection) {
+      userDetailSection.hidden = true;
+    }
+  });
+
+  loadUsers();
+</script>
+
+<style is:global>
+  .users-admin {
+    display: grid;
+    gap: 10px;
+  }
+
+  .users-admin__head h1 {
+    font-size: 1.04rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f4f4f4;
+  }
+
+  .users-admin__message {
+    border-radius: 7px;
+    border: 1px solid #232323;
+    padding: 8px 10px;
+    background: #161616;
+    font-size: 0.68rem;
+  }
+
+  .users-admin__message.is-error {
+    border-color: rgba(116, 38, 38, 0.32);
+    color: #c56b6b;
+  }
+
+  .users-admin__message.is-success {
+    border-color: rgba(19, 108, 58, 0.28);
+    color: #63c78d;
+  }
+
+  .users-admin__loading,
+  .users-admin__empty,
+  .user-detail-card {
+    background: #111;
+    border: 1px solid #1b1b1b;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .users-admin__spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(215, 255, 0, 0.22);
+    border-top-color: #d7ff00;
+    display: inline-block;
+    margin-right: 7px;
+    animation: users-spin 0.9s linear infinite;
+  }
+
+  .users-admin__table-wrap {
+    overflow: hidden;
+    border: 1px solid #171717;
+    background: transparent;
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .users-table thead th {
+    background: #101010;
+    color: #59606a;
+    font-size: 0.44rem;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid #171717;
+  }
+
+  .users-table tbody tr {
+    background: #121212;
+  }
+
+  .users-table tbody tr:nth-child(even) {
+    background: #101010;
+  }
+
+  .users-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #141414;
+    vertical-align: middle;
+    font-size: 0.58rem;
+  }
+
+  .users-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .user-main {
+    margin: 0;
+    color: #d7d7d7;
+    font-weight: 700;
+    line-height: 1.28;
+  }
+
+  .user-sub {
+    display: block;
+    margin-top: 3px;
+    color: #4b4b4b;
+    font-size: 0.42rem;
+    line-height: 1.25;
+  }
+
+  .user-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    min-height: 17px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.42rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+
+  .user-pill.is-admin {
+    background: rgba(215, 255, 0, 0.12);
+    border-color: rgba(215, 255, 0, 0.18);
+    color: #d7ff00;
+  }
+
+  .user-pill.is-client {
+    background: rgba(57, 57, 57, 0.45);
+    border-color: rgba(70, 70, 70, 0.28);
+    color: #bdbdbd;
+  }
+
+  .user-pill.is-active {
+    background: rgba(11, 74, 39, 0.4);
+    border-color: rgba(18, 105, 57, 0.2);
+    color: #20bc63;
+  }
+
+  .user-pill.is-inactive {
+    background: rgba(76, 21, 21, 0.38);
+    border-color: rgba(111, 33, 33, 0.22);
+    color: #b44d4d;
+  }
+
+  .user-btn,
+  .user-detail__close {
+    appearance: none;
+    -webkit-appearance: none;
+    min-height: 20px;
+    padding: 0 10px;
+    border-radius: 3px;
+    border: 1px solid #2c2c2c;
+    background: #151515;
+    font-size: 0.46rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ddd;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .user-btn:hover,
+  .user-detail__close:hover {
+    background: #1b1b1b;
+    border-color: #333;
+  }
+
+  .user-detail-shell {
+    margin-top: 6px;
+  }
+
+  .user-detail__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .user-detail__eyebrow {
+    color: #5d5d5d;
+    font-size: 0.45rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .user-detail__header h2 {
+    font-size: 0.92rem;
+    color: #f0f0f0;
+  }
+
+  .user-detail__stats {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .user-stat {
+    background: #0d0d0d;
+    border: 1px solid #181818;
+    border-radius: 7px;
+    padding: 10px;
+  }
+
+  .user-stat__label {
+    display: block;
+    color: #5d5d5d;
+    font-size: 0.42rem;
+    margin-bottom: 4px;
+  }
+
+  .user-stat strong {
+    color: #f4f4f4;
+    font-size: 0.67rem;
+  }
+
+  .user-detail__grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 12px;
+  }
+
+  .user-detail__block {
+    background: #0d0d0d;
+    border: 1px solid #181818;
+    border-radius: 7px;
+    padding: 12px;
+  }
+
+  .user-detail__block h3 {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: #f0f0f0;
+    margin-bottom: 10px;
+  }
+
+  .user-detail__meta {
+    display: grid;
+    gap: 8px;
+  }
+
+  .user-detail__meta p {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    color: #cfcfcf;
+    font-size: 0.56rem;
+  }
+
+  .user-detail__meta strong {
+    color: #727272;
+    font-weight: 700;
+  }
+
+  .user-detail__orders {
+    display: grid;
+    gap: 8px;
+  }
+
+  .user-order {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 1px solid #181818;
+    border-radius: 7px;
+    background: #121212;
+  }
+
+  .user-order__ref,
+  .user-order__total {
+    margin: 0;
+    color: #e0e0e0;
+    font-size: 0.56rem;
+    font-weight: 700;
+  }
+
+  .user-order__date,
+  .user-order__state,
+  .user-detail__none {
+    color: #555;
+    font-size: 0.44rem;
+  }
+
+  @keyframes users-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .users-admin__table-wrap {
+      overflow-x: auto;
+    }
+
+    .users-table {
+      min-width: 760px;
+    }
+
+    .user-detail__stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .user-detail__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .user-detail__stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .user-detail__meta p {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+  }
+</style>

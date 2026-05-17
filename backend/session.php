@@ -21,8 +21,46 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 // Iniciamos la sesión para poder leer los datos guardados del usuario
 session_start();
 
+require_once __DIR__ . "/conexion.php";
+
 // Indicamos que la respuesta será JSON
 header("Content-Type: application/json; charset=utf-8");
+
+if (isset($_SESSION["usuario_id"])) {
+    try {
+        // Releemos el usuario desde la base de datos para no depender de un rol
+        // viejo guardado en la sesión.
+        $stmt = $conexion->prepare("
+            SELECT id, nombre, email, rol, estado
+            FROM usuarios
+            WHERE id = :id
+            LIMIT 1
+        ");
+        $stmt->execute([
+            "id" => (int)$_SESSION["usuario_id"],
+        ]);
+
+        $usuarioActual = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$usuarioActual || ($usuarioActual["estado"] ?? "") !== "activo") {
+            $_SESSION = [];
+            session_destroy();
+        } else {
+            $_SESSION["usuario_id"] = $usuarioActual["id"];
+            $_SESSION["usuario_nombre"] = $usuarioActual["nombre"];
+            $_SESSION["usuario_email"] = $usuarioActual["email"];
+            $_SESSION["usuario_rol"] = $usuarioActual["rol"];
+        }
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode([
+            "ok" => false,
+            "error" => "No se pudo validar la sesión actual",
+            "detalle" => $e->getMessage()
+        ]);
+        exit;
+    }
+}
 
 // Devolvemos:
 // - si hay sesión iniciada

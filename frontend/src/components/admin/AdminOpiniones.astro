@@ -1,0 +1,599 @@
+<section class="reviews-admin">
+  <div class="reviews-admin__head">
+    <h1>OPINIONES</h1>
+  </div>
+
+  <div class="reviews-admin__tabs" id="reviewsTabs">
+    <button type="button" class="reviews-tab is-active" data-filter="pendiente">
+      Pendientes (<span id="reviewsCountPending">0</span>)
+    </button>
+    <button type="button" class="reviews-tab" data-filter="aprobada">Aprobadas</button>
+    <button type="button" class="reviews-tab" data-filter="rechazada">Rechazadas</button>
+    <button type="button" class="reviews-tab" data-filter="all">Todas</button>
+  </div>
+
+  <div id="reviewsMessage" class="reviews-admin__message" hidden></div>
+
+  <div id="reviewsLoading" class="reviews-admin__loading" hidden>
+    <span class="reviews-admin__spinner" aria-hidden="true"></span>
+    <span>Cargando opiniones...</span>
+  </div>
+
+  <div id="reviewsTableWrap" class="reviews-admin__table-wrap" hidden>
+    <table class="reviews-table">
+      <thead>
+        <tr>
+          <th>Nota</th>
+          <th>Comentario</th>
+          <th>Usuario</th>
+          <th>Producto</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="reviewsTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="reviewsEmpty" class="reviews-admin__empty" hidden>
+    <h2>No hay opiniones para mostrar</h2>
+    <p>Cambia el filtro o espera nuevas reseñas.</p>
+  </div>
+</section>
+
+<script>
+  // @ts-nocheck
+  const reviewsTabs = document.getElementById("reviewsTabs");
+  const reviewsMessage = document.getElementById("reviewsMessage");
+  const reviewsLoading = document.getElementById("reviewsLoading");
+  const reviewsTableWrap = document.getElementById("reviewsTableWrap");
+  const reviewsTableBody = document.getElementById("reviewsTableBody");
+  const reviewsEmpty = document.getElementById("reviewsEmpty");
+  const reviewsCountPending = document.getElementById("reviewsCountPending");
+
+  let currentFilter = "pendiente";
+  let allReviews = [];
+
+  async function requestAdminApi(endpoint, options) {
+    const response = await fetch(`/backend/api/admin/${String(endpoint || "").replace(/^\/+/, "")}`, {
+      credentials: "include",
+      ...(options || {}),
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_error) {
+      data = null;
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+      error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+    };
+  }
+
+  function setLoading(isLoading) {
+    if (reviewsLoading) {
+      reviewsLoading.hidden = !isLoading;
+    }
+  }
+
+  function showMessage(text, kind = "info") {
+    if (!reviewsMessage) return;
+    reviewsMessage.hidden = !text;
+    reviewsMessage.className = `reviews-admin__message is-${kind}`;
+    reviewsMessage.textContent = text || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    const diffMs = Date.now() - date.getTime();
+    const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+    if (diffDays === 0) return "hace 0 días";
+    if (diffDays === 1) return "hace 1 día";
+    if (diffDays < 7) return `hace ${diffDays} días`;
+
+    return date.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function renderStars(value) {
+    const rating = Math.max(1, Math.min(5, Number(value || 0)));
+    return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+  }
+
+  function getStatusLabel(status) {
+    switch (String(status || "").toLowerCase()) {
+      case "aprobada":
+        return "Aprobada";
+      case "rechazada":
+        return "Rechazada";
+      default:
+        return "Pendiente";
+    }
+  }
+
+  function getStatusClass(status) {
+    switch (String(status || "").toLowerCase()) {
+      case "aprobada":
+        return "is-approved";
+      case "rechazada":
+        return "is-rejected";
+      default:
+        return "is-pending";
+    }
+  }
+
+  function syncTabs() {
+    const pendingTotal = allReviews.filter(
+      (entry) => String(entry?.estado || "").toLowerCase() === "pendiente"
+    ).length;
+
+    if (reviewsCountPending) {
+      reviewsCountPending.textContent = String(pendingTotal);
+    }
+
+    reviewsTabs?.querySelectorAll("[data-filter]").forEach((button) => {
+      const isActive = button.getAttribute("data-filter") === currentFilter;
+      button.classList.toggle("is-active", isActive);
+    });
+  }
+
+  function filteredReviews() {
+    if (currentFilter === "all") {
+      return [...allReviews];
+    }
+
+    return allReviews.filter(
+      (entry) => String(entry?.estado || "").toLowerCase() === currentFilter
+    );
+  }
+
+  function actionsFor(entry) {
+    const id = Number(entry?.id || 0);
+    const status = String(entry?.estado || "").toLowerCase();
+
+    if (status === "pendiente") {
+      return `
+        <div class="review-actions">
+          <button type="button" class="review-btn is-approve" data-action="aprobada" data-id="${id}">Aprobar</button>
+          <button type="button" class="review-btn is-reject" data-action="rechazada" data-id="${id}">Rechazar</button>
+        </div>
+      `;
+    }
+
+    if (status === "aprobada") {
+      return `
+        <div class="review-actions">
+          <button type="button" class="review-btn is-delete" data-action="delete" data-id="${id}">Eliminar</button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="review-actions">
+        <button type="button" class="review-btn is-approve" data-action="aprobada" data-id="${id}">Aprobar</button>
+        <button type="button" class="review-btn is-delete" data-action="delete" data-id="${id}">Eliminar</button>
+      </div>
+    `;
+  }
+
+  function renderTable() {
+    if (!reviewsTableWrap || !reviewsTableBody || !reviewsEmpty) return;
+
+    syncTabs();
+    const rows = filteredReviews();
+
+    if (!rows.length) {
+      reviewsTableWrap.hidden = true;
+      reviewsTableBody.innerHTML = "";
+      reviewsEmpty.hidden = false;
+      return;
+    }
+
+    reviewsEmpty.hidden = true;
+    reviewsTableWrap.hidden = false;
+
+    reviewsTableBody.innerHTML = rows.map((entry) => {
+      const status = String(entry?.estado || "pendiente").toLowerCase();
+      const verified = Number(entry?.compra_verificada || 0) > 0;
+      const reviewMeta = verified ? "Talla M verificada ✓" : "Talla sin verificar";
+
+      return `
+        <tr class="${status === "pendiente" ? "" : "is-dimmed"}">
+          <td>
+            <div class="review-score ${status === "aprobada" ? "is-approved" : ""}">${escapeHtml(renderStars(entry?.puntuacion || 0))}</div>
+          </td>
+          <td>
+            <p class="review-comment">"${escapeHtml(entry?.comentario || "")}"</p>
+          </td>
+          <td>
+            <p class="review-main">${escapeHtml(entry?.usuario_nombre || "-")}</p>
+            <span class="review-sub">${escapeHtml(reviewMeta)}</span>
+          </td>
+          <td>
+            <p class="review-main review-main--product">${escapeHtml(entry?.producto_nombre || "-")}</p>
+          </td>
+          <td>
+            <span class="review-sub">${escapeHtml(formatDate(entry?.creado_en))}</span>
+          </td>
+          <td>
+            <span class="review-status ${getStatusClass(status)}">${getStatusLabel(status)}</span>
+          </td>
+          <td>
+            ${actionsFor(entry)}
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    reviewsTableBody.querySelectorAll("[data-action]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const opinionId = Number(button.getAttribute("data-id") || 0);
+        const action = button.getAttribute("data-action") || "";
+        if (!opinionId || !action) return;
+
+        try {
+          if (action === "delete") {
+            const result = await requestAdminApi("opinion-delete.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ opinion_id: opinionId }),
+            });
+
+            if (!result.ok) {
+              throw new Error(result.error || "No se pudo eliminar la opinión");
+            }
+
+            allReviews = allReviews.filter((entry) => Number(entry?.id || 0) !== opinionId);
+            showMessage("Opinión eliminada correctamente", "success");
+            renderTable();
+            return;
+          }
+
+          const result = await requestAdminApi("opinion-estado-update.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              opinion_id: opinionId,
+              estado: action,
+            }),
+          });
+
+          if (!result.ok) {
+            throw new Error(result.error || "No se pudo actualizar la opinión");
+          }
+
+          allReviews = allReviews.map((entry) => (
+            Number(entry?.id || 0) === opinionId
+              ? { ...entry, estado: action }
+              : entry
+          ));
+
+          showMessage(`Opinión marcada como ${getStatusLabel(action)}`, "success");
+          renderTable();
+        } catch (error) {
+          showMessage(error instanceof Error ? error.message : "No se pudo completar la acción", "error");
+        }
+      });
+    });
+  }
+
+  async function loadOpiniones() {
+    setLoading(true);
+    showMessage("");
+
+    try {
+      const query = currentFilter === "all" ? "" : `?estado=${encodeURIComponent(currentFilter)}`;
+      const result = await requestAdminApi(`opiniones-list.php${query}`);
+
+      if (!result.ok) {
+        throw new Error(result.error || "No se pudieron cargar las opiniones");
+      }
+
+      allReviews = Array.isArray(result.data?.opiniones) ? result.data.opiniones : [];
+      renderTable();
+    } catch (error) {
+      allReviews = [];
+      renderTable();
+      showMessage(error instanceof Error ? error.message : "No se pudieron cargar las opiniones", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  reviewsTabs?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+
+    const filter = target.getAttribute("data-filter");
+    if (!filter) return;
+
+    currentFilter = filter;
+    loadOpiniones();
+  });
+
+  loadOpiniones();
+</script>
+
+<style is:global>
+  .reviews-admin {
+    display: grid;
+    gap: 10px;
+  }
+
+  .reviews-admin__head h1 {
+    font-size: 1.04rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f4f4f4;
+  }
+
+  .reviews-admin__tabs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .reviews-tab {
+    min-height: 20px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid #272727;
+    background: #1a1a1a;
+    color: #707070;
+    font-size: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .reviews-tab:hover {
+    border-color: #313131;
+    color: #9a9a9a;
+  }
+
+  .reviews-tab.is-active {
+    background: #d7ff00;
+    border-color: #d7ff00;
+    color: #111;
+  }
+
+  .reviews-admin__message {
+    border-radius: 7px;
+    border: 1px solid #232323;
+    padding: 8px 10px;
+    background: #161616;
+    font-size: 0.68rem;
+  }
+
+  .reviews-admin__message.is-error {
+    border-color: rgba(116, 38, 38, 0.32);
+    color: #c56b6b;
+  }
+
+  .reviews-admin__message.is-success {
+    border-color: rgba(19, 108, 58, 0.28);
+    color: #63c78d;
+  }
+
+  .reviews-admin__loading,
+  .reviews-admin__empty {
+    background: #111;
+    border: 1px solid #1b1b1b;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .reviews-admin__spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(215, 255, 0, 0.22);
+    border-top-color: #d7ff00;
+    display: inline-block;
+    margin-right: 7px;
+    animation: reviews-spin 0.9s linear infinite;
+  }
+
+  .reviews-admin__table-wrap {
+    overflow: hidden;
+    border: 1px solid #171717;
+    background: transparent;
+  }
+
+  .reviews-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .reviews-table thead th {
+    background: #101010;
+    color: #59606a;
+    font-size: 0.44rem;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid #171717;
+  }
+
+  .reviews-table tbody tr {
+    background: #121212;
+  }
+
+  .reviews-table tbody tr:nth-child(even) {
+    background: #101010;
+  }
+
+  .reviews-table tbody tr.is-dimmed {
+    opacity: 0.42;
+  }
+
+  .reviews-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #141414;
+    vertical-align: middle;
+    font-size: 0.58rem;
+  }
+
+  .reviews-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .review-score {
+    color: #d7ff00;
+    font-size: 0.52rem;
+    letter-spacing: 0.13em;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .review-score.is-approved {
+    color: #1ea95c;
+  }
+
+  .review-comment,
+  .review-main {
+    margin: 0;
+    color: #d4d4d4;
+    font-weight: 700;
+    line-height: 1.22;
+  }
+
+  .review-comment {
+    max-width: 152px;
+    font-size: 0.5rem;
+  }
+
+  .review-main {
+    font-size: 0.49rem;
+  }
+
+  .review-main--product {
+    font-size: 0.47rem;
+  }
+
+  .review-sub {
+    display: block;
+    margin-top: 3px;
+    color: #4b4b4b;
+    font-size: 0.4rem;
+    line-height: 1.2;
+  }
+
+  .review-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    min-height: 17px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.42rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+
+  .review-status.is-pending {
+    background: rgba(122, 86, 10, 0.34);
+    border-color: rgba(141, 98, 12, 0.22);
+    color: #d0a021;
+  }
+
+  .review-status.is-approved {
+    background: rgba(11, 74, 39, 0.4);
+    border-color: rgba(18, 105, 57, 0.2);
+    color: #20bc63;
+  }
+
+  .review-status.is-rejected {
+    background: rgba(76, 21, 21, 0.38);
+    border-color: rgba(111, 33, 33, 0.22);
+    color: #b44d4d;
+  }
+
+  .review-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .review-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    min-height: 20px;
+    padding: 0 10px;
+    border-radius: 3px;
+    border: 1px solid #2c2c2c;
+    background: #151515;
+    font-size: 0.46rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ddd;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .review-btn.is-approve {
+    color: #23bb64;
+    border-color: rgba(17, 114, 61, 0.28);
+    background: rgba(11, 74, 39, 0.28);
+  }
+
+  .review-btn.is-approve:hover {
+    background: rgba(11, 74, 39, 0.42);
+  }
+
+  .review-btn.is-reject,
+  .review-btn.is-delete {
+    color: #b34d4d;
+    border-color: rgba(111, 33, 33, 0.28);
+    background: rgba(76, 21, 21, 0.22);
+  }
+
+  .review-btn.is-reject:hover,
+  .review-btn.is-delete:hover {
+    background: rgba(76, 21, 21, 0.36);
+  }
+
+  @keyframes reviews-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .reviews-admin__table-wrap {
+      overflow-x: auto;
+    }
+
+    .reviews-table {
+      min-width: 860px;
+    }
+  }
+</style>

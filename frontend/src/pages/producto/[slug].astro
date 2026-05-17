@@ -12,7 +12,7 @@ export async function getStaticPaths() {
   const { products } = await fetchCatalogData();
   return (products as Product[]).map((product: Product) => ({
     params: { slug: product.slug },
-    props: { slug: product.slug }
+    props: { slug: product.slug },
   }));
 }
 
@@ -35,7 +35,9 @@ if (!product) {
   throw new Error("Producto no encontrado");
 }
 
-const productStock = allStock.find((item: StockEntry) => item.productSlug === product.slug);
+const productStock = allStock.find(
+  (item: StockEntry) => item.productSlug === product.slug,
+);
 const gallery = product.images?.length ? product.images : [product.image];
 // Opiniones dinámicas
 let reviewsList = [];
@@ -45,19 +47,23 @@ const typeLabel = product.type.charAt(0).toUpperCase() + product.type.slice(1);
 const isAccessory = product.type === "accesorio";
 
 const rawSizes = Object.keys(productStock?.bySize ?? {});
-const sizesArray: string[] = Array.isArray(rawSizes) ? rawSizes : [rawSizes as unknown as string];
+const sizesArray: string[] = Array.isArray(rawSizes)
+  ? rawSizes
+  : [rawSizes as unknown as string];
 const sizeOptions = sizesArray.map((size: string) => {
   const sizeStock = productStock?.bySize?.[size]?.stock ?? 0;
   return {
     size,
     stock: sizeStock,
     available: sizeStock > 0,
-    sku: productStock?.bySize?.[size]?.sku ?? `DMH-${product.id}-${size}`
+    sku: productStock?.bySize?.[size]?.sku ?? `DMH-${product.id}-${size}`,
   };
 });
 
 const relatedProducts = allProducts
-  .filter((item: Product) => item.id !== product.id && item.type === product.type)
+  .filter(
+    (item: Product) => item.id !== product.id && item.type === product.type,
+  )
   .slice(0, 4);
 ---
 
@@ -67,7 +73,9 @@ const relatedProducts = allProducts
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/">Inicio</a>
         <span>/</span>
-        <a id="sourceBreadcrumbLink" href={sourceLink.href}>{sourceLink.label}</a>
+        <a id="sourceBreadcrumbLink" href={sourceLink.href}
+          >{sourceLink.label}</a
+        >
         <span>/</span>
         <span>{product.title}</span>
       </nav>
@@ -75,31 +83,53 @@ const relatedProducts = allProducts
       <div class="product-detail__grid">
         <div class="gallery">
           <div class="gallery__carousel">
-            <button class="carousel__btn carousel__btn--prev" id="carouselPrev" aria-label="Imagen anterior">&#8592;</button>
+            <button
+              class="carousel__btn carousel__btn--prev"
+              id="carouselPrev"
+              aria-label="Imagen anterior">&#8592;</button
+            >
             <div class="gallery__slides" id="gallerySlides">
-              {gallery.map((img, i) => (
-                <div class={`gallery__slide${i === 0 ? ' is-active' : ''}`} data-index={String(i)}>
-                  {img.startsWith('/') || img.startsWith('http')
-                    ? <img src={img} alt={`${product.title} - imagen ${i + 1}`} class="gallery__img" />
-                    : <span class="gallery__placeholder-label">{img.replace('-', ' ')}</span>
-                  }
-                </div>
-              ))}
+              {
+                gallery.map((img, i) => (
+                  <div
+                    class={`gallery__slide${i === 0 ? " is-active" : ""}`}
+                    data-index={String(i)}
+                  >
+                    {img.startsWith("/") || img.startsWith("http") ? (
+                      <img
+                        src={img}
+                        alt={`${product.title} - imagen ${i + 1}`}
+                        class="gallery__img"
+                      />
+                    ) : (
+                      <span class="gallery__placeholder-label">
+                        {img.replace("-", " ")}
+                      </span>
+                    )}
+                  </div>
+                ))
+              }
             </div>
-            <button class="carousel__btn carousel__btn--next" id="carouselNext" aria-label="Imagen siguiente">&#8594;</button>
+            <button
+              class="carousel__btn carousel__btn--next"
+              id="carouselNext"
+              aria-label="Imagen siguiente">&#8594;</button
+            >
           </div>
-          {gallery.length > 1 && (
-            <div class="carousel__dots" id="carouselDots">
-              {gallery.map((_image, index) => (
-                <button
-                  type="button"
-                  class={`carousel__dot ${index === 0 ? "is-active" : ""}`}
-                  data-index={String(index)}
-                  aria-label={`Ir a imagen ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
+          {
+            gallery.length > 1 && (
+              <div class="carousel__dots" id="carouselDots">
+                {gallery.map((_image, index) => (
+                  <button
+                    type="button"
+                    class={`carousel__dot ${index === 0 ? "is-active" : ""}`}
+                    data-index={String(index)}
+                    aria-label={`Ir a imagen ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )
+          }
         </div>
 
         <div
@@ -117,13 +147,23 @@ const relatedProducts = allProducts
           <p class="product-info__type">{product.category} · {typeLabel}</p>
           <h1>{product.title}</h1>
           <div class="product-info__rating">
-            <span id="productRatingStars">{"★".repeat(Math.floor(averageRating))}{"☆".repeat(5 - Math.floor(averageRating))}</span>
+            <span id="productRatingStars"
+              >{"★".repeat(Math.floor(averageRating))}{
+                "☆".repeat(5 - Math.floor(averageRating))
+              }</span
+            >
             <strong id="productRatingValue">{averageRating.toFixed(1)}</strong>
             <span id="productRatingCount">({reviewCount} reseñas)</span>
           </div>
 
           <div class="product-info__price">
-            {product.originalPrice && <span class="old-price">{product.originalPrice.toFixed(2)}€</span>}
+            {
+              product.originalPrice && (
+                <span class="old-price">
+                  {product.originalPrice.toFixed(2)}€
+                </span>
+              )
+            }
             <span class="current-price">{product.price.toFixed(2)}€</span>
           </div>
 
@@ -136,42 +176,63 @@ const relatedProducts = allProducts
             </div>
             <div>
               <span class="meta-label">Stock total</span>
-              <span class="meta-value">{productStock?.totalStock ?? 0} uds.</span>
+              <span class="meta-value"
+                >{productStock?.totalStock ?? 0} uds.</span
+              >
             </div>
           </div>
 
-          {!isAccessory && (
-            <div class="size-selector" id="sizeSelector">
-              <p class="section-label">Talla</p>
-              <div class="size-selector__grid">
-                {sizeOptions.map((option, index) => (
-                  <label class={`size-pill ${!option.available ? "is-disabled" : ""}`}>
-                    <input
-                      type="radio"
-                      name="size"
-                      value={option.size}
-                      data-stock={option.stock}
-                      data-sku={option.sku}
-                      disabled={!option.available}
-                      checked={index === 0 && option.available}
-                    />
-                    <span>{option.size}</span>
-                  </label>
-                ))}
+          {
+            !isAccessory && (
+              <div class="size-selector" id="sizeSelector">
+                <p class="section-label">Talla</p>
+                <div class="size-selector__grid">
+                  {sizeOptions.map((option, index) => (
+                    <label
+                      class={`size-pill ${!option.available ? "is-disabled" : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name="size"
+                        value={option.size}
+                        data-stock={option.stock}
+                        data-sku={option.sku}
+                        disabled={!option.available}
+                        checked={index === 0 && option.available}
+                      />
+                      <span>{option.size}</span>
+                    </label>
+                  ))}
+                </div>
+                <p class="size-selector__hint" id="sizeHint">
+                  Selecciona una talla disponible
+                </p>
               </div>
-              <p class="size-selector__hint" id="sizeHint">Selecciona una talla disponible</p>
-            </div>
-          )}
+            )
+          }
 
           <div class="buy-box">
             <label class="quantity">
               <span>Cantidad</span>
-              <input id="quantityInput" type="number" min="1" max="10" value="1" />
+              <input
+                id="quantityInput"
+                type="number"
+                min="1"
+                max="10"
+                value="1"
+              />
             </label>
-            <button class="btn-primary" type="button" id="addToCartBtn">Añadir al carrito</button>
+            <button class="btn-primary" type="button" id="addToCartBtn"
+              >Añadir al carrito</button
+            >
           </div>
 
-          <button class="btn-secondary" type="button" id="toggleWishlistBtn" data-product-slug={product.slug}>
+          <button
+            class="btn-secondary"
+            type="button"
+            id="toggleWishlistBtn"
+            data-product-slug={product.slug}
+          >
             ♡ Añadir a wishlist
           </button>
 
@@ -182,7 +243,6 @@ const relatedProducts = allProducts
           </ul>
         </div>
       </div>
-
 
       <section class="reviews-feed">
         <div class="section-head">
@@ -207,25 +267,30 @@ const relatedProducts = allProducts
           <h2>También te puede gustar</h2>
         </div>
         <div class="related__grid">
-          {relatedProducts.map((item: Product) => (
-            <article
-              class="related-card"
-              data-slug={item.slug}
-              tabindex="0"
-              role="link"
-              aria-label={`Ver ${item.title}`}
-            >
-              <div class="related-card__image">
-                {item.image.startsWith('/') || item.image.startsWith('http') ? (
-                  <img src={item.image} alt={item.title} loading="lazy" />
-                ) : (
-                  <span class="related-card__image-placeholder">{item.image}</span>
-                )}
-              </div>
-              <h3>{item.title}</h3>
-              <p>{item.price.toFixed(2)}€</p>
-            </article>
-          ))}
+          {
+            relatedProducts.map((item: Product) => (
+              <article
+                class="related-card"
+                data-slug={item.slug}
+                tabindex="0"
+                role="link"
+                aria-label={`Ver ${item.title}`}
+              >
+                <div class="related-card__image">
+                  {item.image.startsWith("/") ||
+                  item.image.startsWith("http") ? (
+                    <img src={item.image} alt={item.title} loading="lazy" />
+                  ) : (
+                    <span class="related-card__image-placeholder">
+                      {item.image}
+                    </span>
+                  )}
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.price.toFixed(2)}€</p>
+              </article>
+            ))
+          }
         </div>
       </section>
     </div>
@@ -234,7 +299,9 @@ const relatedProducts = allProducts
   <script>
     // @ts-nocheck
     // --- Opiniones dinámicas ---
-    const productId = Number(document.getElementById("productInfo")?.dataset.productId);
+    const productId = Number(
+      document.getElementById("productInfo")?.dataset.productId,
+    );
     const reviewsListDiv = document.getElementById("reviewsList");
     const reviewCountP = document.getElementById("reviewCount");
     const reviewFormContainer = document.getElementById("reviewFormContainer");
@@ -250,7 +317,9 @@ const relatedProducts = allProducts
       }
 
       try {
-        const result = await requestApi("perfil.php", { credentials: "include" });
+        const result = await requestApi("perfil.php", {
+          credentials: "include",
+        });
         if (result.ok && result.data?.usuario?.rol === "cliente") {
           currentUser = result.data.usuario;
         }
@@ -277,7 +346,10 @@ const relatedProducts = allProducts
     function updateProductRating(opiniones) {
       const total = Array.isArray(opiniones) ? opiniones.length : 0;
       const average = total
-        ? opiniones.reduce((sum, opinion) => sum + Number(opinion.puntuacion || 0), 0) / total
+        ? opiniones.reduce(
+            (sum, opinion) => sum + Number(opinion.puntuacion || 0),
+            0,
+          ) / total
         : 0;
 
       if (productRatingStars) {
@@ -301,9 +373,10 @@ const relatedProducts = allProducts
         return window.dmhFetchJson(endpoint, options || {});
       }
 
-      const fallbackBase = typeof window.dmhApiUrl === "function"
-        ? window.dmhApiUrl(endpoint)
-        : `/backend/api/${endpoint}`;
+      const fallbackBase =
+        typeof window.dmhApiUrl === "function"
+          ? window.dmhApiUrl(endpoint)
+          : `/backend/api/${endpoint}`;
       const response = await fetch(fallbackBase, options || {});
       let data = null;
       try {
@@ -315,45 +388,79 @@ const relatedProducts = allProducts
         ok: response.ok,
         status: response.status,
         data,
-        error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+        error:
+          data?.error ||
+          (!response.ok ? `Error HTTP ${response.status}` : null),
       };
     }
 
     async function fetchOpiniones() {
       if (!productId || !reviewsListDiv) return;
+
       try {
         await ensureCurrentUser();
-        const result = await requestApi(`opiniones.php?producto_id=${productId}`, {
-          credentials: "include",
-        });
+
+        const result = await requestApi(
+          `opiniones.php?producto_id=${productId}`,
+          {
+            credentials: "include",
+          },
+        );
+
         if (!result.ok) {
           throw new Error(result.error || "Error cargando opiniones");
         }
 
         const opiniones = result.data?.opiniones || [];
-        updateProductRating(opiniones);
+        const opinionesAprobadas = opiniones.filter(
+          (op) => String(op?.estado || "aprobada").toLowerCase() === "aprobada",
+        );
+
+        updateProductRating(opinionesAprobadas);
 
         const currentUserId = Number(currentUser?.id || 0);
-        currentUserOpinion = opiniones.find((op) => Number(op.usuario_id || 0) === currentUserId) || null;
+        currentUserOpinion =
+          opiniones.find(
+            (op) => Number(op.usuario_id || 0) === currentUserId,
+          ) || null;
+
         renderReviewForm();
 
         let html = "";
+
         opiniones.forEach((op) => {
-          const isOwnOpinion = currentUserId > 0 && Number(op.usuario_id || 0) === currentUserId;
+          const isOwnOpinion =
+            currentUserId > 0 && Number(op.usuario_id || 0) === currentUserId;
+          const estadoOpinion = String(op.estado || "aprobada").toLowerCase();
+
+          if (!isOwnOpinion && estadoOpinion !== "aprobada") {
+            return;
+          }
+
           const ownInlineStyle = isOwnOpinion
             ? " style='border: 2px solid #C8FF00; border-radius: 1rem; padding: 1.2rem 1.25rem; box-shadow: 0 0 0 1px rgba(200, 255, 0, 0.35), 0 0 20px rgba(200, 255, 0, 0.2);'"
             : "";
+
+          const ownStatusBadge =
+            isOwnOpinion && estadoOpinion !== "aprobada"
+              ? `<span class='review-card__badge review-card__badge--status'>${estadoOpinion === "pendiente" ? "Pendiente de revisión" : "No publicada"}</span>`
+              : "";
+
           html += `<article class='review-card${isOwnOpinion ? " review-card--own" : ""}'${ownInlineStyle}>
-            ${isOwnOpinion ? "<span class='review-card__badge'>Tu opinión</span>" : ""}
-            <header>
-              <h3>${escapeHtml(op.nombre)}</h3>
-              <span class='review-card__stars' aria-label='${Number(op.puntuacion || 0)} de 5 estrellas'>${renderStars(op.puntuacion)}</span>
-            </header>
-            <p>${escapeHtml(op.comentario)}</p>
-            <footer><span>${escapeHtml(String(op.creado_en || "").split(" ")[0])}</span></footer>
-          </article>`;
+        ${isOwnOpinion ? "<span class='review-card__badge'>Tu opinión</span>" : ""}
+        ${ownStatusBadge}
+        <header>
+          <h3>${escapeHtml(op.nombre)}</h3>
+          <span class='review-card__stars' aria-label='${Number(op.puntuacion || 0)} de 5 estrellas'>${renderStars(op.puntuacion)}</span>
+        </header>
+        <p>${escapeHtml(op.comentario)}</p>
+        <footer><span>${escapeHtml(String(op.creado_en || "").split(" ")[0])}</span></footer>
+      </article>`;
         });
-        reviewsListDiv.innerHTML = html || "<article class='review-empty'><p>Aún no hay opiniones para este producto. Sé la primera persona en valorar cómo cae y cómo se siente.</p></article>";
+
+        reviewsListDiv.innerHTML =
+          html ||
+          "<article class='review-empty'><p>Aún no hay opiniones para este producto. Sé la primera persona en valorar cómo cae y cómo se siente.</p></article>";
       } catch (_e) {
         reviewsListDiv.innerHTML = `<article class='review-empty review-empty--error'><p>No se pudieron cargar las opiniones.</p></article>`;
         if (reviewCountP) {
@@ -361,7 +468,6 @@ const relatedProducts = allProducts
         }
       }
     }
-
     // --- Formulario solo para miembros ---
     async function renderReviewForm() {
       await ensureCurrentUser();
@@ -372,21 +478,43 @@ const relatedProducts = allProducts
       }
 
       if (currentUserOpinion) {
+        const estadoActual = String(
+          currentUserOpinion.estado || "aprobada",
+        ).toLowerCase();
+        const tituloEstado =
+          estadoActual === "pendiente"
+            ? "Tu opinión está pendiente"
+            : estadoActual === "rechazada"
+              ? "Tu opinión no fue aprobada"
+              : "Ya has dado tu opinión";
+
+        const textoEstado =
+          estadoActual === "pendiente"
+            ? "Tu opinión se ha guardado correctamente y quedará visible cuando el equipo la apruebe."
+            : estadoActual === "rechazada"
+              ? "Tu opinión no está visible públicamente. Si quieres, puedes borrarla y enviar una nueva."
+              : "Por ayudarnos con tu valoración. Si quieres escribir otra opinión, primero debemos borrar la anterior.";
+
+        const pieEstado =
+          estadoActual === "aprobada"
+            ? "Tu opinión actual seguirá visible hasta que la borres."
+            : "Tu opinión actual no es pública mientras no esté aprobada.";
+
         reviewFormContainer.innerHTML = `
-          <div class='review-form review-form--done'>
-            <div class='review-form__header'>
-              <div>
-                <p class='review-form__eyebrow'>Solo para miembros</p>
-                <h3>Ya has dado tu opinión</h3>
-              </div>
-            </div>
-            <p class='review-form__done-text'>Por ayudarnos con tu valoración. Si quieres escribir otra opinión, primero debemos borrar la anterior.</p>
-            <div class='review-form__footer'>
-              <p>Tu opinión actual seguirá visible hasta que la borres.</p>
-              <button type='button' class='btn-primary review-form__submit' id='rewriteReviewBtn'>Volver a opinar</button>
-            </div>
-          </div>
-        `;
+    <div class='review-form review-form--done'>
+      <div class='review-form__header'>
+        <div>
+          <p class='review-form__eyebrow'>Solo para miembros</p>
+          <h3>${tituloEstado}</h3>
+        </div>
+      </div>
+      <p class='review-form__done-text'>${textoEstado}</p>
+      <div class='review-form__footer'>
+        <p>${pieEstado}</p>
+        <button type='button' class='btn-primary review-form__submit' id='rewriteReviewBtn'>Volver a opinar</button>
+      </div>
+    </div>
+  `;
 
         const rewriteBtn = document.getElementById("rewriteReviewBtn");
         if (rewriteBtn instanceof HTMLButtonElement) {
@@ -404,18 +532,28 @@ const relatedProducts = allProducts
                   });
 
                   if (!result.ok) {
-                    throw new Error(result.error || "No se pudo borrar la opinión");
+                    throw new Error(
+                      result.error || "No se pudo borrar la opinión",
+                    );
                   }
 
-                  window.showToast?.("Opinión borrada. Ya puedes escribir una nueva.", "success");
+                  window.showToast?.(
+                    "Opinión borrada. Ya puedes escribir una nueva.",
+                    "success",
+                  );
                   currentUserOpinion = null;
                   await fetchOpiniones();
                   renderReviewForm();
                 } catch (error) {
-                  window.showToast?.(error instanceof Error ? error.message : "No se pudo borrar la opinión", "error");
+                  window.showToast?.(
+                    error instanceof Error
+                      ? error.message
+                      : "No se pudo borrar la opinión",
+                    "error",
+                  );
                 }
               },
-              { confirmText: "Borrar opinión", cancelText: "Cancelar" }
+              { confirmText: "Borrar opinión", cancelText: "Cancelar" },
             );
           });
         }
@@ -459,24 +597,26 @@ const relatedProducts = allProducts
       const msg = document.getElementById("reviewFormMsg");
       const ratingInput = document.getElementById("ratingInput");
       const ratingValueInput = document.getElementById("reviewRatingValue");
-      const ratingButtons = Array.from(document.querySelectorAll(".rating-input__star"));
+      const ratingButtons = Array.from(
+        document.querySelectorAll(".rating-input__star"),
+      );
       const fieldContainers = document.querySelectorAll(".review-form__field");
-      
+
       if (!(form instanceof HTMLFormElement) || !(msg instanceof HTMLElement)) {
         return;
       }
 
       // Fix textarea container layout
-      fieldContainers.forEach(field => {
+      fieldContainers.forEach((field) => {
         if (!(field instanceof HTMLElement)) return;
         field.style.display = "flex";
         field.style.flexDirection = "column";
         field.style.gap = "0.75rem";
         field.style.width = "100%";
       });
-      
+
       // Fix textarea styling
-      const textarea = form.querySelector('textarea');
+      const textarea = form.querySelector("textarea");
       if (textarea) {
         textarea.style.minHeight = "120px";
         textarea.style.borderRadius = "8px";
@@ -505,15 +645,16 @@ const relatedProducts = allProducts
           if (!(button instanceof HTMLButtonElement)) return;
           const buttonRating = Number(button.dataset.rating || 0);
           const isActive = buttonRating <= rating && rating > 0;
-          
+
           // Toggle class
           button.classList.toggle("is-active", isActive);
           button.setAttribute("aria-pressed", isActive ? "true" : "false");
-          
+
           // Apply inline styles as fallback
           if (isActive) {
             button.style.color = "#C8FF00";
-            button.style.textShadow = "0 0 12px #C8FF00, 0 0 24px rgba(200, 255, 0, 0.5)";
+            button.style.textShadow =
+              "0 0 12px #C8FF00, 0 0 24px rgba(200, 255, 0, 0.5)";
             button.style.transform = "scale(1.15)";
             button.style.fontSize = "2.5rem";
           } else {
@@ -528,7 +669,7 @@ const relatedProducts = allProducts
       ratingButtons.forEach((button) => {
         if (!(button instanceof HTMLButtonElement)) return;
         const buttonRating = Number(button.dataset.rating || 0);
-        
+
         // Set initial styles
         button.style.fontSize = "2.5rem";
         button.style.cursor = "pointer";
@@ -537,17 +678,22 @@ const relatedProducts = allProducts
         button.style.padding = "0";
         button.style.color = "rgba(255, 255, 255, 0.32)";
         button.style.transition = "all 0.15s ease";
-        
+
         button.addEventListener("click", () => paintRating(buttonRating));
         button.addEventListener("mouseenter", () => {
           button.style.color = "#C8FF00";
-          button.style.textShadow = "0 0 10px #C8FF00, 0 0 20px rgba(200, 255, 0, 0.4)";
+          button.style.textShadow =
+            "0 0 10px #C8FF00, 0 0 20px rgba(200, 255, 0, 0.4)";
           button.style.transform = "scale(1.2)";
         });
-        button.addEventListener("mouseleave", () => paintRating(selectedRating));
+        button.addEventListener("mouseleave", () =>
+          paintRating(selectedRating),
+        );
       });
 
-      ratingInput?.addEventListener("mouseleave", () => paintRating(selectedRating));
+      ratingInput?.addEventListener("mouseleave", () =>
+        paintRating(selectedRating),
+      );
       paintRating(0);
 
       form.addEventListener("submit", async (e) => {
@@ -563,35 +709,49 @@ const relatedProducts = allProducts
         const body = JSON.stringify({
           producto_id: productId,
           puntuacion: rating,
-          comentario: fd.get("comentario")
+          comentario: fd.get("comentario"),
         });
         try {
           const result = await requestApi("opiniones.php", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body
+            body,
           });
           if (!result.ok) throw new Error(result.error || "Error");
-          msg.textContent = "¡Opinión enviada!";
+          msg.textContent = "Opinión enviada. Pendiente de revisión.";
           form.reset();
-            paintRating(0);
+          paintRating(0);
           fetchOpiniones();
         } catch (err) {
-            const errorText = err instanceof Error ? err.message : "No se pudo enviar";
-            if (errorText.includes("Ya has opinado")) {
-              window.showToast?.("Ya has dado tu opinión. Gracias por tu valoración.", "info");
-              currentUserOpinion = currentUserOpinion || (await requestApi(`opiniones.php?producto_id=${productId}`, { credentials: "include" })).data?.opiniones?.find((op) => Number(op.usuario_id || 0) === Number(currentUser?.id || 0)) || null;
-              await fetchOpiniones();
-              renderReviewForm();
-              return;
-            }
-            msg.textContent = errorText;
+          const errorText =
+            err instanceof Error ? err.message : "No se pudo enviar";
+          if (errorText.includes("Ya has opinado")) {
+            window.showToast?.(
+              "Ya has dado tu opinión. Gracias por tu valoración.",
+              "info",
+            );
+            currentUserOpinion =
+              currentUserOpinion ||
+              (
+                await requestApi(`opiniones.php?producto_id=${productId}`, {
+                  credentials: "include",
+                })
+              ).data?.opiniones?.find(
+                (op) =>
+                  Number(op.usuario_id || 0) === Number(currentUser?.id || 0),
+              ) ||
+              null;
+            await fetchOpiniones();
+            renderReviewForm();
+            return;
+          }
+          msg.textContent = errorText;
         }
       });
     }
 
-      renderReviewForm();
+    renderReviewForm();
     fetchOpiniones();
     // @ts-nocheck
     const sourceLinks = {
@@ -605,7 +765,9 @@ const relatedProducts = allProducts
     const currentSourceLink =
       sourceLinks[currentSourceSlug] || sourceLinks.catalogo;
 
-    const sourceBreadcrumbLink = document.getElementById("sourceBreadcrumbLink");
+    const sourceBreadcrumbLink = document.getElementById(
+      "sourceBreadcrumbLink",
+    );
     if (sourceBreadcrumbLink instanceof HTMLAnchorElement) {
       sourceBreadcrumbLink.href = currentSourceLink.href;
       sourceBreadcrumbLink.textContent = currentSourceLink.label;
@@ -625,12 +787,20 @@ const relatedProducts = allProducts
 
     function goTo(index) {
       currentIndex = (index + carouselSlides.length) % carouselSlides.length;
-      carouselSlides.forEach((s, i) => s.classList.toggle("is-active", i === currentIndex));
-      dots.forEach((dot, i) => dot.classList.toggle("is-active", i === currentIndex));
+      carouselSlides.forEach((s, i) =>
+        s.classList.toggle("is-active", i === currentIndex),
+      );
+      dots.forEach((dot, i) =>
+        dot.classList.toggle("is-active", i === currentIndex),
+      );
     }
 
-    document.getElementById("carouselPrev")?.addEventListener("click", () => goTo(currentIndex - 1));
-    document.getElementById("carouselNext")?.addEventListener("click", () => goTo(currentIndex + 1));
+    document
+      .getElementById("carouselPrev")
+      ?.addEventListener("click", () => goTo(currentIndex - 1));
+    document
+      .getElementById("carouselNext")
+      ?.addEventListener("click", () => goTo(currentIndex + 1));
     dots.forEach((dot) => {
       dot.addEventListener("click", () => goTo(Number(dot.dataset.index || 0)));
     });
@@ -666,7 +836,10 @@ const relatedProducts = allProducts
       const selected = getSelectedSizeInput();
 
       if (!isAccessory && !selected) {
-        (window as any).showToast?.("Selecciona una talla disponible.", "error");
+        (window as any).showToast?.(
+          "Selecciona una talla disponible.",
+          "error",
+        );
         return;
       }
 
@@ -675,7 +848,10 @@ const relatedProducts = allProducts
         ? Number(productInfo.dataset.productTotalStock || 0)
         : Number(selected?.dataset.stock || 0);
       if (quantity > stock) {
-        (window as any).showToast?.("No hay suficiente stock para esa cantidad.", "error");
+        (window as any).showToast?.(
+          "No hay suficiente stock para esa cantidad.",
+          "error",
+        );
         return;
       }
 
@@ -693,7 +869,7 @@ const relatedProducts = allProducts
         color: productInfo.dataset.productColor,
         size,
         sku,
-        quantity
+        quantity,
       };
 
       /** @type {Array<{slug: string, size: string, quantity: number}>} */
@@ -734,7 +910,8 @@ const relatedProducts = allProducts
       }
 
       const slugs = result.data?.favoritos || [];
-      const normalized = window.dmhFavorites?.set?.(slugs, "product-detail-fetch") || slugs;
+      const normalized =
+        window.dmhFavorites?.set?.(slugs, "product-detail-fetch") || slugs;
       return { authorized: true, slugs: normalized };
     }
 
@@ -772,8 +949,13 @@ const relatedProducts = allProducts
       if (!(toggleWishlistBtn instanceof HTMLButtonElement)) {
         return;
       }
-      toggleWishlistBtn.textContent = isFavorite ? "♥ En wishlist" : "♡ Añadir a wishlist";
-      toggleWishlistBtn.setAttribute("aria-pressed", isFavorite ? "true" : "false");
+      toggleWishlistBtn.textContent = isFavorite
+        ? "♥ En wishlist"
+        : "♡ Añadir a wishlist";
+      toggleWishlistBtn.setAttribute(
+        "aria-pressed",
+        isFavorite ? "true" : "false",
+      );
       toggleWishlistBtn.classList.toggle("is-active", isFavorite);
     }
 
@@ -807,20 +989,30 @@ const relatedProducts = allProducts
         }
 
         const isFavorite = (window.dmhFavorites?.get?.() || []).includes(slug);
-        const result = isFavorite ? await removeFavorite(slug) : await addFavorite(slug);
+        const result = isFavorite
+          ? await removeFavorite(slug)
+          : await addFavorite(slug);
 
         if (!result.ok) {
           if (result.status === 401) {
             window.location.href = "/login";
             return;
           }
-          (window as any).showToast?.(result.error || "No se pudo actualizar favoritos", "error");
+          (window as any).showToast?.(
+            result.error || "No se pudo actualizar favoritos",
+            "error",
+          );
           return;
         }
 
         const nowFav = !isFavorite;
         paintWishlistButton(nowFav);
-        (window as any).showToast?.(nowFav ? "Producto añadido a wishlist" : "Producto eliminado de wishlist", "success");
+        (window as any).showToast?.(
+          nowFav
+            ? "Producto añadido a wishlist"
+            : "Producto eliminado de wishlist",
+          "success",
+        );
       });
 
       window.addEventListener("wishlist-updated", (event) => {
@@ -836,10 +1028,15 @@ const relatedProducts = allProducts
     document.querySelectorAll(".related-card").forEach((card) => {
       const slug = card.getAttribute("data-slug");
       if (!slug) return;
-      card.addEventListener("click", () => { window.location.href = productUrlWithSource(slug); });
+      card.addEventListener("click", () => {
+        window.location.href = productUrlWithSource(slug);
+      });
       card.addEventListener("keydown", (e) => {
         if (!(e instanceof KeyboardEvent)) return;
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.href = productUrlWithSource(slug); }
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          window.location.href = productUrlWithSource(slug);
+        }
       });
     });
   </script>
@@ -868,7 +1065,7 @@ const relatedProducts = allProducts
   }
 
   .breadcrumb a {
-    color: #C8FF00;
+    color: #c8ff00;
   }
 
   .product-detail__grid {
@@ -904,7 +1101,7 @@ const relatedProducts = allProducts
   }
   .review-card {
     background: #e100ff;
-    border: 1px solid #C8FF00;
+    border: 1px solid #c8ff00;
     border-radius: 0.5rem;
     padding: 1rem 1.5rem;
     box-shadow: 0 1px 4px #0001;
@@ -986,8 +1183,12 @@ const relatedProducts = allProducts
     place-items: center;
     transition: background var(--transition-fast);
   }
-  .carousel__btn--prev { left: 0.75rem; }
-  .carousel__btn--next { right: 0.75rem; }
+  .carousel__btn--prev {
+    left: 0.75rem;
+  }
+  .carousel__btn--next {
+    right: 0.75rem;
+  }
   .carousel__btn:hover {
     background: rgba(0, 0, 0, 0.8);
   }
@@ -997,7 +1198,11 @@ const relatedProducts = allProducts
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.32s ease;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(0, 0, 0, 0.22)
+    );
   }
 
   .gallery__slide.is-active {
@@ -1026,8 +1231,8 @@ const relatedProducts = allProducts
     letter-spacing: 0.18em;
     background: repeating-linear-gradient(
       45deg,
-      rgba(255,255,255,0.02) 0px,
-      rgba(255,255,255,0.02) 1px,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
       transparent 1px,
       transparent 12px
     );
@@ -1039,7 +1244,8 @@ const relatedProducts = allProducts
     height: 56px;
     border: 2px solid rgba(200, 255, 0, 0.25);
     border-radius: 50%;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(200,255,0,0.4)' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='M21 15l-5-5L5 21'/%3E%3C/svg%3E") center/32px no-repeat;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(200,255,0,0.4)' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='M21 15l-5-5L5 21'/%3E%3C/svg%3E")
+      center/32px no-repeat;
   }
 
   .carousel__btn {
@@ -1064,8 +1270,12 @@ const relatedProducts = allProducts
     background: rgba(0, 0, 0, 0.8);
   }
 
-  .carousel__btn--prev { left: 0.75rem; }
-  .carousel__btn--next { right: 0.75rem; }
+  .carousel__btn--prev {
+    left: 0.75rem;
+  }
+  .carousel__btn--next {
+    right: 0.75rem;
+  }
 
   .carousel__dots {
     display: flex;
@@ -1086,7 +1296,7 @@ const relatedProducts = allProducts
   }
 
   .carousel__dot.is-active {
-    background: #C8FF00;
+    background: #c8ff00;
   }
 
   .product-info {
@@ -1121,7 +1331,7 @@ const relatedProducts = allProducts
   }
 
   .product-info__rating strong {
-    color: #C8FF00;
+    color: #c8ff00;
   }
 
   .product-info__price {
@@ -1136,7 +1346,7 @@ const relatedProducts = allProducts
   }
 
   .current-price {
-    color: #C8FF00;
+    color: #c8ff00;
     font-size: 2rem;
     font-weight: 800;
   }
@@ -1199,8 +1409,8 @@ const relatedProducts = allProducts
   }
 
   .size-pill:has(input:checked) {
-    border-color: #C8FF00;
-    color: #C8FF00;
+    border-color: #c8ff00;
+    color: #c8ff00;
   }
 
   .size-pill.is-disabled {
@@ -1241,7 +1451,7 @@ const relatedProducts = allProducts
     min-height: 46px;
     border: none;
     border-radius: var(--border-radius-normal);
-    background: #C8FF00;
+    background: #c8ff00;
     color: #090909;
     font-weight: 800;
     cursor: pointer;
@@ -1259,7 +1469,7 @@ const relatedProducts = allProducts
 
   .btn-secondary.is-active {
     border-color: rgba(200, 255, 0, 0.55);
-    color: #C8FF00;
+    color: #c8ff00;
     background: rgba(200, 255, 0, 0.08);
   }
 
@@ -1317,7 +1527,11 @@ const relatedProducts = allProducts
     border-color: rgba(200, 255, 0, 1);
     border-radius: 1rem;
     padding: 1.2rem 1.25rem;
-    background: linear-gradient(180deg, rgba(200, 255, 0, 0.08), rgba(17, 17, 17, 0.98));
+    background: linear-gradient(
+      180deg,
+      rgba(200, 255, 0, 0.08),
+      rgba(17, 17, 17, 0.98)
+    );
     outline: 3px solid rgba(255, 255, 255, 0.95);
     outline-offset: -8px;
     box-shadow:
@@ -1334,20 +1548,25 @@ const relatedProducts = allProducts
     border-radius: 999px;
     background: rgba(200, 255, 0, 0.12);
     border: 1px solid rgba(200, 255, 0, 0.28);
-    color: #C8FF00;
+    color: #c8ff00;
     font-size: 0.76rem;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-
+  .review-card__badge--status {
+    margin-left: 0.45rem;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #f5f5f5;
+  }
   .review-card::before {
     content: "";
     display: block;
     width: 56px;
     height: 3px;
     border-radius: 999px;
-    background: #C8FF00;
+    background: #c8ff00;
     margin-bottom: 0.1rem;
   }
 
@@ -1384,7 +1603,7 @@ const relatedProducts = allProducts
   }
 
   .review-card footer strong {
-    color: #C8FF00;
+    color: #c8ff00;
   }
 
   .review-form {
@@ -1393,7 +1612,11 @@ const relatedProducts = allProducts
     border-radius: var(--border-radius-card);
     border: 1px solid rgba(200, 255, 0, 0.16);
     background:
-      linear-gradient(135deg, rgba(200, 255, 0, 0.08), rgba(255, 255, 255, 0.02) 28%),
+      linear-gradient(
+        135deg,
+        rgba(200, 255, 0, 0.08),
+        rgba(255, 255, 255, 0.02) 28%
+      ),
       #111111;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
     display: grid;
@@ -1431,7 +1654,7 @@ const relatedProducts = allProducts
     border-radius: 999px;
     border: 1px solid rgba(200, 255, 0, 0.18);
     background: rgba(200, 255, 0, 0.08);
-    color: #C8FF00;
+    color: #c8ff00;
     font-weight: 800;
     letter-spacing: 0.08em;
   }
@@ -1517,14 +1740,18 @@ const relatedProducts = allProducts
   }
 
   .rating-input__star:is(.is-active) {
-    color: #C8FF00 !important;
-    text-shadow: 0 0 12px #C8FF00, 0 0 24px rgba(200, 255, 0, 0.5) !important;
+    color: #c8ff00 !important;
+    text-shadow:
+      0 0 12px #c8ff00,
+      0 0 24px rgba(200, 255, 0, 0.5) !important;
     transform: scale(1.15) !important;
   }
 
   .rating-input__star:hover {
-    color: #C8FF00 !important;
-    text-shadow: 0 0 10px #C8FF00, 0 0 20px rgba(200, 255, 0, 0.4) !important;
+    color: #c8ff00 !important;
+    text-shadow:
+      0 0 10px #c8ff00,
+      0 0 20px rgba(200, 255, 0, 0.4) !important;
     transform: scale(1.2) !important;
   }
 
@@ -1544,7 +1771,7 @@ const relatedProducts = allProducts
 
   .review-form--done {
     max-width: 640px;
-    border: 2px solid #C8FF00;
+    border: 2px solid #c8ff00;
     box-shadow:
       inset 0 0 0 1px rgba(200, 255, 0, 0.2),
       0 0 0 1px rgba(200, 255, 0, 0.28),
@@ -1563,7 +1790,7 @@ const relatedProducts = allProducts
     padding: 0 1.15rem;
     border: none;
     border-radius: var(--border-radius-normal);
-    background: #C8FF00;
+    background: #c8ff00;
     color: #090909;
     font-weight: 800;
     cursor: pointer;
@@ -1611,7 +1838,11 @@ const relatedProducts = allProducts
   .related-card__image {
     height: 190px;
     border-radius: var(--border-radius-normal);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(0, 0, 0, 0.22)
+    );
     display: grid;
     place-items: center;
     overflow: hidden;

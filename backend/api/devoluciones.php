@@ -92,6 +92,102 @@ function dmh_try_restore_stock(PDO $conexion, array $row): void {
     ]);
 }
 
+function dmh_update_pedido_estado_si_todo_devuelto(PDO $conexion, int $pedidoId): void {
+    $stmtItemCount = $conexion->prepare(
+        "SELECT id, cantidad FROM items_pedido WHERE pedido_id = :pedido_id"
+    );
+    $stmtItemCount->execute(["pedido_id" => $pedidoId]);
+    $itemsPedido = $stmtItemCount->fetchAll(PDO::FETCH_ASSOC);
+
+    $todoDevuelto = true;
+
+    foreach ($itemsPedido as $itemPedido) {
+        $itemId = (int)$itemPedido["id"];
+        $cantidadItem = (int)$itemPedido["cantidad"];
+
+        $stmtAccepted = $conexion->prepare(
+            "SELECT COALESCE(SUM(cantidad_devuelta), 0)
+             FROM devoluciones
+             WHERE item_pedido_id = :item_id
+               AND estado = 'aceptada'"
+        );
+        $stmtAccepted->execute(["item_id" => $itemId]);
+        $cantidadAceptada = (int)$stmtAccepted->fetchColumn();
+
+        if ($cantidadAceptada < $cantidadItem) {
+            $todoDevuelto = false;
+            break;
+        }
+    }
+
+    if ($todoDevuelto) {
+        $stmtPedido = $conexion->prepare(
+            "UPDATE pedidos
+             SET estado = 'devuelto'
+             WHERE id = :pedido_id"
+        );
+        $stmtPedido->execute(["pedido_id" => $pedidoId]);
+    }
+}
+
+function dmh_update_return_status(PDO $conexion, int $devolucionId, string $estado): array {
+    if ($devolucionId <= 0) {
+        throw new InvalidArgumentException("ID de devolución inválido");
+    }
+
+    if (!in_array($estado, ["pendiente", "aceptada", "rechazada"], true)) {
+        throw new InvalidArgumentException("Estado de devolución inválido");
+    }
+
+    $conexion->beginTransaction();
+
+    $stmtLock = $conexion->prepare(
+        "SELECT d.id, d.estado, d.pedido_id, d.item_pedido_id, d.cantidad_devuelta,
+                i.slug, i.talla, i.color, i.sku
+         FROM devoluciones d
+         INNER JOIN items_pedido i ON i.id = d.item_pedido_id
+         WHERE d.id = :id
+         LIMIT 1
+         FOR UPDATE"
+    );
+    $stmtLock->execute(["id" => $devolucionId]);
+    $row = $stmtLock->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        $conexion->rollBack();
+        throw new RuntimeException("Devolución no encontrada");
+    }
+
+    $estadoAnterior = mb_strtolower(trim((string)($row["estado"] ?? "")));
+
+    $stmtUpdate = $conexion->prepare(
+        "UPDATE devoluciones
+         SET estado = :estado
+         WHERE id = :id"
+    );
+    $stmtUpdate->execute([
+        "estado" => $estado,
+        "id" => $devolucionId,
+    ]);
+
+    if ($estadoAnterior !== "aceptada" && $estado === "aceptada") {
+        dmh_try_restore_stock($conexion, $row);
+    }
+
+    if ($estado === "aceptada") {
+        dmh_update_pedido_estado_si_todo_devuelto($conexion, (int)$row["pedido_id"]);
+    }
+
+    $conexion->commit();
+
+    return [
+        "ok" => true,
+        "mensaje" => "Estado de devolución actualizado",
+        "devolucion_id" => $devolucionId,
+        "estado" => $estado,
+    ];
+}
+
 if ($usuarioId <= 0) {
     http_response_code(401);
     echo json_encode(["ok" => false, "error" => "Debes iniciar sesión"]);
@@ -152,7 +248,11 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         exit;
     } catch (Throwable $e) {
         http_response_code(500);
-        echo json_encode(["ok" => false, "error" => "No se pudieron cargar las devoluciones", "detalle" => $e->getMessage()]);
+        echo json_encode([
+            "ok" => false,
+            "error" => "No se pudieron cargar las devoluciones",
+            "detalle" => $e->getMessage()
+        ]);
         exit;
     }
 }
@@ -160,6 +260,15 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {
         $body = dmh_json_body();
+
+        if (dmh_is_admin($usuarioRol) && isset($body["devolucion_id"], $body["estado"])) {
+            $devolucionId = (int)($body["devolucion_id"] ?? 0);
+            $estado = mb_strtolower(trim((string)($body["estado"] ?? "")));
+
+            $resultado = dmh_update_return_status($conexion, $devolucionId, $estado);
+            echo json_encode($resultado);
+            exit;
+        }
 
         $pedidoId = (int)($body["pedido_id"] ?? 0);
         $itemPedidoId = (int)($body["item_pedido_id"] ?? 0);
@@ -286,7 +395,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ],
         ]);
         exit;
+    } catch (InvalidArgumentException $e) {
+        http_response_code(400);
+        echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+        exit;
+    } catch (RuntimeException $e) {
+        if ($conexion->inTransaction()) {
+            $conexion->rollBack();
+        }
+
+        $status = $e->getMessage() === "Devolución no encontrada" ? 404 : 500;
+        http_response_code($status);
+        echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+        exit;
     } catch (Throwable $e) {
+        if ($conexion->inTransaction()) {
+            $conexion->rollBack();
+        }
+
         if ((int)$e->getCode() === 23000) {
             http_response_code(409);
             echo json_encode(["ok" => false, "error" => "No se pudo crear la devolución por conflicto de datos"]);
@@ -294,7 +420,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         http_response_code(500);
-        echo json_encode(["ok" => false, "error" => "No se pudo registrar la devolución", "detalle" => $e->getMessage()]);
+        echo json_encode([
+            "ok" => false,
+            "error" => "No se pudo registrar la devolución",
+            "detalle" => $e->getMessage()
+        ]);
         exit;
     }
 }
@@ -308,106 +438,24 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
 
     try {
         $body = dmh_json_body();
-
         $devolucionId = (int)($body["devolucion_id"] ?? 0);
         $estado = mb_strtolower(trim((string)($body["estado"] ?? "")));
 
-        if ($devolucionId <= 0) {
-            http_response_code(400);
-            echo json_encode(["ok" => false, "error" => "ID de devolución inválido"]);
-            exit;
-        }
-
-        if (!in_array($estado, ["pendiente", "aceptada", "rechazada"], true)) {
-            http_response_code(400);
-            echo json_encode(["ok" => false, "error" => "Estado de devolución inválido"]);
-            exit;
-        }
-
-        $conexion->beginTransaction();
-
-        $stmtLock = $conexion->prepare(
-            "SELECT d.id, d.estado, d.pedido_id, d.item_pedido_id, d.cantidad_devuelta,
-                    i.slug, i.talla, i.color, i.sku
-             FROM devoluciones d
-             INNER JOIN items_pedido i ON i.id = d.item_pedido_id
-             WHERE d.id = :id
-             LIMIT 1
-             FOR UPDATE"
-        );
-        $stmtLock->execute(["id" => $devolucionId]);
-        $row = $stmtLock->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
+        $resultado = dmh_update_return_status($conexion, $devolucionId, $estado);
+        echo json_encode($resultado);
+        exit;
+    } catch (InvalidArgumentException $e) {
+        http_response_code(400);
+        echo json_encode(["ok" => false, "error" => $e->getMessage()]);
+        exit;
+    } catch (RuntimeException $e) {
+        if ($conexion->inTransaction()) {
             $conexion->rollBack();
-            http_response_code(404);
-            echo json_encode(["ok" => false, "error" => "Devolución no encontrada"]);
-            exit;
         }
 
-        $estadoAnterior = mb_strtolower(trim((string)($row["estado"] ?? "")));
-
-        $stmtUpdate = $conexion->prepare(
-            "UPDATE devoluciones
-             SET estado = :estado
-             WHERE id = :id"
-        );
-        $stmtUpdate->execute([
-            "estado" => $estado,
-            "id" => $devolucionId,
-        ]);
-
-        if ($estadoAnterior !== "aceptada" && $estado === "aceptada") {
-            dmh_try_restore_stock($conexion, $row);
-        }
-
-        if ($estado === "aceptada") {
-            $pedidoId = (int)$row["pedido_id"];
-
-            $stmtItemCount = $conexion->prepare(
-                "SELECT id, cantidad FROM items_pedido WHERE pedido_id = :pedido_id"
-            );
-            $stmtItemCount->execute(["pedido_id" => $pedidoId]);
-            $itemsPedido = $stmtItemCount->fetchAll(PDO::FETCH_ASSOC);
-
-            $todoDevuelto = true;
-            foreach ($itemsPedido as $itemPedido) {
-                $itemId = (int)$itemPedido["id"];
-                $cantidadItem = (int)$itemPedido["cantidad"];
-
-                $stmtAccepted = $conexion->prepare(
-                    "SELECT COALESCE(SUM(cantidad_devuelta), 0)
-                     FROM devoluciones
-                     WHERE item_pedido_id = :item_id
-                       AND estado = 'aceptada'"
-                );
-                $stmtAccepted->execute(["item_id" => $itemId]);
-                $cantidadAceptada = (int)$stmtAccepted->fetchColumn();
-
-                if ($cantidadAceptada < $cantidadItem) {
-                    $todoDevuelto = false;
-                    break;
-                }
-            }
-
-            if ($todoDevuelto) {
-                $stmtPedido = $conexion->prepare(
-                    "UPDATE pedidos
-                     SET estado = 'devuelto'
-                     WHERE id = :pedido_id"
-                );
-                $stmtPedido->execute(["pedido_id" => $pedidoId]);
-            }
-        }
-
-        $conexion->commit();
-
-        echo json_encode([
-            "ok" => true,
-            "mensaje" => "Estado de devolución actualizado",
-            "devolucion_id" => $devolucionId,
-            "estado" => $estado,
-        ]);
+        $status = $e->getMessage() === "Devolución no encontrada" ? 404 : 500;
+        http_response_code($status);
+        echo json_encode(["ok" => false, "error" => $e->getMessage()]);
         exit;
     } catch (Throwable $e) {
         if ($conexion->inTransaction()) {
@@ -415,7 +463,11 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
         }
 
         http_response_code(500);
-        echo json_encode(["ok" => false, "error" => "No se pudo actualizar la devolución", "detalle" => $e->getMessage()]);
+        echo json_encode([
+            "ok" => false,
+            "error" => "No se pudo actualizar la devolución",
+            "detalle" => $e->getMessage()
+        ]);
         exit;
     }
 }
