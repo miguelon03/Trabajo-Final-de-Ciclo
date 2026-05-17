@@ -39,9 +39,32 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
           <p class="cart-summary__shipping-note" id="shippingNote"></p>
 
-          <button class="cart-checkout-btn" id="cartCheckoutBtn" type="button">
-            Finalizar compra
-          </button>
+<div id="puntosBox" style="
+  background: rgba(200,255,0,.08);
+  border: 1px solid rgba(200,255,0,.22);
+  border-radius: 12px;
+  padding: .75rem;
+  display: grid;
+  gap: .5rem;
+">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:.85rem;color:rgba(255,255,255,.8);">⭐ Tus puntos</span>
+    <strong id="puntosDisponiblesLabel" style="color:#c8ff00;font-size:.9rem;"></strong>
+  </div>
+  <label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;color:rgba(255,255,255,.75);cursor:pointer;">
+    <input type="checkbox" id="canjearPuntosCheck" style="accent-color:#c8ff00;" />
+    <span id="canjearPuntosLabel">Canjear puntos (descuento: 0,00 €)</span>
+  </label>
+</div>
+
+<div id="descuentoPuntosLine" class="cart-summary__line" hidden style="color:#c8ff00;">
+  <span>Descuento puntos</span>
+  <span id="descuentoPuntosValor">-0,00 €</span>
+</div>
+
+<button class="cart-checkout-btn" id="cartCheckoutBtn" type="button">
+  Finalizar compra
+</button>
 
           <a class="cart-continue-link" href="/catalogo">← Seguir comprando</a>
         </aside>
@@ -116,33 +139,18 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       </div>
 
       <div class="checkout-modal__paybox">
-        <strong>Método de pago</strong>
-        <p class="checkout-modal__hint">Simulación de pago con tarjeta. Introduce los datos como si fuera una compra real.</p>
-
-        <label>
-          <span>Titular de la tarjeta</span>
-          <input type="text" id="checkoutCardHolder" autocomplete="cc-name" placeholder="Nombre como aparece en la tarjeta" />
-        </label>
-
-        <label>
-          <span>Número de tarjeta</span>
-          <input type="text" id="checkoutCardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="23" />
-        </label>
-
-        <div class="checkout-modal__grid-2 checkout-modal__grid-2--compact">
-          <label>
-            <span>Caducidad</span>
-            <input type="text" id="checkoutCardExpiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5" />
-          </label>
-          <label>
-            <span>CVC</span>
-            <input type="text" id="checkoutCardCvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
-          </label>
-        </div>
-
-        <p class="checkout-modal__hint">No guardamos la tarjeta completa. Solo validamos el formato y registramos el pago como simulado.</p>
+      <strong>Método de pago</strong>
+      <p class="checkout-modal__hint">Pago seguro con Stripe. Usa la tarjeta de prueba: 4242 4242 4242 4242</p>
+      <div id="stripe-card-element" style="
+      background: #101010;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: .85rem .9rem;
+      "></div>
+      <div id="stripe-card-errors" style="color:#ff8484;font-size:.84rem;margin-top:.3rem;"></div>
+      <p class="checkout-modal__hint">Tus datos de pago están protegidos por Stripe y nunca pasan por nuestros servidores.</p>
       </div>
-
+      
       <p id="checkoutProfileMissing" class="checkout-modal__warn" hidden></p>
 
       <label class="checkout-modal__checkline">
@@ -295,7 +303,59 @@ import HomeLayout from "../layouts/HomeLayout.astro";
           noteEl.className = 'cart-summary__shipping-note';
         }
       }
+      updatePuntosUI();
     }
+
+ function updatePuntosUI() {
+  const puntosBox = document.getElementById('puntosBox');
+  const puntosLabel = document.getElementById('puntosDisponiblesLabel');
+  const puntosMensaje = document.getElementById('puntosMensaje');
+  const canjearRow = document.getElementById('canjearPuntosRow');
+  const canjearCheck = document.getElementById('canjearPuntosCheck');
+  const canjearLabel = document.getElementById('canjearPuntosLabel');
+  const descuentoLine = document.getElementById('descuentoPuntosLine');
+  const descuentoValor = document.getElementById('descuentoPuntosValor');
+  const totalEl = document.getElementById('summaryTotal');
+
+  if (!puntosBox || !isLoggedIn) {
+    if (puntosBox) puntosBox.style.display = 'none';
+    return;
+  }
+
+  puntosBox.style.display = 'grid';
+
+  const cart = getCart();
+  const subtotal = cart.reduce((s, item) => s + item.price * item.quantity, 0);
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  const total = subtotal + shipping;
+
+  const maxDescuento = round2(total * 0.20);
+  const descuentoSolicitado = round2(puntosDisponibles / PUNTOS_POR_EURO);
+  const descuento = Math.min(descuentoSolicitado, maxDescuento);
+
+  if (puntosLabel) puntosLabel.textContent = `${puntosDisponibles} pts`;
+
+  if (puntosDisponibles >= PUNTOS_MIN) {
+    if (puntosMensaje) puntosMensaje.textContent = `Equivalen a ${fmt(descuento)} de descuento`;
+    if (canjearRow) canjearRow.style.display = 'flex';
+    if (canjearLabel) canjearLabel.textContent = `Canjear ${puntosDisponibles} pts (−${fmt(descuento)})`;
+  } else {
+    const faltan = PUNTOS_MIN - puntosDisponibles;
+    if (puntosMensaje) puntosMensaje.textContent = puntosDisponibles > 0 ? `Te faltan ${faltan} pts para poder canjear` : 'Acumula puntos comprando';
+    if (canjearRow) canjearRow.style.display = 'none';
+    if (canjearCheck instanceof HTMLInputElement) canjearCheck.checked = false;
+  }
+
+  // Recalcular total sin descuento si no puede canjear
+  const canjear = puntosDisponibles >= PUNTOS_MIN && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
+  if (descuentoLine) descuentoLine.hidden = !canjear;
+  if (descuentoValor) descuentoValor.textContent = `-${fmt(descuento)}`;
+  if (totalEl) totalEl.textContent = fmt(canjear ? round2(total - descuento) : total);
+}
+
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
 
     // Vaciar carrito
     document.getElementById('cartClearBtn')?.addEventListener('click', () => {
@@ -306,7 +366,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       });
     });
 
-    // ── Checkout modal ─────────────────────────────────────────────────────
+    // ───────────────── Checkout modal ────────────────
     const overlay       = document.getElementById('checkoutOverlay');
     const checkoutClose = document.getElementById('checkoutClose');
     const guestFields   = document.getElementById('guestFields');
@@ -323,12 +383,15 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const direccionEl   = document.getElementById('checkoutDireccion');
     const ciudadEl      = document.getElementById('checkoutCiudad');
     const cpEl          = document.getElementById('checkoutCodigoPostal');
-    const cardHolderEl  = document.getElementById('checkoutCardHolder');
-    const cardNumberEl  = document.getElementById('checkoutCardNumber');
-    const cardExpiryEl  = document.getElementById('checkoutCardExpiry');
-    const cardCvcEl     = document.getElementById('checkoutCardCvc');
+    const cardHolderEl  = null;
+    const cardNumberEl  = null;
+    const cardExpiryEl  = null;
+    const cardCvcEl     = null;
     let isLoggedIn = false;
     let profileData = null;
+    let puntosDisponibles = 0;
+    const PUNTOS_MIN = 500;
+    const PUNTOS_POR_EURO = 100;
 
     async function checkSession() {
       try {
@@ -440,6 +503,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
 
       profileData = profileRes.data?.usuario || null;
+      puntosDisponibles = Number(profileData?.puntos || 0);
+      updatePuntosUI();
 
       assignVal(nombreEl, profileData?.nombre || '');
       assignVal(emailEl, profileData?.email || '');
@@ -503,10 +568,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       if (policyEl instanceof HTMLInputElement) {
         policyEl.checked = false;
       }
-      assignVal(cardHolderEl, '');
-      assignVal(cardNumberEl, '');
-      assignVal(cardExpiryEl, '');
-      assignVal(cardCvcEl, '');
+
       showMissingFieldsHint();
     }
 
@@ -521,11 +583,12 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       overlay.hidden = true;
       document.body.style.overflow = '';
     }
-
+    document.getElementById('canjearPuntosCheck')?.addEventListener('change', updatePuntosUI);
     checkoutBtn?.addEventListener('click', async () => {
       try {
         await prepareCheckoutState();
         openCheckout();
+        initStripe();
       } catch (error) {
         window.showToast?.(error?.message || 'No se pudo preparar el checkout', 'error');
       }
@@ -549,6 +612,46 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       assignVal(cardCvcEl, digitsOnly(inputVal(cardCvcEl)).slice(0, 4));
     });
 
+    
+          const STRIPE_PK = 'pk_test_51TY3cxJdVatqe0Q4IPR63l0RhrgFtOgIRKKvJu7ykBlWmppLZGfawi1JqFh6OFaWAOnQsbGZAypZnD2n08Hz0MI600q9SCjBkJ';
+let stripe = null;
+let stripeCard = null;
+
+  function initStripe() {
+  if (stripe) return;
+  stripe = window.Stripe(STRIPE_PK);
+  const elements = stripe.elements({
+    appearance: {
+      theme: 'night',
+      variables: {
+        colorPrimary: '#C8FF00',
+        colorBackground: '#101010',
+        colorText: '#ffffff',
+        colorDanger: '#ff8484',
+        fontFamily: 'inherit',
+        borderRadius: '10px',
+      }
+    }
+  });
+  stripeCard = elements.create('card', {
+    hidePostalCode: true,
+    style: {
+      base: {
+        color: '#fff',
+        fontFamily: 'inherit',
+        fontSize: '15px',
+        '::placeholder': { color: 'rgba(255,255,255,0.35)' },
+      },
+      invalid: { color: '#ff8484' },
+    }
+  });
+  stripeCard.mount('#stripe-card-element');
+  stripeCard.on('change', (event) => {
+    const errEl = document.getElementById('stripe-card-errors');
+    if (errEl) errEl.textContent = event.error ? event.error.message : '';
+  });
+}
+
     confirmBtn?.addEventListener('click', async () => {
       if (checkoutError) { checkoutError.hidden = true; checkoutError.textContent = ''; }
 
@@ -558,10 +661,6 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       const direccion = inputVal(direccionEl);
       const ciudad = inputVal(ciudadEl);
       const codigoPostal = inputVal(cpEl);
-      const cardHolder = inputVal(cardHolderEl);
-      const cardNumber = inputVal(cardNumberEl);
-      const cardExpiry = inputVal(cardExpiryEl);
-      const cardCvc = inputVal(cardCvcEl);
       if (!nombre || !email || !telefono || !direccion || !ciudad || !codigoPostal) {
         showCheckoutError('Completa todos los campos obligatorios para finalizar la compra');
         return;
@@ -572,26 +671,6 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         return;
       }
 
-      if (!cardHolder || cardHolder.length < 5) {
-        showCheckoutError('Introduce el nombre del titular de la tarjeta');
-        return;
-      }
-
-      if (!isValidCardNumber(cardNumber)) {
-        showCheckoutError('El número de tarjeta no es válido');
-        return;
-      }
-
-      if (!isValidExpiry(cardExpiry)) {
-        showCheckoutError('La fecha de caducidad no es válida');
-        return;
-      }
-
-      if (!/^\d{3,4}$/.test(digitsOnly(cardCvc))) {
-        showCheckoutError('El CVC debe tener 3 o 4 dígitos');
-        return;
-      }
-
       if (!(policyEl instanceof HTMLInputElement) || !policyEl.checked) {
         showCheckoutError('Debes aceptar las condiciones de compra para continuar');
         return;
@@ -599,7 +678,9 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       const direccionCompleta = `${direccion}, ${codigoPostal} ${ciudad}`;
 
-      const payload = { items: getCart(), direccion_envio: direccionCompleta };
+      const canjearCheck = document.getElementById('canjearPuntosCheck');
+      const canjear = isLoggedIn && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
+      const payload = { items: getCart(), direccion_envio: direccionCompleta, canjear_puntos: canjear };
 
       if (!isLoggedIn) {
         payload.nombre = nombre;
@@ -654,23 +735,47 @@ import HomeLayout from "../layouts/HomeLayout.astro";
           return;
         }
 
-        const paymentResult = await window.dmhFetchJson('pago_simulado.php', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pedido_id: result.data.pedido_id,
-            titular: cardHolder,
-            tarjeta_ultimos4: digitsOnly(cardNumber).slice(-4),
-            tarjeta_mascara: maskedCard(cardNumber),
-            caducidad: cardExpiry,
-          }),
+      // Creamos PaymentIntent en el servidor
+      const intentResult = await window.dmhFetchJson('pago_stripe.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedido_id: result.data.pedido_id }),
         });
-
-        if (!paymentResult.ok) {
-          showCheckoutError(paymentResult.error || 'No se pudo procesar el pago');
+        
+        if (!intentResult.ok) {
+          showCheckoutError(intentResult.error || 'No se pudo iniciar el pago');
           return;
         }
+          
+      // Confirmamos el pago con Stripe.js
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        intentResult.data.client_secret,
+        { payment_method: { card: stripeCard } }
+      );
+      
+      if (stripeError) {
+        showCheckoutError(stripeError.message || 'El pago fue rechazado');
+        return;
+      }
+      
+      // Actualizamos el pedido en la BD
+      const confirmResult = await window.dmhFetchJson('pago_stripe_confirm.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pedido_id: result.data.pedido_id,
+          payment_intent_id: paymentIntent.id,
+          }),
+        });
+        
+        if (!confirmResult.ok) {
+          showCheckoutError(confirmResult.error || 'No se pudo confirmar el pago');
+          return;
+        }
+        
+        const paymentResult = { data: { tarjeta_mascara: '•••• •••• •••• ••••' } };
 
         saveCart([]);
         closeCheckout();
@@ -712,6 +817,13 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     render();
+     (async () => {
+      await checkSession();
+      if (isLoggedIn) {
+        await loadProfileForCheckout();
+      }
+      updatePuntosUI();
+    })();
   </script>
 
   <style is:global>

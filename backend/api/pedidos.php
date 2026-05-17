@@ -16,7 +16,8 @@ require_once __DIR__ . "/../conexion.php";
 
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : null;
 
-function dmh_try_discount_stock(PDO $conexion, array $item): void {
+function dmh_try_discount_stock(PDO $conexion, array $item): void
+{
     $cantidad = (int)$item["cantidad"];
     $sku = trim((string)($item["sku"] ?? ""));
     $slug = trim((string)($item["slug"] ?? ""));
@@ -130,9 +131,7 @@ function dmh_try_discount_stock(PDO $conexion, array $item): void {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET: listar pedidos del usuario autenticado.
-// ─────────────────────────────────────────────────────────────────────────────
+// Listar pedidos del usuario autenticado.
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
     if (!$usuarioId) {
         http_response_code(401);
@@ -170,15 +169,15 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST: crear pedido (usuario autenticado o invitado). El cobro se simula aparte.
-// ─────────────────────────────────────────────────────────────────────────────
+
+// Crear pedido (usuario autenticado o invitado). El cobro se simula aparte.
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {
         $raw  = file_get_contents("php://input");
         $body = json_decode($raw, true) ?? [];
 
-        // ── Validar items ──────────────────────────────────────────────────
+        // Validar items 
         $items = $body["items"] ?? [];
         if (!is_array($items) || count($items) === 0) {
             http_response_code(400);
@@ -186,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         }
 
-        // ── Dirección de envío ─────────────────────────────────────────────
+        // Dirección de envío 
         $direccionEnvio = trim((string)($body["direccion_envio"] ?? ""));
         if ($direccionEnvio === "") {
             http_response_code(400);
@@ -194,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         }
 
-        // ── Datos de invitado (obligatorios si no hay sesión) ──────────────
+        // Datos de invitado (obligatorios si no hay sesión)
         $nombreInvitado = null;
         $emailInvitado  = null;
 
@@ -235,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
-        // ── Calcular total y validar items ─────────────────────────────────
+        // Calcular total y validar items 
         $totalCalculado = 0.0;
         $itemsLimpios   = [];
 
@@ -282,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $envio = $totalCalculado >= 80 ? 0.0 : 4.95;
         $importeTotal = round($totalCalculado + $envio, 2);
 
-        // ── Insertar pedido ────────────────────────────────────────────────
+        // Insertar pedido 
         $conexion->beginTransaction();
 
         // Restamos stock en el momento de crear el pedido para evitar sobreventa.
@@ -290,26 +289,57 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             dmh_try_discount_stock($conexion, $item);
         }
 
+        // Gestion de puntos para clientes
+        $puntosUsados = 0;
+        $descuentoPuntos = 0.0;
+
+        if ($usuarioId) {
+            // Canjear puntos si el usuario lo solicita
+            $canjearPuntos = (bool)($body["canjear_puntos"] ?? false);
+
+            if ($canjearPuntos) {
+                $stmtPuntos = $conexion->prepare("SELECT puntos FROM puntos_usuarios WHERE usuario_id = :uid LIMIT 1");
+                $stmtPuntos->execute(["uid" => $usuarioId]);
+                $puntosDisponibles = (int)($stmtPuntos->fetchColumn() ?: 0);
+
+                if ($puntosDisponibles >= 500) {
+                    // Máximo 20% del total
+                    $maxDescuento = round($importeTotal * 0.20, 2);
+                    // 100 puntos = 1€
+                    $descuentoSolicitado = round($puntosDisponibles / 100, 2);
+                    $descuentoPuntos = min($descuentoSolicitado, $maxDescuento);
+                    $puntosUsados = (int)($descuentoPuntos * 100);
+                    $importeTotal = round($importeTotal - $descuentoPuntos, 2);
+                }
+            }
+        }
+
+        // Puntos ganados: 1€ = 10 puntos (solo usuarios registrados)
+        $puntosGanados = $usuarioId ? (int)floor($importeTotal * 10) : 0;
+
+        // Insertar pedido
         $stmtPedido = $conexion->prepare("
-            INSERT INTO pedidos (usuario_id, nombre_invitado, email_invitado, importe_total, direccion_envio)
-            VALUES (:uid, :nombre_invitado, :email_invitado, :total, :direccion)
-        ");
+    INSERT INTO pedidos (usuario_id, nombre_invitado, email_invitado, importe_total, puntos_usados, puntos_ganados, direccion_envio)
+    VALUES (:uid, :nombre_invitado, :email_invitado, :total, :puntos_usados, :puntos_ganados, :direccion)
+");
         $stmtPedido->execute([
             "uid"             => $usuarioId,
             "nombre_invitado" => $nombreInvitado,
             "email_invitado"  => $emailInvitado,
             "total"           => $importeTotal,
+            "puntos_usados"   => $puntosUsados,
+            "puntos_ganados"  => $puntosGanados,
             "direccion"       => $direccionEnvio,
         ]);
 
         $pedidoId = (int)$conexion->lastInsertId();
 
         $stmtItem = $conexion->prepare("
-            INSERT INTO items_pedido
-                (pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal)
-            VALUES
-                (:pedido_id, :slug, :nombre, :talla, :color, :sku, :cantidad, :precio, :subtotal)
-        ");
+    INSERT INTO items_pedido
+        (pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal)
+    VALUES
+        (:pedido_id, :slug, :nombre, :talla, :color, :sku, :cantidad, :precio, :subtotal)
+");
 
         foreach ($itemsLimpios as $item) {
             $stmtItem->execute([
@@ -325,14 +355,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ]);
         }
 
+        // Actualizar puntos del usuario
+        if ($usuarioId) {
+            // Descontar puntos usados
+            if ($puntosUsados > 0) {
+                $conexion->prepare("UPDATE puntos_usuarios SET puntos = puntos - :usados WHERE usuario_id = :uid")
+                    ->execute(["usados" => $puntosUsados, "uid" => $usuarioId]);
+
+                $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
+                    ->execute([
+                        "uid"    => $usuarioId,
+                        "pid"    => $pedidoId,
+                        "cambio" => -$puntosUsados,
+                        "motivo" => "Canje de puntos en pedido #$pedidoId",
+                    ]);
+            }
+
+            // Acumular puntos ganados
+            if ($puntosGanados > 0) {
+                $stmtUpsert = $conexion->prepare("
+            INSERT INTO puntos_usuarios (usuario_id, puntos)
+            VALUES (:uid, :puntos)
+            ON DUPLICATE KEY UPDATE puntos = puntos + :puntos
+        ");
+                $stmtUpsert->execute(["uid" => $usuarioId, "puntos" => $puntosGanados]);
+
+                $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
+                    ->execute([
+                        "uid"    => $usuarioId,
+                        "pid"    => $pedidoId,
+                        "cambio" => $puntosGanados,
+                        "motivo" => "Puntos ganados por pedido #$pedidoId",
+                    ]);
+            }
+        }
+
         $conexion->commit();
 
         echo json_encode([
-            "ok"          => true,
-            "mensaje"     => "Pedido realizado correctamente",
-            "pedido_id"   => $pedidoId,
-            "total"       => $importeTotal,
-            "envio"       => $envio,
+            "ok"               => true,
+            "mensaje"          => "Pedido realizado correctamente",
+            "pedido_id"        => $pedidoId,
+            "total"            => $importeTotal,
+            "envio"            => $envio,
+            "puntos_usados"    => $puntosUsados,
+            "puntos_ganados"   => $puntosGanados,
+            "descuento_puntos" => $descuentoPuntos,
         ]);
         exit;
     } catch (Throwable $e) {

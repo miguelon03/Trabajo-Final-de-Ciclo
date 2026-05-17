@@ -49,6 +49,11 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             exit;
         }
 
+        $stmtPuntos = $conexion->prepare("SELECT puntos FROM puntos_usuarios WHERE usuario_id = :uid LIMIT 1");
+        $stmtPuntos->execute(["uid" => $usuarioId]);
+        $puntos = (int)($stmtPuntos->fetchColumn() ?: 0);
+
+        $usuario["puntos"] = $puntos;
         echo json_encode([
             "ok" => true,
             "usuario" => $usuario

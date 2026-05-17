@@ -18,6 +18,24 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       </div>
 
       <div id="profileContent" class="profile-grid" hidden>
+      
+      <!-- Tarjeta de puntos -->
+      <article class="profile-card profile-card--puntos">
+      <div class="profile-card__head">
+      <h2>⭐ Mis puntos</h2>
+      </div>
+      <div class="puntos-display">
+      <div class="puntos-display__main">
+        <span id="puntosActuales" class="puntos-display__number">0</span>
+        <span class="puntos-display__label">puntos disponibles</span>
+      </div>
+      <div class="puntos-display__info">
+        <p id="puntosEquivalencia" class="puntos-display__equiv"></p>
+        <p id="puntosFaltantes" class="puntos-display__hint"></p>
+      </div>
+    </div>
+  </article>
+
         <article class="profile-card">
           <div id="profileLoading" class="profile-loading" hidden>
             <span class="profile-loading__spinner" aria-hidden="true"></span>
@@ -141,6 +159,29 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       direccionInput.value = usuario.direccion || "";
       ciudadInput.value = usuario.ciudad || "";
       codigoPostalInput.value = usuario.codigo_postal || "";
+
+      // Actualizar tarjeta de puntos
+      const puntos = Number(usuario.puntos || 0);
+      const puntosEl = document.getElementById('puntosActuales');
+      const equivEl = document.getElementById('puntosEquivalencia');
+      const faltanEl = document.getElementById('puntosFaltantes');
+
+      if (puntosEl) puntosEl.textContent = puntos.toString();
+      if (equivEl) {
+      const euros = (puntos / 100).toFixed(2).replace('.', ',');
+      equivEl.textContent = `Equivalen a ${euros} € de descuento`;
+      }
+
+      if (faltanEl) {
+        if (puntos >= 500) {
+          faltanEl.textContent = '✓ Puedes canjearlos en tu próxima compra';
+          faltanEl.style.color = '#c8ff00';
+          } else {
+            const faltan = 500 - puntos;
+            faltanEl.textContent = `Te faltan ${faltan} puntos para poder canjear`;
+            faltanEl.style.color = 'rgba(255,255,255,0.5)';
+            }
+          }
     }
 
     async function loadProfile() {
@@ -401,6 +442,45 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       to {
         transform: rotate(360deg);
       }
+    }
+
+    .profile-card--puntos {
+      background: linear-gradient(135deg, rgba(200,255,0,.1), rgba(255,255,255,.03));
+      border-color: rgba(200,255,0,.22);
+    }
+    
+    .puntos-display {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .puntos-display__main {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .puntos-display__number {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #c8ff00;
+      line-height: 1;
+    }
+
+    .puntos-display__label {
+      color: rgba(255,255,255,.6);
+      font-size: .9rem;
+    }
+
+    .puntos-display__equiv {
+      margin: 0;
+      color: rgba(255,255,255,.8);
+      font-size: .9rem;
+    }
+
+    .puntos-display__hint {
+      margin: .3rem 0 0;
+      font-size: .85rem;
     }
   </style>
 </HomeLayout>
