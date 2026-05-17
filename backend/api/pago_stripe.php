@@ -5,7 +5,10 @@ header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=utf-8");
 
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(200); exit(); }
+if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
+    http_response_code(200);
+    exit();
+}
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode(["ok" => false, "error" => "Método no permitido"]);
@@ -16,7 +19,17 @@ require_once __DIR__ . "/../vendor/autoload.php";
 require_once __DIR__ . "/../conexion.php";
 session_start();
 
-\Stripe\Stripe::setApiKey("sk_test_51TY3cxJdVatqe0Q4zDHlRcAMny13IwrAIM9gnluOiH7TaBtSah2bKYQmBQbSFodWiiNnGRcMmZ43Em4nSHz3dNNa00yrhA1tBP");
+$envFile = __DIR__ . '/../.env';
+$stripeKey = '';
+if (file_exists($envFile)) {
+    foreach (file($envFile) as $line) {
+        if (str_starts_with(trim($line), 'STRIPE_SECRET_KEY=')) {
+            $stripeKey = trim(explode('=', $line, 2)[1]);
+            break;
+        }
+    }
+}
+\Stripe\Stripe::setApiKey($stripeKey);
 
 try {
     $body = json_decode(file_get_contents("php://input"), true) ?? [];
