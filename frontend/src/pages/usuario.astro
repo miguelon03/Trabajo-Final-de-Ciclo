@@ -162,23 +162,25 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       // Actualizar tarjeta de puntos
       const puntos = Number(usuario.puntos || 0);
+      const puntosCanjeables = Math.floor(puntos / 100) * 100;
+      const descuentoCanjeable = puntosCanjeables / 10;
       const puntosEl = document.getElementById('puntosActuales');
       const equivEl = document.getElementById('puntosEquivalencia');
       const faltanEl = document.getElementById('puntosFaltantes');
 
       if (puntosEl) puntosEl.textContent = puntos.toString();
       if (equivEl) {
-      const euros = (puntos / 100).toFixed(2).replace('.', ',');
+      const euros = descuentoCanjeable.toFixed(2).replace('.', ',');
       equivEl.textContent = `Equivalen a ${euros} € de descuento`;
       }
 
       if (faltanEl) {
-        if (puntos >= 500) {
+        if (puntosCanjeables >= 100) {
           faltanEl.textContent = '✓ Puedes canjearlos en tu próxima compra';
           faltanEl.style.color = '#c8ff00';
           } else {
-            const faltan = 500 - puntos;
-            faltanEl.textContent = `Te faltan ${faltan} puntos para poder canjear`;
+            const faltan = 100 - (puntos % 100 || 0);
+            faltanEl.textContent = `Te faltan ${faltan} puntos para desbloquear 10€`;
             faltanEl.style.color = 'rgba(255,255,255,0.5)';
             }
           }
@@ -199,6 +201,12 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         const result = await requestProfile(PROFILE_API_ENDPOINT, {
           credentials: "include",
         });
+
+        if (result.ok && result.data?.autenticado === false) {
+          profileGuest.hidden = false;
+          profileContent.hidden = true;
+          return;
+        }
 
         if (!result.ok && result.status === 401) {
           profileGuest.hidden = false;

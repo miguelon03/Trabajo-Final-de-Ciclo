@@ -47,9 +47,35 @@ const typeLabel = product.type.charAt(0).toUpperCase() + product.type.slice(1);
 const isAccessory = product.type === "accesorio";
 
 const rawSizes = Object.keys(productStock?.bySize ?? {});
-const sizesArray: string[] = Array.isArray(rawSizes)
+const SIZE_ORDER = ["XS", "S", "M", "L", "XL"];
+
+function normalizeSize(size: string): string {
+  return String(size || "").replace(/\s+/g, "").toUpperCase();
+}
+
+function compareSizes(a: string, b: string): number {
+  const indexA = SIZE_ORDER.indexOf(normalizeSize(a));
+  const indexB = SIZE_ORDER.indexOf(normalizeSize(b));
+
+  if (indexA !== -1 && indexB !== -1) {
+    return indexA - indexB;
+  }
+
+  if (indexA !== -1) {
+    return -1;
+  }
+
+  if (indexB !== -1) {
+    return 1;
+  }
+
+  return a.localeCompare(b, "es", { sensitivity: "base" });
+}
+
+const sizesArray: string[] = (Array.isArray(rawSizes)
   ? rawSizes
-  : [rawSizes as unknown as string];
+  : [rawSizes as unknown as string]
+).sort(compareSizes);
 const sizeOptions = sizesArray.map((size: string) => {
   const sizeStock = productStock?.bySize?.[size]?.stock ?? 0;
   return {
@@ -140,7 +166,6 @@ const relatedProducts = allProducts
           data-product-title={product.title}
           data-product-price={product.price}
           data-product-image={gallery[0]}
-          data-product-color={product.color}
           data-product-type={product.type}
           data-product-total-stock={productStock?.totalStock ?? 0}
         >
@@ -170,10 +195,6 @@ const relatedProducts = allProducts
           <p class="product-info__description">{product.description}</p>
 
           <div class="product-info__meta">
-            <div>
-              <span class="meta-label">Color</span>
-              <span class="meta-value">{product.color}</span>
-            </div>
             <div>
               <span class="meta-label">Stock total</span>
               <span class="meta-value"
@@ -424,11 +445,23 @@ const relatedProducts = allProducts
             (op) => Number(op.usuario_id || 0) === currentUserId,
           ) || null;
 
+        const opinionesOrdenadas =
+          currentUserId > 0
+            ? [
+                ...opiniones.filter(
+                  (op) => Number(op.usuario_id || 0) === currentUserId,
+                ),
+                ...opiniones.filter(
+                  (op) => Number(op.usuario_id || 0) !== currentUserId,
+                ),
+              ]
+            : opiniones;
+
         renderReviewForm();
 
         let html = "";
 
-        opiniones.forEach((op) => {
+        opinionesOrdenadas.forEach((op) => {
           const isOwnOpinion =
             currentUserId > 0 && Number(op.usuario_id || 0) === currentUserId;
           const estadoOpinion = String(op.estado || "aprobada").toLowerCase();
@@ -866,7 +899,6 @@ const relatedProducts = allProducts
         title: productInfo.dataset.productTitle,
         price: Number(productInfo.dataset.productPrice),
         image: productInfo.dataset.productImage,
-        color: productInfo.dataset.productColor,
         size,
         sku,
         quantity,
@@ -890,6 +922,16 @@ const relatedProducts = allProducts
 
       localStorage.setItem("cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("cart-updated"));
+
+      if (typeof window.dmhFetchJson === "function") {
+        window.dmhFetchJson("carrito.php", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: cart }),
+        });
+      }
+
       (window as any).showToast?.("¡Producto añadido al carrito!", "success");
     });
 
@@ -901,6 +943,10 @@ const relatedProducts = allProducts
       const result = await window.dmhFetchJson("favoritos.php", {
         credentials: "include",
       });
+
+      if (result.ok && result.data?.autenticado === false) {
+        return { authorized: false, slugs: [] };
+      }
 
       if (!result.ok) {
         if (result.status === 401) {
@@ -1214,6 +1260,7 @@ const relatedProducts = allProducts
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 30%; /* Adjust the percentage to focus on the clothing */
     display: block;
   }
 

@@ -51,10 +51,11 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     <span style="font-size:.85rem;color:rgba(255,255,255,.8);">⭐ Tus puntos</span>
     <strong id="puntosDisponiblesLabel" style="color:#c8ff00;font-size:.9rem;"></strong>
   </div>
-  <label style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;color:rgba(255,255,255,.75);cursor:pointer;">
+  <label id="canjearPuntosRow" style="display:flex;align-items:center;gap:.5rem;font-size:.84rem;color:rgba(255,255,255,.75);cursor:pointer;">
     <input type="checkbox" id="canjearPuntosCheck" style="accent-color:#c8ff00;" />
-    <span id="canjearPuntosLabel">Canjear puntos (descuento: 0,00 €)</span>
+    <span id="canjearPuntosLabel">Canjear puntos</span>
   </label>
+  <p id="puntosMensaje" style="margin:0;font-size:.82rem;color:rgba(255,255,255,.72);"></p>
 </div>
 
 <div id="descuentoPuntosLine" class="cart-summary__line" hidden style="color:#c8ff00;">
@@ -103,6 +104,9 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         <p class="checkout-modal__hint">
           Compras como invitado. Si creas una cuenta tendrás beneficios de miembro: seguimiento de pedidos, historial y checkout más rápido.
         </p>
+        <p class="checkout-modal__hint">
+          Como miembro acumulas 1 punto por cada 1,00 € gastado y puedes canjear en bloques de 100 puntos = 10,00 € de descuento.
+        </p>
         <a class="checkout-modal__link" href="/registro">Crear cuenta ahora</a>
       </div>
 
@@ -141,6 +145,14 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       <div class="checkout-modal__paybox">
       <strong>Método de pago</strong>
       <p class="checkout-modal__hint">Pago seguro con Stripe. Usa la tarjeta de prueba: 4242 4242 4242 4242</p>
+      <div id="savedCardsBox" class="checkout-saved-cards" hidden>
+        <p class="checkout-modal__hint">Usar tarjeta guardada</p>
+        <div id="savedCardsList" class="checkout-saved-cards__list"></div>
+      </div>
+      <label id="saveCardRow" class="checkout-modal__checkline" hidden>
+        <input type="checkbox" id="saveCardCheck" />
+        <span>Guardar esta tarjeta para próximas compras</span>
+      </label>
       <div id="stripe-card-element" style="
       background: #101010;
       border: 1px solid rgba(255,255,255,.16);
@@ -188,6 +200,34 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     function saveCart(cart: CartItem[]) {
       localStorage.setItem('cart', JSON.stringify(cart));
       window.dispatchEvent(new Event('cart-updated'));
+
+      // Miembros: además de localStorage, persistimos en BD.
+      if (isLoggedIn && typeof window.dmhFetchJson === 'function') {
+        window.dmhFetchJson('carrito.php', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cart }),
+        });
+      }
+    }
+
+    async function loadMemberCartFromDb() {
+      if (!isLoggedIn || typeof window.dmhFetchJson !== 'function') {
+        return;
+      }
+
+      const result = await window.dmhFetchJson('carrito.php', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!result.ok || !Array.isArray(result.data?.items)) {
+        return;
+      }
+
+      localStorage.setItem('cart', JSON.stringify(result.data.items));
+      window.dispatchEvent(new Event('cart-updated'));
     }
 
     function fmt(n: number) {
@@ -195,7 +235,13 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     function escHtml(str: string) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      if (typeof str !== 'string') {
+        return '';
+      }
+      return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     function render() {
@@ -329,25 +375,29 @@ import HomeLayout from "../layouts/HomeLayout.astro";
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = subtotal + shipping;
 
-  const maxDescuento = round2(total * 0.20);
-  const descuentoSolicitado = round2(puntosDisponibles / PUNTOS_POR_EURO);
-  const descuento = Math.min(descuentoSolicitado, maxDescuento);
+  const puntosCanjeablesSaldo = Math.floor(puntosDisponibles / 100) * 100;
+  const puntosCanjeablesTotal = Math.floor(total / 10) * 100;
+  const puntosCanjeables = Math.min(puntosCanjeablesSaldo, puntosCanjeablesTotal);
+  const descuento = round2(puntosCanjeables / PUNTOS_POR_EURO);
 
   if (puntosLabel) puntosLabel.textContent = `${puntosDisponibles} pts`;
 
-  if (puntosDisponibles >= PUNTOS_MIN) {
-    if (puntosMensaje) puntosMensaje.textContent = `Equivalen a ${fmt(descuento)} de descuento`;
+  if (puntosCanjeables > 0) {
+    if (puntosMensaje) {
+      puntosMensaje.textContent = `Canje disponible: 100 pts = 10,00 €. Acumulas 1 punto por cada 1,00 € gastado.`;
+    }
     if (canjearRow) canjearRow.style.display = 'flex';
-    if (canjearLabel) canjearLabel.textContent = `Canjear ${puntosDisponibles} pts (−${fmt(descuento)})`;
+    if (canjearLabel) canjearLabel.textContent = `Canjear ${puntosCanjeables} pts (−${fmt(descuento)})`;
   } else {
-    const faltan = PUNTOS_MIN - puntosDisponibles;
-    if (puntosMensaje) puntosMensaje.textContent = puntosDisponibles > 0 ? `Te faltan ${faltan} pts para poder canjear` : 'Acumula puntos comprando';
+    if (puntosMensaje) {
+      puntosMensaje.textContent = 'Aún no tienes puntos suficientes. Se canjean en bloques de 100 pts = 10,00 € y acumulas 1 punto por cada 1,00 € gastado.';
+    }
     if (canjearRow) canjearRow.style.display = 'none';
     if (canjearCheck instanceof HTMLInputElement) canjearCheck.checked = false;
   }
 
   // Recalcular total sin descuento si no puede canjear
-  const canjear = puntosDisponibles >= PUNTOS_MIN && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
+  const canjear = puntosCanjeables > 0 && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
   if (descuentoLine) descuentoLine.hidden = !canjear;
   if (descuentoValor) descuentoValor.textContent = `-${fmt(descuento)}`;
   if (totalEl) totalEl.textContent = fmt(canjear ? round2(total - descuento) : total);
@@ -383,6 +433,11 @@ function round2(n) {
     const direccionEl   = document.getElementById('checkoutDireccion');
     const ciudadEl      = document.getElementById('checkoutCiudad');
     const cpEl          = document.getElementById('checkoutCodigoPostal');
+    const savedCardsBox = document.getElementById('savedCardsBox');
+    const savedCardsListEl = document.getElementById('savedCardsList');
+    const saveCardRowEl = document.getElementById('saveCardRow');
+    const saveCardCheckEl = document.getElementById('saveCardCheck');
+    const stripeCardElementHost = document.getElementById('stripe-card-element');
     const cardHolderEl  = null;
     const cardNumberEl  = null;
     const cardExpiryEl  = null;
@@ -390,8 +445,9 @@ function round2(n) {
     let isLoggedIn = false;
     let profileData = null;
     let puntosDisponibles = 0;
-    const PUNTOS_MIN = 500;
-    const PUNTOS_POR_EURO = 100;
+    let savedCards = [];
+    let selectedSavedPaymentMethodId = '';
+    const PUNTOS_POR_EURO = 10;
 
     async function checkSession() {
       try {
@@ -471,7 +527,7 @@ function round2(n) {
       if (modeHintEl) {
         modeHintEl.textContent = isLoggedIn
           ? 'Compra como miembro. Revisa tus datos y simula el pago con tarjeta.'
-          : 'Compra como invitado. Te pediremos todos los datos para completar el pedido.';
+          : 'Compra como invitado. Como miembro ganarías 1 punto por cada 1,00 € y 100 puntos equivalen a 10,00 €.';
       }
 
       if (guestFields) {
@@ -497,6 +553,14 @@ function round2(n) {
       const profileRes = await window.dmhFetchJson('perfil.php', {
         credentials: 'include',
       });
+
+      if (profileRes.ok && profileRes.data?.autenticado === false) {
+        isLoggedIn = false;
+        profileData = null;
+        resetGuestEditableFields();
+        setModeTexts();
+        return;
+      }
 
       if (!profileRes.ok) {
         throw new Error(profileRes.error || 'No se pudo cargar tu perfil');
@@ -530,6 +594,107 @@ function round2(n) {
       assignVal(cpEl, '');
     }
 
+    function formatSavedCardLabel(card) {
+      const brand = String(card?.brand || 'Tarjeta').toUpperCase();
+      const last4 = String(card?.last4 || '0000');
+      const expMonth = Number(card?.exp_month || 0);
+      const expYear = Number(card?.exp_year || 0);
+      const expText = expMonth > 0 && expYear > 0
+        ? ` · ${String(expMonth).padStart(2, '0')}/${String(expYear).slice(-2)}`
+        : '';
+      return `${brand} •••• ${last4}${expText}`;
+    }
+
+    function updatePaymentMethodUI() {
+      const usingSaved = !!selectedSavedPaymentMethodId;
+
+      if (stripeCardElementHost) {
+        stripeCardElementHost.style.display = usingSaved ? 'none' : 'block';
+      }
+
+      if (saveCardRowEl) {
+        saveCardRowEl.hidden = !isLoggedIn || usingSaved;
+      }
+
+      if (saveCardCheckEl instanceof HTMLInputElement && usingSaved) {
+        saveCardCheckEl.checked = false;
+      }
+    }
+
+    function renderSavedCardsUI() {
+      if (!savedCardsBox || !savedCardsListEl) {
+        return;
+      }
+
+      if (!isLoggedIn) {
+        savedCardsBox.hidden = true;
+        savedCardsListEl.innerHTML = '';
+        selectedSavedPaymentMethodId = '';
+        updatePaymentMethodUI();
+        return;
+      }
+
+      const hasCards = Array.isArray(savedCards) && savedCards.length > 0;
+      savedCardsBox.hidden = !hasCards;
+
+      if (!hasCards) {
+        savedCardsListEl.innerHTML = '';
+        selectedSavedPaymentMethodId = '';
+        updatePaymentMethodUI();
+        return;
+      }
+
+      if (!savedCards.some((c) => c.payment_method_id === selectedSavedPaymentMethodId)) {
+        selectedSavedPaymentMethodId = '';
+      }
+
+      const html = savedCards.map((card) => {
+        const isSelected = selectedSavedPaymentMethodId === card.payment_method_id;
+        const safeLabel = formatSavedCardLabel(card)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\"/g, '&quot;');
+
+        return `
+          <div class="saved-card-item ${isSelected ? 'is-selected' : ''}" data-pm-id="${card.payment_method_id}">
+            <button type="button" class="saved-card-item__select" data-action="select-card" data-pm-id="${card.payment_method_id}">${safeLabel}</button>
+            <button type="button" class="saved-card-item__remove" data-action="remove-card" data-card-id="${card.id}" aria-label="Borrar tarjeta">×</button>
+          </div>
+        `;
+      }).join('');
+
+      savedCardsListEl.innerHTML = `${html}
+        <button type="button" class="saved-card-new" data-action="select-new-card">Usar una tarjeta nueva</button>
+      `;
+
+      updatePaymentMethodUI();
+    }
+
+    async function loadSavedCards() {
+      if (!isLoggedIn) {
+        savedCards = [];
+        selectedSavedPaymentMethodId = '';
+        renderSavedCardsUI();
+        return;
+      }
+
+      const cardsRes = await window.dmhFetchJson('tarjetas.php', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!cardsRes.ok) {
+        savedCards = [];
+        selectedSavedPaymentMethodId = '';
+        renderSavedCardsUI();
+        return;
+      }
+
+      savedCards = Array.isArray(cardsRes.data?.tarjetas) ? cardsRes.data.tarjetas : [];
+      renderSavedCardsUI();
+    }
+
     function showMissingFieldsHint() {
       if (!missingEl) return;
 
@@ -556,9 +721,13 @@ function round2(n) {
 
       if (isLoggedIn) {
         await loadProfileForCheckout();
+        await loadSavedCards();
       } else {
         profileData = null;
+        savedCards = [];
+        selectedSavedPaymentMethodId = '';
         resetGuestEditableFields();
+        renderSavedCardsUI();
       }
 
       if (checkoutError) {
@@ -568,6 +737,11 @@ function round2(n) {
       if (policyEl instanceof HTMLInputElement) {
         policyEl.checked = false;
       }
+      if (saveCardCheckEl instanceof HTMLInputElement) {
+        saveCardCheckEl.checked = false;
+      }
+
+      updatePaymentMethodUI();
 
       showMissingFieldsHint();
     }
@@ -584,6 +758,62 @@ function round2(n) {
       document.body.style.overflow = '';
     }
     document.getElementById('canjearPuntosCheck')?.addEventListener('change', updatePuntosUI);
+
+    savedCardsListEl?.addEventListener('click', async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const action = target.dataset.action;
+      if (!action) {
+        return;
+      }
+
+      if (action === 'select-card') {
+        selectedSavedPaymentMethodId = String(target.dataset.pmId || '');
+        renderSavedCardsUI();
+        return;
+      }
+
+      if (action === 'select-new-card') {
+        selectedSavedPaymentMethodId = '';
+        renderSavedCardsUI();
+        return;
+      }
+
+      if (action === 'remove-card') {
+        const cardId = Number(target.dataset.cardId || 0);
+        if (!Number.isFinite(cardId) || cardId <= 0) {
+          return;
+        }
+
+        window.showConfirmToast?.(
+          '¿Seguro que quieres eliminar esta tarjeta guardada?',
+          async () => {
+            const deleteRes = await window.dmhFetchJson('tarjetas.php', {
+              method: 'DELETE',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tarjeta_id: cardId }),
+            });
+
+            if (!deleteRes.ok) {
+              window.showToast?.(deleteRes.error || 'No se pudo borrar la tarjeta', 'error');
+              return;
+            }
+
+            window.showToast?.('Tarjeta eliminada', 'success');
+            await loadSavedCards();
+          },
+          {
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+          },
+        );
+      }
+    });
+
     checkoutBtn?.addEventListener('click', async () => {
       try {
         await prepareCheckoutState();
@@ -679,8 +909,12 @@ let stripeCard = null;
       const direccionCompleta = `${direccion}, ${codigoPostal} ${ciudad}`;
 
       const canjearCheck = document.getElementById('canjearPuntosCheck');
-      const canjear = isLoggedIn && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
+      const canjear = isLoggedIn && puntosDisponibles > 0 && canjearCheck instanceof HTMLInputElement && canjearCheck.checked;
       const payload = { items: getCart(), direccion_envio: direccionCompleta, canjear_puntos: canjear };
+      const saveCard = isLoggedIn
+        && !selectedSavedPaymentMethodId
+        && saveCardCheckEl instanceof HTMLInputElement
+        && saveCardCheckEl.checked;
 
       if (!isLoggedIn) {
         payload.nombre = nombre;
@@ -740,7 +974,11 @@ let stripeCard = null;
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pedido_id: result.data.pedido_id }),
+        body: JSON.stringify({
+          pedido_id: result.data.pedido_id,
+          save_card: saveCard,
+          selected_payment_method_id: selectedSavedPaymentMethodId || null,
+        }),
         });
         
         if (!intentResult.ok) {
@@ -749,9 +987,30 @@ let stripeCard = null;
         }
           
       // Confirmamos el pago con Stripe.js
+      let confirmParams;
+      if (selectedSavedPaymentMethodId) {
+        confirmParams = {
+          payment_method: selectedSavedPaymentMethodId,
+        };
+      } else {
+        if (!stripeCard) {
+          showCheckoutError('No se pudo inicializar el formulario de tarjeta');
+          return;
+        }
+        confirmParams = {
+          payment_method: {
+            card: stripeCard,
+            billing_details: {
+              name: nombre,
+              email,
+            },
+          },
+        };
+      }
+
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
         intentResult.data.client_secret,
-        { payment_method: { card: stripeCard } }
+        confirmParams
       );
       
       if (stripeError) {
@@ -767,6 +1026,7 @@ let stripeCard = null;
         body: JSON.stringify({
           pedido_id: result.data.pedido_id,
           payment_intent_id: paymentIntent.id,
+          save_card: saveCard,
           }),
         });
         
@@ -775,7 +1035,7 @@ let stripeCard = null;
           return;
         }
         
-        const paymentResult = { data: { tarjeta_mascara: '•••• •••• •••• ••••' } };
+        const paymentResult = { data: { tarjeta_mascara: selectedSavedPaymentMethodId ? 'Tarjeta guardada' : '•••• •••• •••• ••••' } };
 
         saveCart([]);
         closeCheckout();
@@ -787,7 +1047,7 @@ let stripeCard = null;
           total:           result.data.total,
           envio:           result.data.envio,
           importe_total:   result.data.total,
-          tarjeta_mascara: paymentResult.data?.tarjeta_mascara || maskedCard(cardNumber),
+          tarjeta_mascara: paymentResult.data?.tarjeta_mascara || '•••• •••• •••• ••••',
           direccion_envio: `${inputVal(direccionEl)}, ${inputVal(cpEl)} ${inputVal(ciudadEl)}`,
           fecha:           new Date().toISOString(),
           isLoggedIn:      isLoggedIn,
@@ -816,12 +1076,13 @@ let stripeCard = null;
       checkoutError.hidden = false;
     }
 
-    render();
-     (async () => {
+    (async () => {
       await checkSession();
       if (isLoggedIn) {
+        await loadMemberCartFromDb();
         await loadProfileForCheckout();
       }
+      render();
       updatePuntosUI();
     })();
   </script>
@@ -978,6 +1239,78 @@ let stripeCard = null;
       font-size: .9rem;
     }
 
+    .checkout-saved-cards {
+      display: grid;
+      gap: 0.45rem;
+      margin-bottom: 0.1rem;
+    }
+
+    .checkout-saved-cards__list {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .saved-card-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 0.45rem;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px;
+      background: #101010;
+      padding: 0.3rem;
+    }
+
+    .saved-card-item.is-selected {
+      border-color: rgba(200,255,0,.55);
+      box-shadow: 0 0 0 2px rgba(200,255,0,.12);
+    }
+
+    .saved-card-item__select {
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,.88);
+      font-size: 0.85rem;
+      padding: 0.5rem 0.55rem;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .saved-card-item__remove {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.62);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .saved-card-item__remove:hover {
+      color: #ff9b9b;
+      border-color: rgba(255,120,120,.45);
+      background: rgba(255,120,120,.12);
+    }
+
+    .saved-card-new {
+      border: 1px dashed rgba(255,255,255,.24);
+      border-radius: 10px;
+      background: transparent;
+      color: rgba(255,255,255,.72);
+      font-size: 0.83rem;
+      padding: 0.55rem 0.7rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .saved-card-new:hover {
+      border-color: rgba(200,255,0,.45);
+      color: #d6ff59;
+    }
+
     .checkout-modal__warn {
       margin: 0;
       font-size: .82rem;
@@ -988,10 +1321,10 @@ let stripeCard = null;
       padding: .55rem .75rem;
     }
 
-    .checkout-modal__checkline {
+    .checkout-modal label.checkout-modal__checkline {
       display: flex;
       flex-direction: row;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.55rem;
       color: rgba(255,255,255,.72);
       font-size: 0.84rem;
@@ -1000,9 +1333,18 @@ let stripeCard = null;
       font-weight: 500;
     }
 
-    .checkout-modal__checkline input {
-      margin-top: 0.15rem;
+    .checkout-modal label.checkout-modal__checkline input {
+      margin-top: 0;
       accent-color: #c8ff00;
+    }
+
+    #saveCardRow {
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+
+    #saveCardRow span {
+      white-space: nowrap;
     }
 
     .checkout-modal__error {

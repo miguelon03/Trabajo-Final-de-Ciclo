@@ -60,6 +60,10 @@ const allProducts = products as Array<{
         credentials: "include",
       });
 
+      if (result.ok && result.data?.autenticado === false) {
+        return { authorized: false, slugs: [], error: "Debes iniciar sesión" };
+      }
+
       if (!result.ok) {
         if (result.status === 401) {
           return { authorized: false, slugs: [], error: "Debes iniciar sesión" };
@@ -102,6 +106,15 @@ const allProducts = products as Array<{
     function saveCart(cart) {
       localStorage.setItem("cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("cart-updated"));
+
+      if (typeof window.dmhFetchJson === "function") {
+        window.dmhFetchJson("carrito.php", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: cart }),
+        });
+      }
     }
 
     function setWishlistLoading(isLoading) {

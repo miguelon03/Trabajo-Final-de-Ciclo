@@ -84,7 +84,6 @@ try {
                       data-precio-base={p.precio_base}
                       data-precio-original={p.precio_original ?? ""}
                       data-tipo={p.tipo ?? ""}
-                      data-color={p.color ?? ""}
                       data-badge={p.badge ?? ""}
                       data-estado={p.estado}
                     >
@@ -162,11 +161,6 @@ try {
         <div class="field">
           <label for="productTipo">Tipo</label>
           <input id="productTipo" type="text" />
-        </div>
-
-        <div class="field">
-          <label for="productColor">Color</label>
-          <input id="productColor" type="text" />
         </div>
 
         <div class="field">
@@ -493,7 +487,6 @@ try {
     "productPrecioOriginal",
   );
   const productTipo = document.getElementById("productTipo");
-  const productColor = document.getElementById("productColor");
   const productBadge = document.getElementById("productBadge");
   const productEstado = document.getElementById("productEstado");
 
@@ -528,7 +521,6 @@ try {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
-    const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const estadoInput = asField(productEstado);
 
@@ -539,7 +531,6 @@ try {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
-      !colorInput ||
       !badgeInput ||
       !estadoInput
     ) {
@@ -553,7 +544,6 @@ try {
     precioBaseInput.value = "";
     precioOriginalInput.value = "";
     tipoInput.value = "";
-    colorInput.value = "";
     badgeInput.value = "";
     estadoInput.value = "borrador";
 
@@ -572,7 +562,6 @@ try {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
-    const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const estadoInput = asField(productEstado);
 
@@ -583,7 +572,6 @@ try {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
-      !colorInput ||
       !badgeInput ||
       !estadoInput
     ) {
@@ -597,7 +585,6 @@ try {
     precioBaseInput.value = button.dataset.precioBase || "";
     precioOriginalInput.value = button.dataset.precioOriginal || "";
     tipoInput.value = button.dataset.tipo || "";
-    colorInput.value = button.dataset.color || "";
     badgeInput.value = button.dataset.badge || "";
     estadoInput.value = button.dataset.estado || "borrador";
   }
@@ -668,7 +655,6 @@ try {
       !(productPrecioBase instanceof HTMLInputElement) ||
       !(productPrecioOriginal instanceof HTMLInputElement) ||
       !(productTipo instanceof HTMLInputElement) ||
-      !(productColor instanceof HTMLInputElement) ||
       !(productBadge instanceof HTMLInputElement) ||
       !(productEstado instanceof HTMLSelectElement)
     ) {
@@ -686,7 +672,6 @@ try {
       precio_base: Number(productPrecioBase.value),
       precio_original: productPrecioOriginal.value.trim(),
       tipo: productTipo.value.trim(),
-      color: productColor.value.trim(),
       badge: productBadge.value.trim(),
       estado: productEstado.value,
     };

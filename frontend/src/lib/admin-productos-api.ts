@@ -6,7 +6,6 @@ export type AdminProducto = {
   precio_base: number;
   precio_original: number | null;
   tipo: string | null;
-  color: string | null;
   badge: string | null;
   fecha_catalogo: string | null;
   estado: string;

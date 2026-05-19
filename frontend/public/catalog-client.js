@@ -29,6 +29,15 @@ function getCart() {
 function saveCart(cart) {
   localStorage.setItem("cart", JSON.stringify(cart));
   window.dispatchEvent(new Event("cart-updated"));
+
+  if (typeof window.dmhFetchJson === "function") {
+    window.dmhFetchJson("carrito.php", {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: cart }),
+    });
+  }
 }
 
 function getTotalStock(card) {
@@ -525,6 +534,10 @@ async function fetchWishlist() {
     credentials: "include",
   });
 
+  if (result.ok && result.data?.autenticado === false) {
+    return { authorized: false, slugs: [], error: "Debes iniciar sesión" };
+  }
+
   if (!result.ok) {
     if (result.status === 401) {
       return { authorized: false, slugs: [], error: "Debes iniciar sesión" };
@@ -689,7 +702,6 @@ function setupCardNavigation() {
 
 const activeFilters = {
   type: [],
-  color: [],
   price: [],
 };
 
@@ -697,12 +709,6 @@ function updateActiveFilters() {
   activeFilters.type = filterInputs
     .filter(
       (input) => input.dataset.filterType === "type" && input.checked,
-    )
-    .map((input) => input.value);
-
-  activeFilters.color = filterInputs
-    .filter(
-      (input) => input.dataset.filterType === "color" && input.checked,
     )
     .map((input) => input.value);
 
@@ -715,11 +721,9 @@ function updateActiveFilters() {
 
 function passesFilter(card) {
   const type = card.getAttribute("data-type") || "";
-  const color = card.getAttribute("data-color") || "";
   const price = parseFloat(card.getAttribute("data-price") || "0");
 
   const matchesType = activeFilters.type.length === 0 || activeFilters.type.includes(type);
-  const matchesColor = activeFilters.color.length === 0 || activeFilters.color.includes(color);
   const matchesPrice =
     activeFilters.price.length === 0 ||
     activeFilters.price.some((range) => {
@@ -727,7 +731,7 @@ function passesFilter(card) {
       return price >= min && price <= max;
     });
 
-  return matchesType && matchesColor && matchesPrice;
+  return matchesType && matchesPrice;
 }
 
 function sortCards(cards) {

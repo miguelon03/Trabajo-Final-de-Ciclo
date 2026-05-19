@@ -102,7 +102,7 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
     </style>
   </head>
   <body>
-    <div class="admin-layout">
+    <div class="admin-layout" id="adminLayoutRoot">
       <AdminSidebar />
       <main class="main">
         <div class="topbar">
@@ -117,6 +117,36 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
     </div>
 
     <script>
+      const adminLayoutRoot = document.getElementById("adminLayoutRoot");
+
+      if (adminLayoutRoot instanceof HTMLElement) {
+        adminLayoutRoot.style.visibility = "hidden";
+      }
+
+      async function ensureAdminSession() {
+        try {
+          const response = await fetch("/backend/session.php", {
+            credentials: "include",
+          });
+
+          const data = await response.json();
+          const isAdmin = Boolean(data?.logueado && data?.usuario?.rol === "admin");
+
+          if (!isAdmin) {
+            window.location.href = "/login";
+            return;
+          }
+
+          if (adminLayoutRoot instanceof HTMLElement) {
+            adminLayoutRoot.style.visibility = "visible";
+          }
+        } catch (_error) {
+          window.location.href = "/login";
+        }
+      }
+
+      void ensureAdminSession();
+
       document.getElementById("logoutLink")?.addEventListener("click", async (e) => {
         e.preventDefault();
 
