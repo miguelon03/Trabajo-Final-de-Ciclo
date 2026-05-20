@@ -16,20 +16,19 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 session_start();
 require_once __DIR__ . "/../conexion.php";
 
-// Todas las operaciones de perfil requieren sesión iniciada.
-if (!isset($_SESSION["usuario_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "ok" => false,
-        "error" => "No autorizado. Inicia sesión para continuar"
-    ]);
-    exit;
-}
-
-$usuarioId = (int)$_SESSION["usuario_id"];
-
 // GET => devolver perfil del usuario autenticado.
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
+    if (!isset($_SESSION["usuario_id"])) {
+        echo json_encode([
+            "ok" => true,
+            "autenticado" => false,
+            "usuario" => null,
+        ]);
+        exit;
+    }
+
+    $usuarioId = (int)$_SESSION["usuario_id"];
+
     try {
         $sql = "SELECT id, nombre, email, rol, estado, telefono, direccion, ciudad, codigo_postal, creado_en, actualizado_en
                 FROM usuarios
@@ -49,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             exit;
         }
 
-        $stmtPuntos = $conexion->prepare("SELECT puntos FROM puntos_usuarios WHERE usuario_id = :uid LIMIT 1");
+        $stmtPuntos = $conexion->prepare("SELECT COALESCE(SUM(puntos), 0) FROM puntos_usuarios WHERE usuario_id = :uid");
         $stmtPuntos->execute(["uid" => $usuarioId]);
         $puntos = (int)($stmtPuntos->fetchColumn() ?: 0);
 
@@ -72,6 +71,17 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
 // POST => actualizar datos editables del perfil.
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!isset($_SESSION["usuario_id"])) {
+        http_response_code(401);
+        echo json_encode([
+            "ok" => false,
+            "error" => "No autorizado. Inicia sesión para continuar"
+        ]);
+        exit;
+    }
+
+    $usuarioId = (int)$_SESSION["usuario_id"];
+
     try {
         // Aceptamos tanto JSON como form-data/x-www-form-urlencoded.
         $contentType = $_SERVER["CONTENT_TYPE"] ?? "";

@@ -292,30 +292,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Gestion de puntos para clientes
         $puntosUsados = 0;
         $descuentoPuntos = 0.0;
+        $puntosDisponibles = 0;
 
         if ($usuarioId) {
+            $stmtPuntos = $conexion->prepare("SELECT COALESCE(SUM(puntos), 0) FROM puntos_usuarios WHERE usuario_id = :uid");
+            $stmtPuntos->execute(["uid" => $usuarioId]);
+            $puntosDisponibles = (int)($stmtPuntos->fetchColumn() ?: 0);
+
             // Canjear puntos si el usuario lo solicita
             $canjearPuntos = (bool)($body["canjear_puntos"] ?? false);
 
             if ($canjearPuntos) {
-                $stmtPuntos = $conexion->prepare("SELECT puntos FROM puntos_usuarios WHERE usuario_id = :uid LIMIT 1");
-                $stmtPuntos->execute(["uid" => $usuarioId]);
-                $puntosDisponibles = (int)($stmtPuntos->fetchColumn() ?: 0);
-
-                if ($puntosDisponibles >= 500) {
-                    // Máximo 20% del total
-                    $maxDescuento = round($importeTotal * 0.20, 2);
-                    // 100 puntos = 1€
-                    $descuentoSolicitado = round($puntosDisponibles / 100, 2);
-                    $descuentoPuntos = min($descuentoSolicitado, $maxDescuento);
-                    $puntosUsados = (int)($descuentoPuntos * 100);
+                if ($puntosDisponibles > 0) {
+                    // Canje por tramos completos: 100 puntos = 10€.
+                    // 299 puntos => 200 puntos canjeables; 300 => 300.
+                    // Además, el canje no puede superar el total del pedido.
+                    $puntosCanjeablesPorSaldo = (int)(floor($puntosDisponibles / 100) * 100);
+                    $puntosCanjeablesPorTotal = (int)(floor($importeTotal / 10) * 100);
+                    $puntosUsados = min($puntosCanjeablesPorSaldo, $puntosCanjeablesPorTotal);
+                    $descuentoPuntos = round($puntosUsados / 10, 2);
                     $importeTotal = round($importeTotal - $descuentoPuntos, 2);
                 }
             }
         }
 
-        // Puntos ganados: 1€ = 10 puntos (solo usuarios registrados)
-        $puntosGanados = $usuarioId ? (int)floor($importeTotal * 10) : 0;
+        // Puntos ganados: 1€ = 1 punto (solo usuarios registrados)
+        $puntosGanados = $usuarioId ? (int)floor($importeTotal) : 0;
+        $saldoPuntosFinal = $usuarioId ? max(0, $puntosDisponibles - $puntosUsados + $puntosGanados) : null;
 
         // Insertar pedido
         $stmtPedido = $conexion->prepare("
@@ -356,12 +359,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         // Actualizar puntos del usuario
-        if ($usuarioId) {
-            // Descontar puntos usados
-            if ($puntosUsados > 0) {
-                $conexion->prepare("UPDATE puntos_usuarios SET puntos = puntos - :usados WHERE usuario_id = :uid")
-                    ->execute(["usados" => $puntosUsados, "uid" => $usuarioId]);
+        if ($usuarioId && $saldoPuntosFinal !== null) {
+            // Normalizamos a una única fila por usuario para evitar saldos incoherentes.
+            $conexion->prepare("DELETE FROM puntos_usuarios WHERE usuario_id = :uid")
+                ->execute(["uid" => $usuarioId]);
 
+            $conexion->prepare("INSERT INTO puntos_usuarios (usuario_id, puntos) VALUES (:uid, :puntos)")
+                ->execute(["uid" => $usuarioId, "puntos" => $saldoPuntosFinal]);
+
+            if ($puntosUsados > 0) {
                 $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
                     ->execute([
                         "uid"    => $usuarioId,
@@ -371,15 +377,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     ]);
             }
 
-            // Acumular puntos ganados
             if ($puntosGanados > 0) {
-                $stmtUpsert = $conexion->prepare("
-            INSERT INTO puntos_usuarios (usuario_id, puntos)
-            VALUES (:uid, :puntos)
-            ON DUPLICATE KEY UPDATE puntos = puntos + :puntos
-        ");
-                $stmtUpsert->execute(["uid" => $usuarioId, "puntos" => $puntosGanados]);
-
                 $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
                     ->execute([
                         "uid"    => $usuarioId,
@@ -388,6 +386,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "motivo" => "Puntos ganados por pedido #$pedidoId",
                     ]);
             }
+
+            // Al completar el pedido, limpiamos carrito persistente del usuario.
+            $conexion->prepare("DELETE FROM carrito_items WHERE usuario_id = :uid")
+                ->execute(["uid" => $usuarioId]);
         }
 
         $conexion->commit();

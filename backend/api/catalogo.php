@@ -23,6 +23,16 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 require_once __DIR__ . "/../conexion.php";
 
 try {
+    $stmtHasOpinionStatus = $conexion->prepare(
+        "SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'opiniones'
+           AND COLUMN_NAME = 'estado'"
+    );
+    $stmtHasOpinionStatus->execute();
+    $hasOpinionStatusColumn = (int)$stmtHasOpinionStatus->fetchColumn() > 0;
+
     $slug = trim((string)($_GET["slug"] ?? ""));
 
     $sqlProductos = "
@@ -96,22 +106,26 @@ try {
     $stmtVariantes->execute($productIds);
     $rowsVariantes = $stmtVariantes->fetchAll();
 
-    $stmtOpiniones = $conexion->prepare(
-        "
-    SELECT
-        o.id,
-        o.producto_id,
-        o.puntuacion,
-        o.comentario,
-        o.creado_en,
-        u.nombre AS usuario_nombre
-    FROM opiniones o
-    INNER JOIN usuarios u ON u.id = o.usuario_id
-    WHERE o.producto_id IN ($inClause)
-      AND o.estado = 'aprobada'
-    ORDER BY o.producto_id ASC, o.creado_en DESC, o.id DESC
-    "
-    );
+    $sqlOpiniones = "
+        SELECT
+            o.id,
+            o.producto_id,
+            o.puntuacion,
+            o.comentario,
+            o.creado_en,
+            u.nombre AS usuario_nombre
+        FROM opiniones o
+        INNER JOIN usuarios u ON u.id = o.usuario_id
+        WHERE o.producto_id IN ($inClause)
+    ";
+
+    if ($hasOpinionStatusColumn) {
+        $sqlOpiniones .= " AND o.estado = 'aprobada' ";
+    }
+
+    $sqlOpiniones .= " ORDER BY o.producto_id ASC, o.creado_en DESC, o.id DESC ";
+
+    $stmtOpiniones = $conexion->prepare($sqlOpiniones);
     $stmtOpiniones->execute($productIds);
     $rowsOpiniones = $stmtOpiniones->fetchAll();
 
@@ -177,7 +191,7 @@ try {
     foreach ($rowsProductos as $row) {
         $pid = (int)$row["id"];
         $slugProducto = (string)$row["slug"];
-        $images = $imagesByProductId[$pid] ?? [];
+        $imagenesProducto = $imagesByProductId[$pid] ?? [];
 
         $products[] = [
             "id" => $pid,
@@ -190,8 +204,8 @@ try {
             "color" => (string)($row["color"] ?? ""),
             "badge" => (string)($row["badge"] ?? ""),
             "createdAt" => $row["fecha_catalogo"] ? (string)$row["fecha_catalogo"] : substr((string)$row["creado_en"], 0, 10),
-            "image" => count($images) ? $images[0] : "placeholder",
-            "images" => $images,
+            "image" => $imagenesProducto[0] ?? "placeholder",
+            "images" => $imagenesProducto,
             "description" => (string)($row["descripcion"] ?? ""),
         ];
 

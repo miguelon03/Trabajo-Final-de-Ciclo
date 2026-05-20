@@ -15,19 +15,19 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 session_start();
 require_once __DIR__ . "/../conexion.php";
 
-if (!isset($_SESSION["usuario_id"])) {
-    http_response_code(401);
-    echo json_encode([
-        "ok" => false,
-        "error" => "Debes iniciar sesión"
-    ]);
-    exit;
-}
-
-$usuarioId = (int)$_SESSION["usuario_id"];
-
 // GET: devolver lista de slugs favoritos del usuario.
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
+    if (!isset($_SESSION["usuario_id"])) {
+        echo json_encode([
+            "ok" => true,
+            "autenticado" => false,
+            "favoritos" => [],
+        ]);
+        exit;
+    }
+
+    $usuarioId = (int)$_SESSION["usuario_id"];
+
     try {
         $stmt = $conexion->prepare(
             "SELECT slug
@@ -56,6 +56,17 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
 // POST/DELETE: añadir o quitar favorito usando slug de producto.
 if ($_SERVER["REQUEST_METHOD"] === "POST" || $_SERVER["REQUEST_METHOD"] === "DELETE") {
+    if (!isset($_SESSION["usuario_id"])) {
+        http_response_code(401);
+        echo json_encode([
+            "ok" => false,
+            "error" => "Debes iniciar sesión"
+        ]);
+        exit;
+    }
+
+    $usuarioId = (int)$_SESSION["usuario_id"];
+
     try {
         $contentType = $_SERVER["CONTENT_TYPE"] ?? "";
         $body = [];

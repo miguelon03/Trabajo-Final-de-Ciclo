@@ -41,7 +41,6 @@ try {
         ? (float)$input["precio_original"]
         : null;
     $tipo = trim((string)($input["tipo"] ?? ""));
-    $color = trim((string)($input["color"] ?? ""));
     $badge = trim((string)($input["badge"] ?? ""));
     $estado = trim((string)($input["estado"] ?? "borrador"));
 
@@ -79,10 +78,10 @@ try {
     $stmt = $conexion->prepare("
         INSERT INTO productos (
             nombre, slug, descripcion, precio_base, precio_original,
-            tipo, color, badge, fecha_catalogo, estado
+            tipo, badge, fecha_catalogo, estado
         ) VALUES (
             :nombre, :slug, :descripcion, :precio_base, :precio_original,
-            :tipo, :color, :badge, CURDATE(), :estado
+            :tipo, :badge, CURDATE(), :estado
         )
     ");
 
@@ -93,7 +92,6 @@ try {
         "precio_base" => $precioBase,
         "precio_original" => $precioOriginal,
         "tipo" => $tipo !== "" ? $tipo : null,
-        "color" => $color !== "" ? $color : null,
         "badge" => $badge !== "" ? $badge : null,
         "estado" => in_array($estado, ["borrador", "publicado", "archivado"], true) ? $estado : "borrador",
     ]);

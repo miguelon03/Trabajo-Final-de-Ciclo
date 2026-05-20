@@ -64,15 +64,30 @@ if (isset($_SESSION["usuario_id"])) {
 
 // Devolvemos:
 // - si hay sesión iniciada
-// - y, si la hay, los datos básicos del usuario
+// - y, si la hay, los datos básicos del usuario, incluyendo puntos
+$usuario = null;
+if (isset($_SESSION["usuario_id"])) {
+    // Consultar puntos del usuario
+    $puntos = 0;
+    try {
+        $stmtPuntos = $conexion->prepare("SELECT COALESCE(SUM(puntos), 0) AS puntos FROM puntos_usuarios WHERE usuario_id = :id");
+        $stmtPuntos->execute(["id" => (int)$_SESSION["usuario_id"]]);
+        $puntos = (int)($stmtPuntos->fetchColumn() ?: 0);
+    } catch (Throwable $e) {
+        $puntos = 0;
+    }
+    $usuario = [
+        "id" => $_SESSION["usuario_id"],
+        "nombre" => $_SESSION["usuario_nombre"] ?? "",
+        "email" => $_SESSION["usuario_email"] ?? "",
+        "rol" => $_SESSION["usuario_rol"] ?? "cliente",
+        "puntos" => $puntos
+    ];
+}
+
 echo json_encode([
     "ok" => true,
     "logueado" => isset($_SESSION["usuario_id"]),
     "autenticado" => isset($_SESSION["usuario_id"]),
-    "usuario" => isset($_SESSION["usuario_id"]) ? [
-        "id" => $_SESSION["usuario_id"],
-        "nombre" => $_SESSION["usuario_nombre"] ?? "",
-        "email" => $_SESSION["usuario_email"] ?? "",
-        "rol" => $_SESSION["usuario_rol"] ?? "cliente"
-    ] : null
+    "usuario" => $usuario
 ]);

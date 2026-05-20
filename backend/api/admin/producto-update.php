@@ -42,7 +42,6 @@ try {
         ? (float)$input["precio_original"]
         : null;
     $tipo = trim((string)($input["tipo"] ?? ""));
-    $color = trim((string)($input["color"] ?? ""));
     $badge = trim((string)($input["badge"] ?? ""));
     $estado = trim((string)($input["estado"] ?? "borrador"));
 
@@ -97,7 +96,6 @@ try {
             precio_base = :precio_base,
             precio_original = :precio_original,
             tipo = :tipo,
-            color = :color,
             badge = :badge,
             estado = :estado
         WHERE id = :id
@@ -111,7 +109,6 @@ try {
         "precio_base" => $precioBase,
         "precio_original" => $precioOriginal,
         "tipo" => $tipo !== "" ? $tipo : null,
-        "color" => $color !== "" ? $color : null,
         "badge" => $badge !== "" ? $badge : null,
         "estado" => in_array($estado, ["borrador", "publicado", "archivado"], true) ? $estado : "borrador",
     ]);
