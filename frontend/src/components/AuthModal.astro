@@ -1,0 +1,485 @@
+---
+// Modal de autenticación reutilizable.
+// - Se abre automáticamente en la primera visita (sin cookie dmh_visited).
+// - Se puede abrir manualmente desde cualquier página con window.dmhOpenAuth().
+// - Contiene tres vistas: "login", "registro" y (inline) el botón de invitado.
+---
+
+<!-- Overlay del modal -->
+<div id="authModal" class="auth-modal" role="dialog" aria-modal="true" aria-label="Iniciar sesión o registrarse" hidden>
+  <div class="auth-modal__backdrop" id="authModalBackdrop"></div>
+
+  <div class="auth-modal__panel">
+    <!-- Botón cerrar (solo visible si no es primera visita) -->
+    <button class="auth-modal__close" id="authModalClose" type="button" aria-label="Cerrar">✕</button>
+
+    <!-- Logo -->
+    <div class="auth-modal__logo">
+      <img src="/logo-dmh.png" alt="DMH" />
+    </div>
+
+    <!-- ── Vista: Login ── -->
+    <div id="authViewLogin" class="auth-view">
+      <p class="auth-modal__subtitle">INICIA SESIÓN</p>
+
+      <form id="authLoginForm" novalidate>
+        <div class="auth-field">
+          <label class="auth-label" for="authEmail">Email</label>
+          <input class="auth-input" type="email" id="authEmail" name="email" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="authPassword">Contraseña</label>
+          <input class="auth-input" type="password" id="authPassword" name="contrasena" autocomplete="current-password" />
+        </div>
+        <div class="auth-forgot-wrap">
+          <a class="auth-forgot" href="#">He olvidado mi contraseña</a>
+        </div>
+        <p id="authLoginMsg" class="auth-msg"></p>
+        <button class="auth-btn auth-btn--primary" type="submit">INICIAR SESIÓN</button>
+      </form>
+
+      <hr class="auth-divider" />
+
+      <p class="auth-switch-text">¿No tienes cuenta? <button type="button" class="auth-switch-link" id="goToRegister">Regístrate</button></p>
+      <button class="auth-btn auth-btn--secondary" id="goToRegisterBtn" type="button">CREAR CUENTA →</button>
+
+      <hr class="auth-divider" />
+
+      <button class="auth-btn auth-btn--ghost" id="authGuestBtnLogin" type="button">Continuar como invitado →</button>
+    </div>
+
+    <!-- ── Vista: Registro ── -->
+    <div id="authViewRegister" class="auth-view" hidden>
+      <p class="auth-modal__subtitle">REGÍSTRATE</p>
+
+      <form id="authRegisterForm" novalidate>
+        <div class="auth-field">
+          <label class="auth-label" for="authNombre">Nombre</label>
+          <input class="auth-input" type="text" id="authNombre" name="nombre" autocomplete="name" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="authRegEmail">Email</label>
+          <input class="auth-input" type="email" id="authRegEmail" name="email" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="authRegPassword">Contraseña</label>
+          <input class="auth-input" type="password" id="authRegPassword" name="contrasena" autocomplete="new-password" />
+        </div>
+        <label class="auth-terms">
+          <input type="checkbox" name="acepta" value="1" />
+          <span>Acepto los <a href="/terminos">términos</a> y la <a href="/privacidad">política de privacidad</a></span>
+        </label>
+        <p id="authRegisterMsg" class="auth-msg"></p>
+        <button class="auth-btn auth-btn--primary" type="submit">CREAR CUENTA</button>
+      </form>
+
+      <hr class="auth-divider" />
+
+      <p class="auth-switch-text">¿Ya tienes cuenta? <button type="button" class="auth-switch-link" id="goToLogin">Inicia sesión</button></p>
+
+      <hr class="auth-divider" />
+
+      <button class="auth-btn auth-btn--ghost" id="authGuestBtnRegister" type="button">Continuar como invitado →</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes auth-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes auth-panel-in {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+
+  @keyframes auth-panel-out {
+    from { opacity: 1; transform: translateY(0)   scale(1); }
+    to   { opacity: 0; transform: translateY(16px) scale(0.97); }
+  }
+
+  .auth-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .auth-modal[hidden] { display: none !important; }
+
+  .auth-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.76);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: auth-backdrop-in 0.25s ease forwards;
+  }
+
+  .auth-modal__panel {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 460px);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: #0d0d0d;
+    border: 1px solid rgba(190, 255, 0, 0.55);
+    box-shadow:
+      0 0 0 1px rgba(190, 255, 0, 0.08),
+      0 0 32px rgba(190, 255, 0, 0.12),
+      0 24px 60px rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    padding: 2.5rem 2rem 2rem;
+    color: #f5f5f5;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+    animation: auth-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .auth-modal__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #888;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    line-height: 1;
+  }
+
+  .auth-modal__close:hover { background: rgba(255,255,255,0.1); color: #f5f5f5; }
+
+  .auth-modal__logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    /* Recorta un poco de espacio en blanco del PNG arriba y abajo */
+    overflow: hidden;
+    height: 52px;
+    align-items: center;
+  }
+
+  .auth-modal__logo img {
+    width: clamp(110px, 18vw, 160px);
+    height: 72px;
+    object-fit: cover;
+    object-position: center 52%;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .auth-modal__subtitle {
+    text-align: center;
+    color: #4f4f4f;
+    letter-spacing: 0.35em;
+    font-size: 0.95rem;
+    margin: 0 0 1.8rem;
+  }
+
+  .auth-view[hidden] { display: none !important; }
+
+  .auth-field { margin-bottom: 1.4rem; }
+
+  .auth-label {
+    display: block;
+    color: #787878;
+    font-size: 0.92rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .auth-input {
+    width: 100%;
+    height: 50px;
+    background: #141414;
+    border: 1px solid #2b2b2b;
+    border-radius: 4px;
+    color: #f5f5f5;
+    padding: 0 14px;
+    font-size: 0.97rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+
+  .auth-input:focus {
+    border-color: rgba(190, 255, 0, 0.6);
+    box-shadow: 0 0 0 1px rgba(190, 255, 0, 0.25) inset;
+  }
+
+  .auth-forgot-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -0.4rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .auth-forgot {
+    color: #d9ff00;
+    font-size: 0.88rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .auth-msg {
+    min-height: 20px;
+    margin: 0 0 0.9rem;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .auth-msg.error { color: #ff6b6b; }
+  .auth-msg.success { color: #7dff98; }
+
+  .auth-btn {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 800;
+    font-size: 0.97rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.18s, transform 0.18s, box-shadow 0.18s;
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.02em;
+  }
+
+  .auth-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .auth-btn:active { transform: scale(0.99) translateY(0); }
+
+  .auth-btn--primary {
+    background: #d9ff00;
+    color: #111;
+    box-shadow: 0 4px 20px rgba(217, 255, 0, 0.25);
+  }
+  .auth-btn--primary:hover {
+    box-shadow: 0 6px 28px rgba(217, 255, 0, 0.38);
+  }
+  .auth-btn--secondary { background: #161616; color: #fff; border: 1px solid #303030; }
+  .auth-btn--ghost {
+    background: transparent;
+    color: #666;
+    border: 1px solid #282828;
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+  .auth-btn--ghost:hover { color: #ccc; border-color: #3a3a3a; box-shadow: none; transform: none; }
+
+  .auth-divider {
+    border: none;
+    border-top: 1px solid #242424;
+    margin: 1.4rem 0;
+  }
+
+  .auth-switch-text {
+    text-align: center;
+    color: #666;
+    font-size: 0.93rem;
+    margin: 0 0 0.9rem;
+  }
+
+  .auth-switch-link {
+    background: none;
+    border: none;
+    color: #d9ff00;
+    font-weight: 600;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+  }
+
+  .auth-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #9a9a9a;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    cursor: pointer;
+  }
+
+  .auth-terms input[type="checkbox"] {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: #d9ff00;
+    flex-shrink: 0;
+  }
+
+  .auth-terms a { color: #d9ff00; text-decoration: none; font-weight: 600; }
+
+  @media (max-width: 500px) {
+    .auth-modal__panel { padding: 2rem 1.2rem 1.5rem; }
+  }
+</style>
+
+<script>
+  // @ts-nocheck
+  const VISITED_KEY = "dmh_visited";
+
+  const modal         = document.getElementById("authModal");
+  const closeBtn      = document.getElementById("authModalClose");
+  const backdrop      = document.getElementById("authModalBackdrop");
+  const viewLogin     = document.getElementById("authViewLogin");
+  const viewRegister  = document.getElementById("authViewRegister");
+
+  const loginForm     = document.getElementById("authLoginForm");
+  const loginMsg      = document.getElementById("authLoginMsg");
+  const registerForm  = document.getElementById("authRegisterForm");
+  const registerMsg   = document.getElementById("authRegisterMsg");
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  // forced=true → primera visita forzada, sin botón de cerrar
+  function openModal(view = "login", forced = false) {
+    if (!modal) return;
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    showView(view);
+    if (closeBtn) closeBtn.style.display = forced ? "none" : "inline-flex";
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    // Animación de salida
+    const panel = modal.querySelector(".auth-modal__panel");
+    if (panel) {
+      panel.style.animation = "auth-panel-out 0.22s cubic-bezier(0.4,0,1,1) forwards";
+      setTimeout(() => {
+        modal.hidden = true;
+        panel.style.animation = "";
+        document.body.style.overflow = "";
+      }, 200);
+    } else {
+      modal.hidden = true;
+      document.body.style.overflow = "";
+    }
+    localStorage.setItem(VISITED_KEY, "1");
+  }
+
+  function showView(name) {
+    if (viewLogin)    viewLogin.hidden    = name !== "login";
+    if (viewRegister) viewRegister.hidden = name !== "register";
+  }
+
+  // ── Apertura automática en primera visita ─────────────────────────────
+
+  async function maybeShowOnFirstVisit() {
+    // Si ya visitó (independientemente de si cerró el modal o no), no volvemos a abrirlo.
+    if (localStorage.getItem(VISITED_KEY)) return;
+
+    try {
+      const res  = await fetch("/backend/session.php", { credentials: "include" });
+      const data = await res.json();
+      if (data.logueado) {
+        localStorage.setItem(VISITED_KEY, "1");
+        return;
+      }
+    } catch (_) {}
+
+    // Marcamos la visita ANTES de abrir el modal para que al navegar
+    // de vuelta al home no aparezca de nuevo.
+    localStorage.setItem(VISITED_KEY, "1");
+    openModal("login", true); // forced → sin botón de cerrar
+  }
+
+  // ── Exponer función global para abrirlo desde Header ─────────────────
+
+  window.dmhOpenAuth = openModal;
+
+  // ── Eventos del modal ─────────────────────────────────────────────────
+
+  closeBtn?.addEventListener("click", closeModal);
+  backdrop?.addEventListener("click", closeModal);
+
+  document.getElementById("goToRegister")?.addEventListener("click", () => showView("register"));
+  document.getElementById("goToRegisterBtn")?.addEventListener("click", () => showView("register"));
+  document.getElementById("goToLogin")?.addEventListener("click", () => showView("login"));
+
+  // Cerrar con Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal && !modal.hidden) {
+      const hasVisited = localStorage.getItem(VISITED_KEY);
+      if (hasVisited) closeModal();
+    }
+  });
+
+  // Botones de invitado
+  function handleGuest() {
+    closeModal();
+    window.showToast?.("Navegando como invitado", "info");
+  }
+  document.getElementById("authGuestBtnLogin")?.addEventListener("click", handleGuest);
+  document.getElementById("authGuestBtnRegister")?.addEventListener("click", handleGuest);
+
+  // ── Formulario de Login ───────────────────────────────────────────────
+
+  loginForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (loginMsg) { loginMsg.textContent = ""; loginMsg.className = "auth-msg"; }
+
+    const formData = new FormData(loginForm);
+    try {
+      const res  = await fetch("/backend/login.php", { method: "POST", body: formData, credentials: "include" });
+      const data = await res.json();
+
+      if (data.ok) {
+        if (loginMsg) { loginMsg.textContent = "Inicio de sesión correcto"; loginMsg.className = "auth-msg success"; }
+        window.showToast?.("Sesión iniciada correctamente", "success");
+        closeModal();
+        setTimeout(() => window.location.href = data.redirect || "/", 600);
+      } else {
+        if (loginMsg) { loginMsg.textContent = data.error || "Credenciales incorrectas"; loginMsg.className = "auth-msg error"; }
+      }
+    } catch {
+      if (loginMsg) { loginMsg.textContent = "Error de conexión"; loginMsg.className = "auth-msg error"; }
+    }
+  });
+
+  // ── Formulario de Registro ────────────────────────────────────────────
+
+  registerForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (registerMsg) { registerMsg.textContent = ""; registerMsg.className = "auth-msg"; }
+
+    const formData = new FormData(registerForm);
+    try {
+      const res  = await fetch("/backend/register.php", { method: "POST", body: formData, credentials: "include" });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { ok: false, error: text }; }
+
+      if (data.ok) {
+        if (registerMsg) { registerMsg.textContent = "Cuenta creada correctamente"; registerMsg.className = "auth-msg success"; }
+        window.showToast?.("Cuenta creada correctamente", "success");
+        closeModal();
+        setTimeout(() => window.location.href = "/", 600);
+      } else {
+        if (registerMsg) { registerMsg.textContent = data.error || "Error al crear la cuenta"; registerMsg.className = "auth-msg error"; }
+      }
+    } catch {
+      if (registerMsg) { registerMsg.textContent = "Error de conexión"; registerMsg.className = "auth-msg error"; }
+    }
+  });
+
+  // ── Inicialización ────────────────────────────────────────────────────
+
+  maybeShowOnFirstVisit();
+</script>

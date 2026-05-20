@@ -1047,6 +1047,8 @@ let stripeCard = null;
           total:           result.data.total,
           envio:           result.data.envio,
           importe_total:   result.data.total,
+          puntos_ganados:  Number(result.data.puntos_ganados || 0),
+          puntos_usados:   Number(result.data.puntos_usados || 0),
           tarjeta_mascara: paymentResult.data?.tarjeta_mascara || '•••• •••• •••• ••••',
           direccion_envio: `${inputVal(direccionEl)}, ${inputVal(cpEl)} ${inputVal(ciudadEl)}`,
           fecha:           new Date().toISOString(),

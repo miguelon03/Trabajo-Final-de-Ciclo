@@ -38,6 +38,31 @@ body {
   color: var(--color-text);
 }
 
+/* Evita caret parpadeante en texto no editable (p.ej. navegación por cursor). */
+body,
+a,
+p,
+span,
+div,
+li,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button {
+  caret-color: transparent;
+}
+
+/* Mantiene caret visible donde sí se escribe. */
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  caret-color: auto;
+}
+
 img,
 picture,
 svg,

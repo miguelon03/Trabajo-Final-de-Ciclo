@@ -12,7 +12,6 @@ const productCards = Array.from(document.querySelectorAll(".product-card")).filt
 );
 const noResults = document.getElementById("noResults");
 const productCount = document.getElementById("productCount");
-const sortSelect = document.getElementById("sortSelect");
 const prevPageBtn = document.getElementById("prevPage");
 const nextPageBtn = document.getElementById("nextPage");
 const pageIndicator = document.getElementById("pageIndicator");
@@ -703,6 +702,7 @@ function setupCardNavigation() {
 const activeFilters = {
   type: [],
   price: [],
+  sort: "newest",
 };
 
 function updateActiveFilters() {
@@ -717,6 +717,36 @@ function updateActiveFilters() {
       (input) => input.dataset.filterType === "price" && input.checked,
     )
     .map((input) => input.value);
+
+  const selectedSortInput = filterInputs.find(
+    (input) => input.dataset.filterType === "sort" && input.checked,
+  );
+  activeFilters.sort = selectedSortInput?.value || "newest";
+}
+
+function enforceExclusiveSort(changedInput) {
+  if (changedInput.dataset.filterType !== "sort") {
+    return;
+  }
+
+  const sortInputs = filterInputs.filter((input) => input.dataset.filterType === "sort");
+
+  if (changedInput.checked) {
+    sortInputs.forEach((input) => {
+      if (input !== changedInput) {
+        input.checked = false;
+      }
+    });
+    return;
+  }
+
+  const hasAnyChecked = sortInputs.some((input) => input.checked);
+  if (!hasAnyChecked) {
+    const newestInput = sortInputs.find((input) => input.value === "newest") || sortInputs[0];
+    if (newestInput) {
+      newestInput.checked = true;
+    }
+  }
 }
 
 function passesFilter(card) {
@@ -735,7 +765,7 @@ function passesFilter(card) {
 }
 
 function sortCards(cards) {
-  const currentSort = sortSelect?.value || "newest";
+  const currentSort = activeFilters.sort || "newest";
 
   return cards.sort((a, b) => {
     if (currentSort === "price-asc") {
@@ -834,6 +864,8 @@ function applyFiltersAndPagination() {
 
 filterInputs.forEach((input) => {
   input.addEventListener("change", () => {
+    enforceExclusiveSort(input);
+    currentPage = 1;
     applyFiltersAndPagination();
   });
 });
@@ -841,15 +873,12 @@ filterInputs.forEach((input) => {
 if (clearFiltersBtn) {
   clearFiltersBtn.addEventListener("click", () => {
     filterInputs.forEach((input) => {
-      input.checked = false;
+      if (input.dataset.filterType === "sort") {
+        input.checked = input.value === "newest";
+      } else {
+        input.checked = false;
+      }
     });
-    currentPage = 1;
-    applyFiltersAndPagination();
-  });
-}
-
-if (sortSelect) {
-  sortSelect.addEventListener("change", () => {
     currentPage = 1;
     applyFiltersAndPagination();
   });

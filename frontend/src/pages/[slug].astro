@@ -61,20 +61,6 @@ if (slug === "novedades") {
         </nav>
 
         <div class="categoria__content">
-          {slug === "novedades" && (
-            <div class="novedades__hero">
-              <div class="novedades__images">
-                <div class="placeholder-image">Imagen Marca 1</div>
-                <div class="placeholder-image">Imagen Marca 2</div>
-              </div>
-              <div class="novedades__text">
-                <h2>Nueva Colección Primavera</h2>
-                <p>Descubre nuestras últimas prendas con diseños exclusivos y materiales de alta calidad.</p>
-                <p>Nueva Sudadera Urban Style - Disponible ahora en negro y gris.</p>
-              </div>
-            </div>
-          )}
-
           <div class="categoria__products">
             <h1 class="categoria__title">{titulo}</h1>
             <div class="products-grid" id="productsGrid" data-quick-add-icon={cartIcon}>
@@ -174,42 +160,6 @@ if (slug === "novedades") {
     gap: 2rem;
   }
 
-  .novedades__hero {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    align-items: center;
-  }
-
-  .novedades__images {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .placeholder-image {
-    aspect-ratio: 1;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.22));
-    border-radius: var(--border-radius-card);
-    display: grid;
-    place-items: center;
-    color: rgba(255, 255, 255, 0.28);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    font-size: 0.95rem;
-  }
-
-  .novedades__text h2 {
-    color: #C8FF00;
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .novedades__text p {
-    color: #f5f5f5;
-    margin-bottom: 0.5rem;
-  }
-
   .categoria__products {
     display: flex;
     flex-direction: column;
@@ -224,9 +174,10 @@ if (slug === "novedades") {
 
   .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 260px));
     gap: 1.2rem;
     align-items: stretch;
+    justify-content: flex-start;
   }
 
   .product-card {
@@ -390,17 +341,8 @@ if (slug === "novedades") {
       padding: 1.5rem;
     }
 
-    .novedades__hero {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .novedades__images {
-      grid-template-columns: 1fr;
-    }
-
     .products-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

@@ -21,96 +21,108 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       </div>
 
       <!-- Confirmación real -->
-      <div id="confirmContent" hidden>
-
-        <!-- Encabezado éxito -->
-        <div class="confirm-success-head">
-          <span class="confirm-icon confirm-icon--ok" aria-hidden="true">✓</span>
-          <div>
-            <h1>¡Pedido realizado!</h1>
-            <p id="confirmSubtitle">Tu compra se ha completado correctamente.</p>
-          </div>
-        </div>
-
-        <!-- Aviso para miembro -->
-        <div id="confirmMemberNote" class="confirm-member-note" hidden>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-          </svg>
-          <span>Como miembro también puedes descargar el recibo desde <a href="/usuario/pedidos">Mis pedidos</a>.</span>
-        </div>
-
-        <!-- Recibo -->
-        <div class="receipt" id="receipt">
-          <header class="receipt__head">
-            <div class="receipt__brand">DMH</div>
-            <div class="receipt__meta">
-              <p class="receipt__label">Recibo de compra</p>
-              <p id="receiptDate" class="receipt__date"></p>
-            </div>
-          </header>
-
-          <div class="receipt__row receipt__row--highlight">
-            <span>Número de pedido</span>
-            <strong id="receiptId"></strong>
-          </div>
-          <div class="receipt__row">
-            <span>Estado</span>
-            <span class="receipt__badge">Pagado</span>
-          </div>
-          <div class="receipt__row">
-            <span>Tarjeta</span>
-            <span id="receiptCard"></span>
-          </div>
-
-          <hr class="receipt__divider" />
-
-          <p class="receipt__section-title">Dirección de envío</p>
-          <p id="receiptAddress" class="receipt__address"></p>
-
-          <hr class="receipt__divider" />
-
-          <p class="receipt__section-title">Productos</p>
-          <div id="receiptItems" class="receipt__items"></div>
-
-          <hr class="receipt__divider" />
-
-          <div class="receipt__totals">
-            <div class="receipt__row">
-              <span>Subtotal</span>
-              <span id="receiptSubtotal"></span>
-            </div>
-            <div class="receipt__row">
-              <span>Envío</span>
-              <span id="receiptShipping"></span>
-            </div>
-            <div class="receipt__row receipt__row--total">
-              <strong>Total</strong>
-              <strong id="receiptTotal"></strong>
+      <div id="confirmContent" class="confirm-layout" hidden>
+        <div class="confirm-layout__left">
+          <!-- Mensaje 1: encabezado éxito -->
+          <div class="confirm-success-head">
+            <span class="confirm-icon confirm-icon--ok" aria-hidden="true">✓</span>
+            <div>
+              <h1>¡Pedido realizado!</h1>
+              <p id="confirmSubtitle">Tu compra se ha completado correctamente.</p>
             </div>
           </div>
 
-          <p class="receipt__footer-note">
-            Gracias por tu compra en DripMode Hood (DMH).<br />
-            Este recibo es una confirmación de pago simulado con fines de demostración.
-          </p>
-        </div>
-
-        <!-- Acciones -->
-        <div class="confirm-actions" id="confirmActions">
-          <button class="btn-download" id="btnDownloadPdf" type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
+          <!-- Mensaje 2: aviso para miembro -->
+          <div id="confirmMemberNote" class="confirm-member-note" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
             </svg>
-            Descargar recibo (PDF)
-          </button>
-          <a id="confirmCta" class="btn-primary" href="/catalogo">Seguir comprando</a>
+            <span>Como miembro también puedes descargar el recibo desde <a href="/usuario/pedidos">Mis pedidos</a>.</span>
+          </div>
+
+          <div id="confirmPointsNote" class="confirm-member-note confirm-member-note--points" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/>
+            </svg>
+            <span id="confirmPointsText"></span>
+          </div>
+
+          <!-- Acciones -->
+          <div class="confirm-actions" id="confirmActions">
+            <button class="btn-download" id="btnDownloadPdf" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Descargar recibo (PDF)
+            </button>
+            <a id="confirmCta" class="btn-primary" href="/catalogo">Seguir comprando</a>
+          </div>
         </div>
 
+        <div class="confirm-layout__right">
+          <!-- Recibo -->
+          <div class="receipt" id="receipt">
+            <header class="receipt__head">
+              <div class="receipt__brand">
+                <img src="/logo-dmh.png" alt="DMH" />
+              </div>
+              <div class="receipt__meta">
+                <p class="receipt__label">Recibo de compra</p>
+                <p id="receiptDate" class="receipt__date"></p>
+              </div>
+            </header>
+
+            <div class="receipt__row receipt__row--highlight">
+              <span>Número de pedido</span>
+              <strong id="receiptId"></strong>
+            </div>
+            <div class="receipt__row">
+              <span>Estado</span>
+              <span class="receipt__badge">Pagado</span>
+            </div>
+            <div class="receipt__row">
+              <span>Tarjeta</span>
+              <span id="receiptCard"></span>
+            </div>
+
+            <hr class="receipt__divider" />
+
+            <p class="receipt__section-title">Dirección de envío</p>
+            <p id="receiptAddress" class="receipt__address"></p>
+
+            <hr class="receipt__divider" />
+
+            <p class="receipt__section-title">Productos</p>
+            <div id="receiptItems" class="receipt__items"></div>
+
+            <hr class="receipt__divider" />
+
+            <div class="receipt__totals">
+              <div class="receipt__row">
+                <span>Subtotal</span>
+                <span id="receiptSubtotal"></span>
+              </div>
+              <div class="receipt__row">
+                <span>Envío</span>
+                <span id="receiptShipping"></span>
+              </div>
+              <div class="receipt__row receipt__row--total">
+                <strong>Total</strong>
+                <strong id="receiptTotal"></strong>
+              </div>
+            </div>
+
+            <p class="receipt__footer-note">
+              Gracias por tu compra en DripMode Hood (DMH).<br />
+              Este recibo es una confirmación de pago simulado con fines de demostración.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -123,6 +135,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const noDataEl   = document.getElementById("confirmNoData");
     const contentEl  = document.getElementById("confirmContent");
     const memberNote = document.getElementById("confirmMemberNote");
+    const pointsNote = document.getElementById("confirmPointsNote");
+    const pointsText = document.getElementById("confirmPointsText");
     const ctaBtn     = document.getElementById("confirmCta");
 
     function euro(n) {
@@ -198,6 +212,16 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       // Nota de miembro + ajuste del CTA
       if (order.isLoggedIn) {
         if (memberNote) memberNote.hidden = false;
+
+        const pointsEarned = Number(order.puntos_ganados || 0);
+        const pointsUsed = Number(order.puntos_usados || 0);
+        if (pointsNote && pointsText) {
+          pointsText.textContent = pointsEarned > 0
+            ? `Has ganado ${pointsEarned} punto${pointsEarned === 1 ? '' : 's'} con esta compra.${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`
+            : `En esta compra no has generado puntos.${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`;
+          pointsNote.hidden = false;
+        }
+
         if (ctaBtn) {
           ctaBtn.textContent = "Ver mis pedidos";
           ctaBtn.href = "/usuario/pedidos";
@@ -229,10 +253,29 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     .confirm-container {
-      max-width: 720px;
+      max-width: 1100px;
       margin: 0 auto;
       display: grid;
       gap: 1.4rem;
+    }
+
+    .confirm-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(380px, 520px);
+      gap: 1.6rem;
+      align-items: start;
+    }
+
+    .confirm-layout__left {
+      display: grid;
+      gap: 1.15rem;
+      align-content: start;
+    }
+
+    .confirm-layout__right {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
     }
 
     .confirm-card {
@@ -316,6 +359,15 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       color: #c8ff00;
     }
 
+    .confirm-member-note--points {
+      border-color: rgba(139, 255, 151, .28);
+      background: rgba(139, 255, 151, .08);
+    }
+
+    .confirm-member-note--points svg {
+      color: #8bff97;
+    }
+
     /* ── Recibo ─────────────────────────────────── */
     .receipt {
       border: 1px solid rgba(255,255,255,.1);
@@ -333,10 +385,16 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     }
 
     .receipt__brand {
-      font-size: 2rem;
-      font-weight: 900;
-      letter-spacing: .18em;
-      color: #c8ff00;
+      display: inline-flex;
+      align-items: center;
+      max-width: 170px;
+    }
+
+    .receipt__brand img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
     }
 
     .receipt__meta { text-align: right; }
@@ -480,6 +538,12 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
     .btn-primary:hover { opacity: .9; }
 
+    @media (max-width: 980px) {
+      .confirm-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* ── Print ─────────────────────────────────── */
     @media print {
       body { background: #fff !important; color: #000 !important; }
@@ -498,7 +562,6 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         max-width: 100% !important;
       }
 
-      .receipt__brand { color: #000 !important; }
       .receipt__label, .receipt__date, .receipt__address,
       .receipt__item-meta, .receipt__footer-note,
       .receipt__section-title { color: #555 !important; }

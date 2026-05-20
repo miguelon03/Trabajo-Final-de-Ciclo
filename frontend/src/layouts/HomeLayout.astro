@@ -9,6 +9,7 @@
 
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import AuthModal from "../components/AuthModal.astro";
 import "../styles/global.css";
 
 /* Props opcionales:
@@ -38,6 +39,8 @@ const { title = "DripMode Hood", description = "" } = Astro.props;
     <body>
         <!-- Cabecera fija de la web -->
         <Header />
+        <!-- Modal de autenticación: login/registro/invitado -->
+        <AuthModal />
         <!-- Contenido específico de cada página que use este Layout -->
         <main>
             <slot />

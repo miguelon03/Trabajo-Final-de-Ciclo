@@ -214,7 +214,8 @@ const catalogProducts = products as Array<{
         <title>Recibo DMH #${pedido.id}</title>
         <style>
           body{font-family:Arial,sans-serif;background:#fff;color:#111;margin:0;padding:2rem;}
-          .brand{font-size:2.2rem;font-weight:900;letter-spacing:.18em;margin:0 0 .2rem;}
+          .brand{display:inline-flex;align-items:center;margin:0 0 .35rem;max-width:170px;}
+          .brand img{width:100%;height:auto;display:block;filter:grayscale(1) brightness(0);}
           .meta{color:#666;font-size:.85rem;margin:0 0 1.5rem;}
           h2{margin:.5rem 0 .3rem;font-size:1rem;text-transform:uppercase;letter-spacing:.1em;color:#888;}
           table{width:100%;border-collapse:collapse;margin:.6rem 0 1.2rem;}
@@ -227,7 +228,7 @@ const catalogProducts = products as Array<{
           @media print{body{padding:1rem;}}
         </style>
       </head><body>
-        <p class="brand">DMH</p>
+        <p class="brand"><img src="/logo-dmh.png" alt="DMH" /></p>
         <p class="meta">Recibo de compra · Pedido #${pedido.id} · ${pedido.creado_en ? new Date(pedido.creado_en).toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"}) : new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
         <p><strong>Estado:</strong> <span class="badge">${getStatusLabel(pedido.estado)}</span></p>
         <p><strong>Dirección de envío:</strong> ${escapeHtml(pedido.direccion_envio || "-")}</p>

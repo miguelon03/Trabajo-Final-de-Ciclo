@@ -1,4 +1,5 @@
 <style>
+  /* Vista de alta de usuario con validación delegada al backend. */
   /* Variables del tema */
   :root {
     --bg: #050505;
@@ -37,13 +38,17 @@
 
   /* Logo */
   .logo {
-    text-align: center;
-    color: var(--accent);
-    font-size: clamp(2.8rem, 8vw, 5rem);
-    font-weight: 900;
-    letter-spacing: 0.18em;
-    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin: 0 0 16px;
+  }
+
+  .logo img {
+    width: clamp(150px, 26vw, 240px);
+    height: auto;
+    display: block;
+    object-fit: contain;
   }
 
   .subtitle {
@@ -211,7 +216,7 @@
 
 <section class="page">
   <div class="register-card">
-    <h1 class="logo">DMH</h1>
+    <h1 class="logo"><img src="/logo-dmh.png" alt="DMH" /></h1>
     <p class="subtitle">REGÍSTRATE</p>
 
     <!-- Formulario de registro -->
@@ -266,6 +271,7 @@
 
   <script>
     // @ts-nocheck
+    // Flujo: submit -> POST register.php -> parse robusto de respuesta -> feedback al usuario.
     // Referencias al formulario y al contenedor de mensajes
     const registerForm = document.getElementById("registerForm");
     const registerMessage = document.getElementById("registerMessage");

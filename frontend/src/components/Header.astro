@@ -16,6 +16,7 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
 
 const currentPath = Astro.url.pathname;
 
+// Marca como activo el enlace exacto o cualquier subruta de la sección.
 function isActivePath(path: string) {
   return currentPath === path || currentPath.startsWith(`${path}/`);
 }
@@ -446,6 +447,7 @@ function isActivePath(path: string) {
   </style>
 
   <script>
+    // Script de estado global de cabecera: carrito, sesión y menú de cuenta.
     // Actualiza el contador visual del carrito leyendo localStorage
     function updateCartBadge(bump = false) {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -572,13 +574,14 @@ function isActivePath(path: string) {
           });
         } else {
           puntosMeter.style.display = "none";
-          // Si no hay sesión, el botón de usuario lleva al login
-          if (profileLink && profileLink.tagName === "A") (profileLink as HTMLAnchorElement).href = "/login";
-          if (ordersLink && ordersLink.tagName === "A") (ordersLink as HTMLAnchorElement).href = "/login";
-          if (favoritesLink && favoritesLink.tagName === "A") (favoritesLink as HTMLAnchorElement).href = "/login";
+          // Si no hay sesión, el botón de usuario abre el modal de autenticación
+          if (profileLink && profileLink.tagName === "A") (profileLink as HTMLAnchorElement).href = "#";
+          if (ordersLink && ordersLink.tagName === "A") (ordersLink as HTMLAnchorElement).href = "#";
+          if (favoritesLink && favoritesLink.tagName === "A") (favoritesLink as HTMLAnchorElement).href = "#";
 
-          accountButton.addEventListener("click", () => {
-            window.location.href = "/login";
+          accountButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            (window as any).dmhOpenAuth?.("login");
           });
 
           // Ocultamos el botón de cerrar sesión
@@ -597,6 +600,7 @@ function isActivePath(path: string) {
 
   <script define:vars={{ searchData }}>
     // @ts-nocheck
+    // Script del buscador: apertura/cierre, sugerencias y navegación a resultados.
 
     // Referencias a los elementos del buscador
     const searchWrapper = document.getElementById("searchWrapper");
