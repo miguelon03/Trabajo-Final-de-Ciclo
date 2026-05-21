@@ -7,8 +7,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     <div class="profile-container">
       <header class="profile-header">
         <p class="profile-kicker">Área de usuario</p>
-        <h1>Mi perfil</h1>
-        <p>Edita tus datos personales.</p>
+        <h1 id="profileTitle">Mi perfil</h1>
+        <p id="profileIntro">Edita tus datos personales.</p>
       </header>
 
       <div id="profileGuest" class="profile-card" hidden>
@@ -95,6 +95,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     const profileMessage = document.getElementById("profileMessage");
     const profileForm = document.getElementById("profileForm");
     const profileLoading = document.getElementById("profileLoading");
+    const profileTitle = document.getElementById("profileTitle");
+    const profileIntro = document.getElementById("profileIntro");
 
     const nombreInput = document.getElementById("nombre");
     const emailInput = document.getElementById("email");
@@ -159,6 +161,17 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       direccionInput.value = usuario.direccion || "";
       ciudadInput.value = usuario.ciudad || "";
       codigoPostalInput.value = usuario.codigo_postal || "";
+
+      const nombreUsuario = String(usuario.nombre || "").trim();
+      if (profileTitle) {
+        profileTitle.textContent = nombreUsuario ? `Hola, ${nombreUsuario}` : "Mi perfil";
+      }
+
+      if (profileIntro) {
+        profileIntro.textContent = nombreUsuario
+          ? "Edita tus datos personales desde aquí."
+          : "Edita tus datos personales.";
+      }
 
       // Actualizar tarjeta de puntos
       const puntos = Number(usuario.puntos || 0);

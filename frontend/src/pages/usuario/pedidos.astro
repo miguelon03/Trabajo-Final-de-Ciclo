@@ -197,6 +197,9 @@ const catalogProducts = products as Array<{
       const total    = Number(pedido.importe_total || 0);
       const envio    = Number(pedido.envio ?? (total >= 80 ? 0 : 4.95));
       const subtotal = +(total - envio).toFixed(2);
+      const clienteNombre = escapeHtml(pedido.cliente_nombre || "Cliente");
+      const clienteEmail = escapeHtml(pedido.cliente_email || "Sin email");
+      const clienteTelefono = escapeHtml(pedido.cliente_telefono || "-");
 
       const itemsHtml = items.map((item) => {
         const info = getProductInfo(item);
@@ -230,6 +233,9 @@ const catalogProducts = products as Array<{
       </head><body>
         <p class="brand"><img src="/logo-dmh.png" alt="DMH" /></p>
         <p class="meta">Recibo de compra · Pedido #${pedido.id} · ${pedido.creado_en ? new Date(pedido.creado_en).toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"}) : new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
+        <p><strong>Cliente:</strong> ${clienteNombre}</p>
+        <p><strong>Email:</strong> ${clienteEmail}</p>
+        <p><strong>Teléfono:</strong> ${clienteTelefono}</p>
         <p><strong>Estado:</strong> <span class="badge">${getStatusLabel(pedido.estado)}</span></p>
         <p><strong>Dirección de envío:</strong> ${escapeHtml(pedido.direccion_envio || "-")}</p>
         <h2>Productos</h2>

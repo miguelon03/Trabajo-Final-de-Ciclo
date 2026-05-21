@@ -20,6 +20,16 @@ if (!isset($conexion) || !($conexion instanceof PDO)) {
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : null;
 $metodo = $_SERVER["REQUEST_METHOD"];
 
+$stmtHasOpinionStatus = $conexion->prepare(
+        "SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = 'opiniones'
+             AND COLUMN_NAME = 'estado'"
+);
+$stmtHasOpinionStatus->execute();
+$hasOpinionStatusColumn = (int)$stmtHasOpinionStatus->fetchColumn() > 0;
+
 function error_response($msg, $code = 400) {
     http_response_code($code);
     echo json_encode(["ok" => false, "error" => $msg]);
@@ -30,23 +40,34 @@ if ($metodo === "GET") {
     $producto_id = isset($_GET["producto_id"]) ? (int)$_GET["producto_id"] : 0;
     if ($producto_id <= 0) error_response("Falta producto_id", 422);
 
-    $stmt = $conexion->prepare("
-        SELECT o.id, o.usuario_id, u.nombre, o.puntuacion, o.comentario, o.estado, o.creado_en
-        FROM opiniones o
-        JOIN usuarios u ON o.usuario_id = u.id
-        WHERE o.producto_id = :pid
-          AND (
-            o.estado = 'aprobada'
-            OR (:uid > 0 AND o.usuario_id = :uid)
-          )
-        ORDER BY
-          CASE
-            WHEN o.estado = 'aprobada' THEN 0
-            WHEN o.estado = 'pendiente' THEN 1
-            ELSE 2
-          END,
-          o.creado_en DESC
-    ");
+        $sqlGet = "
+                SELECT o.id, o.usuario_id, u.nombre, o.puntuacion, o.comentario,
+                             " . ($hasOpinionStatusColumn ? "o.estado" : "'aprobada' AS estado") . ",
+                             o.creado_en
+                FROM opiniones o
+                JOIN usuarios u ON o.usuario_id = u.id
+                WHERE o.producto_id = :pid
+        ";
+
+        if ($hasOpinionStatusColumn) {
+                $sqlGet .= "
+                    AND (
+                        o.estado = 'aprobada'
+                        OR (:uid > 0 AND o.usuario_id = :uid)
+                    )
+                ORDER BY
+                    CASE
+                        WHEN o.estado = 'aprobada' THEN 0
+                        WHEN o.estado = 'pendiente' THEN 1
+                        ELSE 2
+                    END,
+                    o.creado_en DESC
+                ";
+        } else {
+                $sqlGet .= " ORDER BY o.creado_en DESC ";
+        }
+
+        $stmt = $conexion->prepare($sqlGet);
     $stmt->execute([
         "pid" => $producto_id,
         "uid" => (int)($usuarioId ?? 0),
@@ -74,7 +95,11 @@ if ($metodo === "POST") {
         error_response("Datos inválidos", 422);
     }
 
-    $stmtCheck = $conexion->prepare("SELECT estado FROM opiniones WHERE usuario_id = :uid AND producto_id = :pid LIMIT 1");
+    $stmtCheck = $conexion->prepare(
+        $hasOpinionStatusColumn
+            ? "SELECT estado FROM opiniones WHERE usuario_id = :uid AND producto_id = :pid LIMIT 1"
+            : "SELECT 'aprobada' AS estado FROM opiniones WHERE usuario_id = :uid AND producto_id = :pid LIMIT 1"
+    );
     $stmtCheck->execute(["uid" => $usuarioId, "pid" => $producto_id]);
     $estadoExistente = $stmtCheck->fetchColumn();
 
@@ -88,10 +113,13 @@ if ($metodo === "POST") {
         error_response("Ya has opinado sobre este producto", 409);
     }
 
-    $stmt = $conexion->prepare("
-        INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, estado, creado_en)
-        VALUES (:uid, :pid, :punt, :coment, 'pendiente', NOW())
-    ");
+    $stmt = $conexion->prepare(
+        $hasOpinionStatusColumn
+            ? "INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, estado, creado_en)
+               VALUES (:uid, :pid, :punt, :coment, 'pendiente', NOW())"
+            : "INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, creado_en)
+               VALUES (:uid, :pid, :punt, :coment, NOW())"
+    );
     $stmt->execute([
         "uid" => $usuarioId,
         "pid" => $producto_id,

@@ -140,11 +140,20 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 
     try {
-        $stmtPedidos = $conexion->prepare("
-            SELECT id, estado, importe_total, direccion_envio, creado_en
-            FROM pedidos
-            WHERE usuario_id = :uid
-            ORDER BY creado_en DESC
+        $stmtPedidos = $conexion->prepare(" 
+            SELECT
+                p.id,
+                p.estado,
+                p.importe_total,
+                p.direccion_envio,
+                p.creado_en,
+                COALESCE(NULLIF(u.nombre, ''), NULLIF(p.nombre_invitado, ''), 'Cliente') AS cliente_nombre,
+                COALESCE(NULLIF(u.email, ''), NULLIF(p.email_invitado, ''), 'Sin email') AS cliente_email,
+                COALESCE(NULLIF(u.telefono, ''), '') AS cliente_telefono
+            FROM pedidos p
+            LEFT JOIN usuarios u ON u.id = p.usuario_id
+            WHERE p.usuario_id = :uid
+            ORDER BY p.creado_en DESC
         ");
         $stmtPedidos->execute(["uid" => $usuarioId]);
         $pedidos = $stmtPedidos->fetchAll();

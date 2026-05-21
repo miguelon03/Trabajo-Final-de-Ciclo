@@ -1,3 +1,7 @@
+---
+import { instagramIcon, tiktokIcon } from "./icons";
+---
+
 <footer class="site-footer">
   <div class="footer-grid">
     <!-- Columna legal con enlaces de cumplimiento -->
@@ -24,18 +28,20 @@
     <!-- Datos de contacto directo -->
     <div class="footer-column">
       <p class="footer-title">CONTACTO</p>
-      <a href="mailto:hello@dripmode.es">hello@dripmode.es</a>
-      <span>+34 91 427 67 68</span>
+      <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a>
+      
     </div>
 
-    <!-- Enlaces sociales (pendientes de URLs finales) -->
+    <!-- Enlaces sociales -->
     <div class="footer-column">
       <p class="footer-title">CONECTA</p>
       <div class="social-links">
-        <a href="#" aria-label="Instagram">IG</a>
-        <a href="#" aria-label="Facebook">FB</a>
-        <a href="#" aria-label="TikTok">TT</a>
-        <a href="#" aria-label="Pinterest">PT</a>
+        <a href="https://www.instagram.com/dripmodehood/" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+          <span set:html={instagramIcon}></span>
+        </a>
+        <a href="#" aria-label="TikTok">
+          <span set:html={tiktokIcon}></span>
+        </a>
       </div>
     </div>
   </div>
@@ -119,6 +125,13 @@
     color: #ffffff;
     text-decoration: none;
     font-size: 0.85rem;
+  }
+
+  .social-links a span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
   }
 
   .footer-copy {

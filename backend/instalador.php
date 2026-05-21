@@ -374,6 +374,47 @@ try {
         )
     ");
     $pasos[] = "Tabla opiniones creada";
+
+    // Compatibilidad: columnas de moderacion para opiniones.
+    $stmtColOpiniones = $conexion->prepare(" 
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'opiniones'
+          AND COLUMN_NAME = :columna
+    ");
+
+    $stmtColOpiniones->execute(['schema' => $basedatos, 'columna' => 'estado']);
+    if ((int)$stmtColOpiniones->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE opiniones ADD COLUMN estado ENUM('pendiente','aprobada','rechazada') NOT NULL DEFAULT 'pendiente' AFTER comentario");
+        $pasos[] = "Columna opiniones.estado añadida";
+    }
+
+    $stmtColOpiniones->execute(['schema' => $basedatos, 'columna' => 'moderada_por']);
+    if ((int)$stmtColOpiniones->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE opiniones ADD COLUMN moderada_por INT NULL AFTER estado");
+        $pasos[] = "Columna opiniones.moderada_por añadida";
+    }
+
+    $stmtColOpiniones->execute(['schema' => $basedatos, 'columna' => 'moderada_en']);
+    if ((int)$stmtColOpiniones->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE opiniones ADD COLUMN moderada_en TIMESTAMP NULL DEFAULT NULL AFTER moderada_por");
+        $pasos[] = "Columna opiniones.moderada_en añadida";
+    }
+
+    $stmtFkOpinionModeradaPor = $conexion->prepare(" 
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = :schema
+          AND TABLE_NAME = 'opiniones'
+          AND COLUMN_NAME = 'moderada_por'
+          AND REFERENCED_TABLE_NAME = 'usuarios'
+    ");
+    $stmtFkOpinionModeradaPor->execute(['schema' => $basedatos]);
+    if ((int)$stmtFkOpinionModeradaPor->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE opiniones ADD CONSTRAINT fk_opiniones_moderada_por FOREIGN KEY (moderada_por) REFERENCES usuarios(id)");
+        $pasos[] = "FK opiniones.moderada_por creada";
+    }
     //Tabla de productos por categoria
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS productos_categorias (
@@ -774,11 +815,12 @@ try {
         ");
         $stmtGetUsuarioReview = $conexion->prepare("SELECT id FROM usuarios WHERE email = :email LIMIT 1");
         $stmtOpinion = $conexion->prepare("
-            INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, creado_en)
-            VALUES (:uid, :pid, :puntuacion, :comentario, :creado_en)
+            INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, estado, creado_en)
+            VALUES (:uid, :pid, :puntuacion, :comentario, 'aprobada', :creado_en)
             ON DUPLICATE KEY UPDATE
                 puntuacion = VALUES(puntuacion),
                 comentario = VALUES(comentario),
+                estado = VALUES(estado),
                 creado_en = VALUES(creado_en)
         ");
         $stmtProductosSobrantes = $conexion->query("SELECT id, slug FROM productos");

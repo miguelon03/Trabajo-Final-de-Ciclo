@@ -27,3 +27,18 @@ export const cartIcon = `
   <circle cx="18" cy="20" r="1.5" fill="currentColor" />
 </svg>
 `;
+
+export const instagramIcon = `
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="12" cy="12" r="3.8" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/>
+</svg>
+`;
+
+export const tiktokIcon = `
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M14.2 4.2V13.7C14.2 16.1 12.3 18 10 18C7.7 18 5.8 16.1 5.8 13.8C5.8 11.5 7.7 9.6 10 9.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.2 4.2C15 6 16.6 7.2 18.6 7.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
+`;
