@@ -1,7 +1,11 @@
 <?php
 
 // CORS para desarrollo en Astro (localhost:4321).
-header("Access-Control-Allow-Origin: http://localhost:4321");
+$dmhAllowedOrigins = ["http://localhost:4321", "https://dripmode.com"];
+$dmhOrigin = $_SERVER["HTTP_ORIGIN"] ?? "";
+if (in_array($dmhOrigin, $dmhAllowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $dmhOrigin);
+}
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");

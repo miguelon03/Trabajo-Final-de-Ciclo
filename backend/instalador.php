@@ -1,7 +1,11 @@
 <?php
 
-//cabeceras CORS para permitir peticiones desde el frontend de Astro en localhost
-header("Access-Control-Allow-Origin: http://localhost:4321");
+//cabeceras CORS para permitir peticiones desde el frontend de Astro y dripmode.com
+$dmhAllowedOrigins = ["http://localhost:4321", "https://dripmode.com"];
+$dmhOrigin = $_SERVER["HTTP_ORIGIN"] ?? "";
+if (in_array($dmhOrigin, $dmhAllowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $dmhOrigin);
+}
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -26,6 +30,23 @@ function dmh_slugify(string $value): string {
     $value = preg_replace('/[^a-z0-9]+/i', '-', $value) ?? '';
     $value = trim($value, '-');
     return $value !== '' ? $value : 'sin-categoria';
+}
+
+function dmh_strip_color_mentions(string $description): string {
+    $text = trim($description);
+    if ($text === '') {
+        return $text;
+    }
+
+    // Elimina frases del tipo "en color negro" (o variantes) para no redundar con las imagenes.
+    $text = preg_replace('/\s+en\s+color\s+[a-z0-9áéíóúüñ\- ]+(?=[,.;])/iu', '', $text) ?? $text;
+    $text = preg_replace('/\s+en\s+color\s+[a-z0-9áéíóúüñ\- ]+$/iu', '', $text) ?? $text;
+
+    // Limpieza de espacios residuales.
+    $text = preg_replace('/\s{2,}/', ' ', $text) ?? $text;
+    $text = preg_replace('/\s+([,.;:])/u', '$1', $text) ?? $text;
+
+    return trim($text);
 }
 
 function dmh_is_placeholder_image(string $value): bool {
@@ -864,7 +885,7 @@ try {
             $stmtProducto->execute([
                 'nombre' => (string)($product['title'] ?? ''),
                 'slug' => (string)($product['slug'] ?? ''),
-                'descripcion' => (string)($product['description'] ?? ''),
+                'descripcion' => dmh_strip_color_mentions((string)($product['description'] ?? '')),
                 'precio' => (float)($product['price'] ?? 0),
                 'precio_original' => isset($product['originalPrice']) ? (float)$product['originalPrice'] : null,
                 'tipo' => trim((string)($product['type'] ?? '')) ?: null,

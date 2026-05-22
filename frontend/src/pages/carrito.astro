@@ -212,6 +212,66 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
     }
 
+    const stockCacheBySlugAndSize = new Map<string, number>();
+    let stockCacheLoaded = false;
+    let stockCachePromise: Promise<void> | null = null;
+
+    function normalizeStockSize(size: string) {
+      return String(size || '').trim().toLowerCase();
+    }
+
+    function getStockKey(slug: string, size: string) {
+      return `${String(slug || '').trim()}::${normalizeStockSize(size)}`;
+    }
+
+    async function ensureStockCache() {
+      if (stockCacheLoaded) return;
+      if (stockCachePromise) {
+        await stockCachePromise;
+        return;
+      }
+
+      stockCachePromise = (async () => {
+        const result = await window.dmhFetchJson('catalogo.php', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!result?.ok) {
+          throw new Error(result?.error || 'No se pudo validar el stock');
+        }
+
+        stockCacheBySlugAndSize.clear();
+
+        const stockEntries = Array.isArray(result.data?.stock) ? result.data.stock : [];
+        for (const entry of stockEntries) {
+          const slug = String(entry?.productSlug || '').trim();
+          const bySize = entry?.bySize || {};
+          const sizes = Object.keys(bySize);
+
+          for (const size of sizes) {
+            const info = bySize?.[size] || {};
+            const stock = Number(info?.stock || 0);
+            stockCacheBySlugAndSize.set(getStockKey(slug, size), stock);
+          }
+        }
+
+        stockCacheLoaded = true;
+      })();
+
+      try {
+        await stockCachePromise;
+      } finally {
+        stockCachePromise = null;
+      }
+    }
+
+    async function getMaxStockForItem(item: CartItem) {
+      await ensureStockCache();
+      const key = getStockKey(item.slug, item.size);
+      return Number(stockCacheBySlugAndSize.get(key) ?? 0);
+    }
+
     async function loadMemberCartFromDb() {
       if (!isLoggedIn || typeof window.dmhFetchJson !== 'function') {
         return;
@@ -312,10 +372,19 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       // Listeners botones cantidad
       cartItems.querySelectorAll('.qty-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const i = Number(btn.dataset.index);
           const c = getCart();
+          if (!Number.isFinite(i) || i < 0 || i >= c.length) {
+            return;
+          }
+
           if (btn.dataset.action === 'inc') {
+            const maxStock = await getMaxStockForItem(c[i]);
+            if (c[i].quantity + 1 > maxStock) {
+              window.showToast?.('No puedes superar el stock disponible para esta talla.', 'error');
+              return;
+            }
             c[i].quantity += 1;
           } else {
             c[i].quantity -= 1;

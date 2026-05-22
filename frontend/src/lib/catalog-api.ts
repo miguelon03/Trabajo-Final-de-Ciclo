@@ -52,7 +52,11 @@ function getCatalogApiUrl(): string {
     return fromEnv.trim();
   }
 
-  return "http://tfc.local/backend/api/catalogo.php";
+  if (typeof window !== "undefined") {
+    return "/backend/api/catalogo.php";
+  }
+
+  return "http://localhost/backend/api/catalogo.php";
 }
 
 export async function fetchCatalogData(slug?: string): Promise<CatalogApiResponse> {
