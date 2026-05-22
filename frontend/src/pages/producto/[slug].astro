@@ -505,8 +505,33 @@ const relatedProducts = allProducts
     async function renderReviewForm() {
       await ensureCurrentUser();
 
-      if (!currentUser || !reviewFormContainer) {
-        reviewFormContainer.innerHTML = "";
+      if (!reviewFormContainer) {
+        return;
+      }
+
+      if (!currentUser) {
+        reviewFormContainer.innerHTML = `
+          <div class='review-form review-form--done'>
+            <div class='review-form__header'>
+              <div>
+                <p class='review-form__eyebrow'>Solo para miembros</p>
+                <h3>Para opinar necesitas cuenta</h3>
+              </div>
+            </div>
+            <p class='review-form__done-text'>Para publicar una opinión tienes que crear una cuenta e iniciar sesión.</p>
+            <div class='review-form__footer'>
+              <p>Cuando inicies sesión podrás valorar este producto.</p>
+              <button type='button' class='btn-primary review-form__submit' id='reviewLoginBtn'>Ir a login</button>
+            </div>
+          </div>
+        `;
+
+        const reviewLoginBtn = document.getElementById("reviewLoginBtn");
+        if (reviewLoginBtn instanceof HTMLButtonElement) {
+          reviewLoginBtn.addEventListener("click", () => {
+            window.location.href = "/login";
+          });
+        }
         return;
       }
 
@@ -912,6 +937,17 @@ const relatedProducts = allProducts
           existingIndex = i;
           break;
         }
+      }
+
+      const existingQty =
+        existingIndex > -1 ? Number(cart[existingIndex].quantity || 0) : 0;
+
+      if (existingQty + cartItem.quantity > stock) {
+        (window as any).showToast?.(
+          "No puedes añadir más unidades que el stock disponible para esta talla.",
+          "error",
+        );
+        return;
       }
 
       if (existingIndex > -1) {

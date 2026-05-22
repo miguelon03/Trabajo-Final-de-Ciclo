@@ -26,7 +26,7 @@ type ApiResponse = {
   error?: string;
 };
 
-const SERVER_BASE = "http://tfc.local/backend/api/admin";
+const SERVER_BASE = "http://localhost/backend/api/admin";
 const CLIENT_BASE = "/backend/api/admin";
 
 function getAdminProductosBase(): string {

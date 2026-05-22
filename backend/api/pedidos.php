@@ -1,6 +1,10 @@
 <?php
 
-header("Access-Control-Allow-Origin: http://localhost:4321");
+$dmhAllowedOrigins = ["http://localhost:4321", "https://dripmode.com"];
+$dmhOrigin = $_SERVER["HTTP_ORIGIN"] ?? "";
+if (in_array($dmhOrigin, $dmhAllowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $dmhOrigin);
+}
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -15,121 +19,6 @@ session_start();
 require_once __DIR__ . "/../conexion.php";
 
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : null;
-
-function dmh_try_discount_stock(PDO $conexion, array $item): void
-{
-    $cantidad = (int)$item["cantidad"];
-    $sku = trim((string)($item["sku"] ?? ""));
-    $slug = trim((string)($item["slug"] ?? ""));
-    $talla = trim((string)($item["talla"] ?? "Única"));
-    $color = trim((string)($item["color"] ?? ""));
-
-    if ($cantidad <= 0 || $slug === "") {
-        return;
-    }
-
-    // Si no hay variantes inventariadas para ese slug, no bloqueamos el pedido.
-    $stmtHasVariants = $conexion->prepare(
-        "SELECT COUNT(*)
-         FROM variantes_producto vp
-         JOIN productos p ON p.id = vp.producto_id
-         WHERE p.slug = :slug"
-    );
-    $stmtHasVariants->execute(["slug" => $slug]);
-    $hasVariants = (int)$stmtHasVariants->fetchColumn() > 0;
-    if (!$hasVariants) {
-        return;
-    }
-
-    if ($sku !== "") {
-        $stmtSku = $conexion->prepare(
-            "UPDATE variantes_producto vp
-             JOIN productos p ON p.id = vp.producto_id
-             SET vp.stock = vp.stock - :cantidad
-             WHERE vp.sku = :sku
-               AND vp.stock >= :cantidad"
-        );
-        $stmtSku->execute([
-            "cantidad" => $cantidad,
-            "sku" => $sku,
-        ]);
-
-        if ($stmtSku->rowCount() > 0) {
-            return;
-        }
-    }
-
-    $stmtVariantColor = $conexion->prepare(
-        "UPDATE variantes_producto vp
-         JOIN productos p ON p.id = vp.producto_id
-         SET vp.stock = vp.stock - :cantidad
-         WHERE p.slug = :slug
-           AND vp.talla = :talla
-           AND (
-             (:color = '' AND (vp.color IS NULL OR vp.color = ''))
-             OR vp.color = :color
-           )
-           AND vp.stock >= :cantidad"
-    );
-
-    $stmtVariantColor->execute([
-        "cantidad" => $cantidad,
-        "slug" => $slug,
-        "talla" => $talla,
-        "color" => $color,
-    ]);
-
-    if ($stmtVariantColor->rowCount() > 0) {
-        return;
-    }
-
-    $stmtVariantSize = $conexion->prepare(
-        "UPDATE variantes_producto vp
-         JOIN productos p ON p.id = vp.producto_id
-         SET vp.stock = vp.stock - :cantidad
-         WHERE p.slug = :slug
-           AND vp.talla = :talla
-           AND vp.stock >= :cantidad
-         ORDER BY vp.stock DESC
-         LIMIT 1"
-    );
-
-    $stmtVariantSize->execute([
-        "cantidad" => $cantidad,
-        "slug" => $slug,
-        "talla" => $talla,
-    ]);
-
-    if ($stmtVariantSize->rowCount() > 0) {
-        return;
-    }
-
-    // Si se pidió una talla concreta, no debemos descontar otra talla distinta.
-    // Esto garantiza que el stock que baja coincide con la talla comprada.
-    $normalizedTalla = mb_strtolower(trim($talla));
-    if ($normalizedTalla !== "" && $normalizedTalla !== "unica" && $normalizedTalla !== "única") {
-        throw new RuntimeException("Sin stock suficiente para la talla seleccionada en " . ($item["nombre_producto"] ?? $slug));
-    }
-
-    $stmtAnyVariant = $conexion->prepare(
-        "UPDATE variantes_producto vp
-         JOIN productos p ON p.id = vp.producto_id
-         SET vp.stock = vp.stock - :cantidad
-         WHERE p.slug = :slug
-           AND vp.stock >= :cantidad
-         ORDER BY vp.stock DESC
-         LIMIT 1"
-    );
-
-    $stmtAnyVariant->execute([
-        "cantidad" => $cantidad,
-        "slug" => $slug,
-    ]);
-
-    if ($stmtAnyVariant->rowCount() === 0) {
-        throw new RuntimeException("Sin stock suficiente para " . ($item["nombre_producto"] ?? $slug));
-    }
-}
 
 // Listar pedidos del usuario autenticado.
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
@@ -290,13 +179,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $envio = $totalCalculado >= 80 ? 0.0 : 4.95;
         $importeTotal = round($totalCalculado + $envio, 2);
 
-        // Insertar pedido 
+        // Insertar pedido pendiente. El stock y los efectos finales de compra
+        // se consolidan al confirmar el pago correctamente.
         $conexion->beginTransaction();
-
-        // Restamos stock en el momento de crear el pedido para evitar sobreventa.
-        foreach ($itemsLimpios as $item) {
-            dmh_try_discount_stock($conexion, $item);
-        }
 
         // Gestion de puntos para clientes
         $puntosUsados = 0;
@@ -327,7 +212,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Puntos ganados: 1€ = 1 punto (solo usuarios registrados)
         $puntosGanados = $usuarioId ? (int)floor($importeTotal) : 0;
-        $saldoPuntosFinal = $usuarioId ? max(0, $puntosDisponibles - $puntosUsados + $puntosGanados) : null;
 
         // Insertar pedido
         $stmtPedido = $conexion->prepare("
@@ -365,40 +249,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "precio"    => $item["precio_unitario"],
                 "subtotal"  => $item["subtotal"],
             ]);
-        }
-
-        // Actualizar puntos del usuario
-        if ($usuarioId && $saldoPuntosFinal !== null) {
-            // Normalizamos a una única fila por usuario para evitar saldos incoherentes.
-            $conexion->prepare("DELETE FROM puntos_usuarios WHERE usuario_id = :uid")
-                ->execute(["uid" => $usuarioId]);
-
-            $conexion->prepare("INSERT INTO puntos_usuarios (usuario_id, puntos) VALUES (:uid, :puntos)")
-                ->execute(["uid" => $usuarioId, "puntos" => $saldoPuntosFinal]);
-
-            if ($puntosUsados > 0) {
-                $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
-                    ->execute([
-                        "uid"    => $usuarioId,
-                        "pid"    => $pedidoId,
-                        "cambio" => -$puntosUsados,
-                        "motivo" => "Canje de puntos en pedido #$pedidoId",
-                    ]);
-            }
-
-            if ($puntosGanados > 0) {
-                $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
-                    ->execute([
-                        "uid"    => $usuarioId,
-                        "pid"    => $pedidoId,
-                        "cambio" => $puntosGanados,
-                        "motivo" => "Puntos ganados por pedido #$pedidoId",
-                    ]);
-            }
-
-            // Al completar el pedido, limpiamos carrito persistente del usuario.
-            $conexion->prepare("DELETE FROM carrito_items WHERE usuario_id = :uid")
-                ->execute(["uid" => $usuarioId]);
         }
 
         $conexion->commit();

@@ -12,7 +12,11 @@ type AdminDashboardResponse = {
 };
 
 function getAdminDashboardUrl(): string {
-  return "http://tfc.local/backend/api/admin/dashboard.php";
+  if (typeof window !== "undefined") {
+    return "/backend/api/admin/dashboard.php";
+  }
+
+  return "http://localhost/backend/api/admin/dashboard.php";
 }
 
 export async function fetchAdminDashboard(cookieHeader?: string): Promise<AdminDashboardStats> {

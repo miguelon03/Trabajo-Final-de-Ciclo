@@ -1,7 +1,11 @@
 <?php
 
-//cabeceras CORS para permitir peticiones desde el frontend de Astro en localhost
-header("Access-Control-Allow-Origin: http://localhost:4321");
+//cabeceras CORS para permitir peticiones desde el frontend de Astro y dripmode.com
+$dmhAllowedOrigins = ["http://localhost:4321", "https://dripmode.com"];
+$dmhOrigin = $_SERVER["HTTP_ORIGIN"] ?? "";
+if (in_array($dmhOrigin, $dmhAllowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $dmhOrigin);
+}
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");

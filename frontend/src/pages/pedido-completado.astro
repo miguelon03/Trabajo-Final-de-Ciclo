@@ -130,6 +130,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
   <script>
     // @ts-nocheck
     const ORDER_SESSION_KEY = "dmh:last_order";
+    const ORDER_FAVORITES_PROMPT_PREFIX = "dmh:order-favorites-prompted:";
 
     const loadingEl  = document.getElementById("confirmLoading");
     const noDataEl   = document.getElementById("confirmNoData");
@@ -158,6 +159,104 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         });
       } catch (_) {
         return iso;
+      }
+    }
+
+    function getFavoritesPromptKey(orderId) {
+      return ORDER_FAVORITES_PROMPT_PREFIX + String(orderId || "unknown");
+    }
+
+    async function loadCurrentFavorites() {
+      const result = await window.dmhFetchJson?.("favoritos.php", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!result?.ok) {
+        throw new Error(result?.error || "No se pudieron cargar tus favoritos");
+      }
+
+      return Array.isArray(result.data?.favoritos) ? result.data.favoritos : [];
+    }
+
+    async function removeFavorites(slugs) {
+      const removed = [];
+
+      for (const slug of slugs) {
+        const result = await window.dmhFetchJson?.("favoritos.php", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug }),
+        });
+
+        if (!result?.ok) {
+          throw new Error(result?.error || "No se pudieron actualizar los favoritos");
+        }
+
+        removed.push(slug);
+      }
+
+      return removed;
+    }
+
+    async function maybePromptToRemovePurchasedFavorites(order) {
+      if (!order?.isLoggedIn || !order?.pedido_id) {
+        return;
+      }
+
+      const promptKey = getFavoritesPromptKey(order.pedido_id);
+      if (sessionStorage.getItem(promptKey)) {
+        return;
+      }
+
+      const purchasedSlugs = Array.from(new Set(
+        (Array.isArray(order.items) ? order.items : [])
+          .map((item) => String(item?.slug || "").trim())
+          .filter(Boolean)
+      ));
+
+      if (!purchasedSlugs.length) {
+        sessionStorage.setItem(promptKey, "skip");
+        return;
+      }
+
+      try {
+        const currentFavorites = await loadCurrentFavorites();
+        const purchasedFavorites = currentFavorites.filter((slug) => purchasedSlugs.includes(slug));
+
+        if (!purchasedFavorites.length) {
+          sessionStorage.setItem(promptKey, "skip");
+          return;
+        }
+
+        sessionStorage.setItem(promptKey, "shown");
+
+        const count = purchasedFavorites.length;
+        const message = count === 1
+          ? "Has comprado un producto que sigue en favoritos. ¿Quieres quitarlo de favoritos?"
+          : `Has comprado ${count} productos que siguen en favoritos. ¿Quieres quitarlos de favoritos?`;
+
+        window.showConfirmToast?.(message, async () => {
+          try {
+            const removed = await removeFavorites(purchasedFavorites);
+            const remaining = currentFavorites.filter((slug) => !removed.includes(slug));
+            window.dmhFavorites?.set?.(remaining, "order-complete-remove-purchased");
+
+            const successMessage = removed.length === 1
+              ? "Producto comprado eliminado de favoritos"
+              : "Productos comprados eliminados de favoritos";
+            window.showToast?.(successMessage, "success");
+          } catch (error) {
+            window.showToast?.(error?.message || "No se pudieron quitar los favoritos comprados", "error");
+          }
+        }, {
+          confirmText: "Quitar",
+          cancelText: "Mantener",
+        });
+      } catch (error) {
+        sessionStorage.setItem(promptKey, "error");
+        window.showToast?.(error?.message || "No se pudieron revisar tus favoritos", "error");
       }
     }
 
@@ -208,6 +307,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       populateReceipt(order);
 
       if (contentEl) contentEl.hidden = false;
+
+      maybePromptToRemovePurchasedFavorites(order);
 
       // Nota de miembro + ajuste del CTA
       if (order.isLoggedIn) {

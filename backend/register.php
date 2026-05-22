@@ -1,7 +1,11 @@
 <?php
 
-// Permitimos peticiones desde el frontend Astro que corre en localhost:4321
-header("Access-Control-Allow-Origin: http://localhost:4321");
+// Permitimos peticiones desde el frontend Astro y dripmode.com
+$dmhAllowedOrigins = ["http://localhost:4321", "https://dripmode.com"];
+$dmhOrigin = $_SERVER["HTTP_ORIGIN"] ?? "";
+if (in_array($dmhOrigin, $dmhAllowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: " . $dmhOrigin);
+}
 
 // Permitimos enviar cookies y usar la sesión en peticiones cross-origin
 header("Access-Control-Allow-Credentials: true");
