@@ -16,20 +16,18 @@ const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
 
 const currentPath = Astro.url.pathname;
 
-// Marca como activo el enlace exacto o cualquier subruta de la sección.
 function isActivePath(path: string) {
   return currentPath === path || currentPath.startsWith(`${path}/`);
 }
 ---
 
 <header class="site-header">
-  <!-- Bloque izquierdo: logo + navegación principal -->
   <div class="site-header__brand-nav">
     <a class="brand" href="/" aria-label="Inicio DMH">
       <img src="/logo-dmh.png" alt="DMH" />
     </a>
 
-    <nav class="site-nav" aria-label="Navegación principal">
+    <nav id="siteNav" class="site-nav" aria-label="Navegación principal">
       <a class={`site-nav__link ${isActivePath("/catalogo") ? "active" : ""}`} href="/catalogo">Catálogo</a>
       <a class={`site-nav__link ${isActivePath("/novedades") ? "active" : ""}`} href="/novedades">Novedades</a>
       <a class={`site-nav__link ${isActivePath("/accesorios") ? "active" : ""}`} href="/accesorios">Accesorios</a>
@@ -37,16 +35,7 @@ function isActivePath(path: string) {
     </nav>
   </div>
 
-  <!-- Bloque derecho: puntos + búsqueda + cuenta + carrito -->
   <div class="site-header__actions">
-    <!-- Medidor de puntos para miembros logueados (antes de las acciones) -->
-    <div id="puntosMeter" class="puntos-meter" style="display:none">
-      <span class="puntos-meter__icon">⭐</span>
-      <span id="puntosMeterValue" class="puntos-meter__value">0</span>
-      <span class="puntos-meter__label">puntos</span>
-    </div>
-
-    <!-- Buscador expandible -->
     <div class="search-wrapper" id="searchWrapper">
       <div class="search-expand" id="searchExpand">
         <input
@@ -60,10 +49,8 @@ function isActivePath(path: string) {
         />
       </div>
 
-      <!-- Lista de sugerencias del buscador -->
       <ul class="search-suggestions" id="searchSuggestions" role="listbox"></ul>
 
-      <!-- Botón del buscador -->
       <button
         class="icon-button"
         id="searchBtn"
@@ -73,14 +60,6 @@ function isActivePath(path: string) {
       />
     </div>
 
-    <!-- Medidor de puntos para miembros logueados -->
-    <div id="puntosMeter" class="puntos-meter" style="display:none">
-      <span class="puntos-meter__icon">⭐</span>
-      <span id="puntosMeterValue" class="puntos-meter__value">0</span>
-      <span class="puntos-meter__label">puntos</span>
-    </div>
-
-    <!-- Menú de cuenta de usuario -->
     <div class="account-menu" id="accountMenu">
       <button
         id="accountButton"
@@ -92,7 +71,6 @@ function isActivePath(path: string) {
         <span set:html={userIcon} />
       </button>
 
-      <!-- Desplegable del usuario -->
       <div class="account-dropdown" id="accountDropdown">
         <a id="profileLink" href="/login">Mi perfil</a>
         <a id="ordersLink" href="/login">Mis pedidos</a>
@@ -101,66 +79,53 @@ function isActivePath(path: string) {
       </div>
     </div>
 
-    <!-- Botón del carrito con contador -->
     <a class="cart-button" href="/carrito" aria-label="Carrito de compras">
       <span class="cart-icon" set:html={cartIcon} />
       <span class="cart-badge" id="cart-badge">0</span>
     </a>
+
+    <button
+      id="menuToggle"
+      class="menu-toggle"
+      type="button"
+      aria-label="Abrir menú"
+      aria-controls="siteNav"
+      aria-expanded="false"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 
   <style>
-    .puntos-meter {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: rgba(200,255,0,0.08);
-      border-radius: 999px;
-      padding: 0.35rem 0.85rem 0.35rem 0.7rem;
-      margin-right: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #c8ff00;
-      box-shadow: 0 1px 8px 0 rgba(200,255,0,0.04);
-      border: 1px solid rgba(200,255,0,0.18);
-      min-width: 0;
-      transition: background 0.2s, color 0.2s;
-    }
-    .puntos-meter__icon {
-      font-size: 1.15em;
-      margin-right: 0.1em;
-      filter: drop-shadow(0 0 2px #c8ff00cc);
-    }
-    .puntos-meter__value {
-      min-width: 1.5em;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-    .puntos-meter__label {
-      font-size: 0.93em;
-      color: #eaffb7;
-      margin-left: 0.2em;
-    }
-    /* Contenedor principal del header */
     .site-header {
       width: 100%;
-      max-width: 100%;
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 1.25rem 18rem;
+      padding: 1.15rem clamp(1rem, 2.8vw, 2.5rem);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.8rem;
+      gap: 1rem;
       color: #f5f5f5;
+      position: relative;
     }
 
-    /* Logo / marca */
+    .site-header__brand-nav {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
     .brand {
       display: inline-flex;
       align-items: center;
-      width: clamp(130px, 12vw, 170px);
-      height: clamp(30px, 3.2vw, 40px);
+      width: clamp(132px, 12vw, 172px);
+      height: clamp(34px, 3vw, 44px);
       overflow: hidden;
-      margin-right: 1rem;
       flex-shrink: 0;
     }
 
@@ -170,15 +135,14 @@ function isActivePath(path: string) {
       height: 100%;
       object-fit: cover;
       object-position: center;
-      image-rendering: -webkit-optimize-contrast;
     }
 
-    /* Navegación principal */
     .site-nav {
       display: flex;
-      gap: 1.6rem;
-      flex-wrap: wrap;
       align-items: center;
+      gap: 1.8rem;
+      min-width: 0;
+      flex-wrap: wrap;
     }
 
     .site-nav__link {
@@ -186,6 +150,7 @@ function isActivePath(path: string) {
       font-size: 0.95rem;
       text-decoration: none;
       transition: color 0.2s ease;
+      white-space: nowrap;
     }
 
     .site-nav__link:hover,
@@ -193,25 +158,18 @@ function isActivePath(path: string) {
       color: #ffffff;
     }
 
-    .site-header__brand-nav {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
     .site-header__actions {
       display: flex;
       align-items: center;
-      gap: 0.45rem;
-      flex-wrap: nowrap;
+      justify-content: flex-end;
+      gap: 0.75rem;
       min-width: 0;
-      max-width: 100%;
+      flex-shrink: 0;
     }
 
-    /* Botones redondos de iconos */
     .icon-button,
-    .cart-button {
+    .cart-button,
+    .menu-toggle {
       border: none;
       background: rgba(255, 255, 255, 0.04);
       color: #f5f5f5;
@@ -226,15 +184,16 @@ function isActivePath(path: string) {
         background 0.2s ease,
         transform 0.2s ease;
       text-decoration: none;
+      flex-shrink: 0;
     }
 
     .icon-button:hover,
-    .cart-button:hover {
+    .cart-button:hover,
+    .menu-toggle:hover {
       background: rgba(255, 255, 255, 0.12);
       transform: translateY(-1px);
     }
 
-    /* Carrito con badge */
     .cart-button {
       position: relative;
     }
@@ -257,7 +216,6 @@ function isActivePath(path: string) {
       transition: transform 0.15s ease;
     }
 
-    /* Animación del badge del carrito al actualizarse */
     @keyframes badge-bump {
       0% { transform: scale(1); }
       40% { transform: scale(1.55); }
@@ -269,60 +227,23 @@ function isActivePath(path: string) {
       animation: badge-bump 0.35s ease forwards;
     }
 
-    /* Responsive */
-    @media (max-width: 900px) {
-      .site-header {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1rem 1.5rem;
-      }
-
-      .site-header__actions {
-        width: 100%;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        max-width: 100%;
-      }
-      .search-wrapper {
-        max-width: 100%;
-      }
-      .search-expand.is-open {
-        max-width: 100%;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .site-header {
-        padding: 0.9rem 1rem;
-      }
-
-      .site-nav {
-        gap: 1rem;
-      }
-    }
-
-    /* Buscador */
     .search-wrapper {
       position: relative;
       display: flex;
       align-items: center;
       min-width: 0;
-      flex: 1 1 0;
       max-width: 320px;
     }
 
     .search-expand {
       width: 0;
       min-width: 0;
-      max-width: 260px;
-      flex: 1 1 0;
       overflow: hidden;
       transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .search-expand.is-open {
-      width: 100%;
-      max-width: 260px;
+      width: 260px;
       margin-right: 0.5rem;
     }
 
@@ -337,7 +258,6 @@ function isActivePath(path: string) {
 
     .search-input {
       width: 100%;
-      min-width: 0;
       height: 42px;
       background: rgba(255, 255, 255, 0.07);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -347,7 +267,6 @@ function isActivePath(path: string) {
       font-size: 0.88rem;
       outline: none;
       transition: border-color 0.2s;
-      white-space: nowrap;
       box-sizing: border-box;
     }
 
@@ -364,6 +283,7 @@ function isActivePath(path: string) {
       top: calc(100% + 6px);
       right: 42px;
       width: 260px;
+      max-width: min(260px, calc(100vw - 2rem));
       background: #1a1a1a;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 10px;
@@ -397,9 +317,9 @@ function isActivePath(path: string) {
       font-weight: 600;
     }
 
-    /* Menú de cuenta */
     .account-menu {
       position: relative;
+      flex-shrink: 0;
     }
 
     .account-dropdown {
@@ -444,11 +364,152 @@ function isActivePath(path: string) {
       background: rgba(215, 255, 0, 0.08);
       color: #d7ff00;
     }
+
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0;
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .menu-toggle.is-open span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    .menu-toggle.is-open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle.is-open span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    @media (max-width: 900px) {
+      .site-header {
+        padding: 1rem 1.25rem;
+        align-items: center;
+      }
+
+      .menu-toggle {
+        display: inline-flex;
+      }
+
+      .site-nav {
+        display: none;
+        position: absolute;
+        top: calc(100% - 0.2rem);
+        left: 1.25rem;
+        right: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding: 0.6rem 0.95rem;
+        background: #121212;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+        z-index: 250;
+      }
+
+      .site-nav.is-open {
+        display: flex;
+      }
+
+      .site-nav__link {
+        width: 100%;
+        padding: 0.8rem 0;
+        font-size: 0.98rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .site-header__brand-nav {
+        gap: 1rem;
+      }
+
+      .site-header__actions {
+        gap: 0.55rem;
+      }
+
+      .search-expand.is-open {
+        width: min(240px, calc(100vw - 8rem));
+      }
+
+      .search-suggestions {
+        right: 0;
+        width: min(260px, calc(100vw - 2rem));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .site-header {
+        padding: 0.9rem 1rem;
+      }
+
+      .brand {
+        width: 128px;
+        height: 32px;
+      }
+
+      .icon-button,
+      .cart-button,
+      .menu-toggle {
+        width: 40px;
+        height: 40px;
+      }
+
+      .site-header__actions {
+        gap: 0.5rem;
+      }
+
+      .search-expand.is-open {
+        width: min(220px, calc(100vw - 6.5rem));
+      }
+
+      .search-suggestions {
+        right: 0;
+        left: auto;
+        width: min(250px, calc(100vw - 2rem));
+      }
+
+      .account-dropdown {
+        right: 0;
+        left: auto;
+        min-width: 180px;
+      }
+
+      .site-nav {
+        left: 1rem;
+        right: 1rem;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .site-header__brand-nav {
+        gap: 0.75rem;
+      }
+
+      .site-header__actions {
+        gap: 0.42rem;
+      }
+
+      .search-expand.is-open {
+        width: min(200px, calc(100vw - 6rem));
+      }
+    }
   </style>
 
   <script>
-    // Script de estado global de cabecera: carrito, sesión y menú de cuenta.
-    // Actualiza el contador visual del carrito leyendo localStorage
+    // @ts-nocheck
     function updateCartBadge(bump = false) {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       const total = Array.isArray(cart)
@@ -469,14 +530,15 @@ function isActivePath(path: string) {
           badge.classList.add("is-bumping");
           badge.addEventListener(
             "animationend",
-            () => badge.classList.remove("is-bumping"),
+            function() {
+              badge.classList.remove("is-bumping");
+            },
             { once: true },
           );
         }
       }
     }
 
-    // Consulta la sesión al backend y adapta el menú de usuario
     async function updateSessionUI() {
       const profileLink = document.getElementById("profileLink");
       const ordersLink = document.getElementById("ordersLink");
@@ -486,8 +548,6 @@ function isActivePath(path: string) {
       const accountDropdown = document.getElementById("accountDropdown");
       const accountMenu = document.getElementById("accountMenu");
 
-      const puntosMeter = document.getElementById("puntosMeter");
-      const puntosMeterValue = document.getElementById("puntosMeterValue");
       if (
         !accountButton ||
         !accountDropdown ||
@@ -495,39 +555,26 @@ function isActivePath(path: string) {
         !ordersLink ||
         !favoritesLink ||
         !logoutBtn ||
-        !accountMenu ||
-        !puntosMeter ||
-        !puntosMeterValue
+        !accountMenu
       ) {
         return;
       }
 
-      let data;
       try {
-        const response = await fetch(
-          "/backend/session.php",
-          {
-            credentials: "include",
-          },
-        );
-        data = await response.json();
-      } catch (error) {
-        console.error("Error leyendo sesión:", error);
-        return;
-      }
+        const response = await fetch("/backend/session.php", {
+          credentials: "include",
+        });
 
-      // Si hay usuario logueado, activamos el desplegable y mostramos puntos
-      if (data.logueado && data.usuario) {
-          puntosMeter.style.display = "inline-flex";
-          puntosMeterValue.textContent = Number(data.usuario.puntos || 0).toString();
+        const data = await response.json();
+
+        if (data.logueado && data.usuario) {
           const isAdmin = data.usuario.rol === "admin";
-          // Las rutas cambian según sea admin o cliente
-          if (profileLink && profileLink.tagName === "A") (profileLink as HTMLAnchorElement).href = isAdmin ? "/admin" : "/usuario";
-          if (ordersLink && ordersLink.tagName === "A") (ordersLink as HTMLAnchorElement).href = isAdmin ? "/admin/pedidos" : "/usuario/pedidos";
-          if (favoritesLink && favoritesLink.tagName === "A") (favoritesLink as HTMLAnchorElement).href = isAdmin ? "/admin" : "/usuario/favoritos";
 
-          // Al pulsar el icono se abre o cierra el menú desplegable
-          accountButton.addEventListener("click", (e) => {
+          profileLink.setAttribute("href", isAdmin ? "/admin" : "/usuario");
+          ordersLink.setAttribute("href", isAdmin ? "/admin/pedidos" : "/usuario/pedidos");
+          favoritesLink.setAttribute("href", isAdmin ? "/admin" : "/usuario/favoritos");
+
+          accountButton.addEventListener("click", function(e) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -535,74 +582,97 @@ function isActivePath(path: string) {
             accountButton.setAttribute("aria-expanded", String(isOpen));
           });
 
-          // Si haces clic fuera del menú, se cierra
-          document.addEventListener("click", (e) => {
-            const target = e.target as Node;
-            if (accountMenu && target && !accountMenu.contains(target)) {
+          document.addEventListener("click", function(e) {
+            const target = e.target;
+
+            if (target instanceof Node && !accountMenu.contains(target)) {
               accountDropdown.classList.remove("is-open");
               accountButton.setAttribute("aria-expanded", "false");
             }
           });
 
-          // Botón para cerrar sesión
-          logoutBtn.addEventListener("click", async () => {
+          logoutBtn.addEventListener("click", async function() {
             try {
-              const logoutResponse = await fetch(
-                "/backend/logout.php",
-                {
-                  method: "POST",
-                  credentials: "include",
-                },
-              );
+              const logoutResponse = await fetch("/backend/logout.php", {
+                method: "POST",
+                credentials: "include",
+              });
 
               const logoutData = await logoutResponse.json();
 
               if (logoutData.ok) {
-                localStorage.removeItem("cart");
-                window.dispatchEvent(new Event("cart-updated"));
-                (window as any).showToast?.("Sesión cerrada correctamente", "success");
-                setTimeout(() => {
+                window.showToast?.("Sesión cerrada correctamente", "success");
+                setTimeout(function() {
                   window.location.href = "/";
                 }, 450);
               } else {
-                (window as any).showToast?.(logoutData.error || "No se pudo cerrar sesión", "error");
+                window.showToast?.(logoutData.error || "No se pudo cerrar sesión", "error");
               }
             } catch (error) {
-              (window as any).showToast?.("Error cerrando sesión", "error");
+              window.showToast?.("Error cerrando sesión", "error");
               console.error("Error cerrando sesión:", error);
             }
           });
         } else {
-          puntosMeter.style.display = "none";
-          // Si no hay sesión, el botón de usuario abre el modal de autenticación
-          if (profileLink && profileLink.tagName === "A") (profileLink as HTMLAnchorElement).href = "#";
-          if (ordersLink && ordersLink.tagName === "A") (ordersLink as HTMLAnchorElement).href = "#";
-          if (favoritesLink && favoritesLink.tagName === "A") (favoritesLink as HTMLAnchorElement).href = "#";
+          profileLink.setAttribute("href", "/login");
+          ordersLink.setAttribute("href", "/login");
+          favoritesLink.setAttribute("href", "/login");
 
-          accountButton.addEventListener("click", (e) => {
-            e.preventDefault();
-            (window as any).dmhOpenAuth?.("login");
+          accountButton.addEventListener("click", function() {
+            window.location.href = "/login";
           });
 
-          // Ocultamos el botón de cerrar sesión
           logoutBtn.style.display = "none";
         }
-      // (catch eliminado, ya gestionado antes)
+      } catch (error) {
+        console.error("Error leyendo sesión:", error);
+      }
     }
 
-    // Inicializamos el badge del carrito y el estado de la sesión
+    function setupHamburgerMenu() {
+      const menuToggle = document.getElementById("menuToggle");
+      const siteNav = document.getElementById("siteNav");
+
+      if (!menuToggle || !siteNav) {
+        return;
+      }
+
+      menuToggle.addEventListener("click", function() {
+        const isOpen = siteNav.classList.toggle("is-open");
+        menuToggle.classList.toggle("is-open", isOpen);
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      siteNav.querySelectorAll("a").forEach(function(link) {
+        link.addEventListener("click", function() {
+          if (window.innerWidth <= 900) {
+            siteNav.classList.remove("is-open");
+            menuToggle.classList.remove("is-open");
+            menuToggle.setAttribute("aria-expanded", "false");
+          }
+        });
+      });
+
+      window.addEventListener("resize", function() {
+        if (window.innerWidth > 900) {
+          siteNav.classList.remove("is-open");
+          menuToggle.classList.remove("is-open");
+          menuToggle.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
     updateCartBadge();
     updateSessionUI();
+    setupHamburgerMenu();
 
-    // Escuchamos eventos personalizados para refrescar el carrito al añadir productos
-    window.addEventListener("cart-updated", () => updateCartBadge(true));
+    window.addEventListener("cart-updated", function() {
+      updateCartBadge(true);
+    });
   </script>
 
   <script define:vars={{ searchData }}>
     // @ts-nocheck
-    // Script del buscador: apertura/cierre, sugerencias y navegación a resultados.
-
-    // Referencias a los elementos del buscador
     const searchWrapper = document.getElementById("searchWrapper");
     const searchExpand = document.getElementById("searchExpand");
     const searchInput = document.getElementById("searchInput");
@@ -610,7 +680,6 @@ function isActivePath(path: string) {
     const searchSuggestions = document.getElementById("searchSuggestions");
     let isOpen = false;
 
-    // Abre el buscador expandible
     function openSearch() {
       isOpen = true;
       searchExpand.classList.add("is-open");
@@ -619,7 +688,6 @@ function isActivePath(path: string) {
       setTimeout(() => searchInput.focus(), 40);
     }
 
-    // Cierra el buscador y limpia sugerencias
     function closeSearch() {
       isOpen = false;
       searchExpand.classList.remove("is-open");
@@ -629,18 +697,15 @@ function isActivePath(path: string) {
       hideSuggestions();
     }
 
-    // Redirige a la página de resultados de búsqueda
     function doSearch() {
       const q = searchInput.value.trim();
       if (q) window.location.href = "/buscar?q=" + encodeURIComponent(q);
     }
 
-    // Escapa caracteres especiales para construir una expresión regular segura
     function escRe(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
-    // Muestra sugerencias en tiempo real según el texto escrito
     function renderSuggestions(q) {
       if (!q.trim()) {
         hideSuggestions();
@@ -673,7 +738,6 @@ function isActivePath(path: string) {
 
       searchSuggestions.style.display = "block";
 
-      // Al pulsar una sugerencia, redirige a la página del producto
       searchSuggestions.querySelectorAll("li").forEach((li) => {
         li.addEventListener("click", () => {
           window.location.href = "/producto/" + li.dataset.slug;
@@ -681,13 +745,11 @@ function isActivePath(path: string) {
       });
     }
 
-    // Oculta y limpia la lista de sugerencias
     function hideSuggestions() {
       searchSuggestions.style.display = "none";
       searchSuggestions.innerHTML = "";
     }
 
-    // Lógica del botón de búsqueda
     searchBtn.addEventListener("click", () => {
       if (!isOpen) {
         openSearch();
@@ -701,12 +763,10 @@ function isActivePath(path: string) {
       }
     });
 
-    // Actualiza sugerencias mientras el usuario escribe
     searchInput.addEventListener("input", () =>
       renderSuggestions(searchInput.value),
     );
 
-    // Enter busca, Escape cierra
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         doSearch();
@@ -715,7 +775,6 @@ function isActivePath(path: string) {
       }
     });
 
-    // Si se hace clic fuera del buscador, se cierra
     document.addEventListener("click", (e) => {
       if (searchWrapper && !searchWrapper.contains(e.target)) {
         closeSearch();
