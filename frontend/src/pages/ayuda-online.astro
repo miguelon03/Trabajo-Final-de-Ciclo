@@ -1,0 +1,78 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - Ayuda online" description="Centro de ayuda de DripMode Hood.">
+  <section class="info-page">
+    <div class="info-page__container">
+      <p class="info-page__eyebrow">Servicios</p>
+      <h1>Ayuda online</h1>
+      <p>
+        Si necesitas soporte con tu compra, cuenta o devoluciones, estamos aqui para ayudarte.
+      </p>
+
+      <h2>Como podemos ayudarte</h2>
+      <p>
+        Te asistimos en estado de pedidos, incidencias de pago, cambios de direccion y dudas sobre tallas
+        o disponibilidad.
+      </p>
+
+      <h2>Canal de contacto</h2>
+      <p>
+        Escribenos a <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a> indicando
+        numero de pedido (si lo tienes) y una descripcion breve del problema.
+      </p>
+
+      <h2>Tiempo de respuesta</h2>
+      <p>
+        Intentamos responder en un plazo de 24 a 48 horas laborables.
+      </p>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .info-page {
+    min-height: 70vh;
+    padding: 2.5rem 1.2rem 4rem;
+    background: #111;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .info-page__container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-page__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    color: #c8ff00;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+    color: #fff;
+  }
+
+  h2 {
+    margin: 1.2rem 0 0.2rem;
+    color: #fff;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #c8ff00;
+  }
+</style>
