@@ -164,9 +164,8 @@
 </style>
 
 <script>
-  // Llamamos al instalador al cargar el hero para asegurar
-  // que la base de datos y tablas existen al arrancar la app
-  // En desarrollo esto evita errores cuando la BD aún no está sembrada.
+  // Prepara la BD si no existe.
+  // El instalador debe ser seguro: crear si falta, pero no borrar datos existentes.
   fetch("/backend/instalador.php", {
     credentials: "include"
   })

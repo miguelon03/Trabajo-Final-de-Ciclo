@@ -24,14 +24,52 @@ if (!isset($_SESSION["usuario_id"]) || ($_SESSION["usuario_rol"] ?? "") !== "adm
 require_once __DIR__ . "/../../conexion.php";
 
 function dmh_slugify(string $value): string {
-    $value = strtolower(trim($value));
+    $value = trim($value);
+
+    if (function_exists("iconv")) {
+        $normalized = iconv("UTF-8", "ASCII//TRANSLIT", $value);
+        if ($normalized !== false) {
+            $value = $normalized;
+        }
+    }
+
+    $value = strtolower($value);
     $value = preg_replace('/[^a-z0-9]+/i', '-', $value) ?? '';
     $value = trim($value, '-');
+
     return $value !== '' ? $value : 'producto';
+}
+
+function dmh_normalize_badge(string $badge): ?string {
+    $badge = trim($badge);
+
+    if ($badge === "" || $badge === "sin_badge") {
+        return null;
+    }
+
+    $lower = strtolower($badge);
+
+    if ($lower === "new") {
+        return "NEW";
+    }
+
+    if ($lower === "oferta") {
+        return "Oferta";
+    }
+
+    return "__INVALID__";
 }
 
 try {
     $input = json_decode(file_get_contents("php://input"), true);
+
+    if (!is_array($input)) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "Datos de producto no válidos"
+        ]);
+        exit;
+    }
 
     $id = (int)($input["id"] ?? 0);
     $nombre = trim((string)($input["nombre"] ?? ""));
@@ -42,7 +80,8 @@ try {
         ? (float)$input["precio_original"]
         : null;
     $tipo = trim((string)($input["tipo"] ?? ""));
-    $badge = trim((string)($input["badge"] ?? ""));
+    $color = trim((string)($input["color"] ?? ""));
+    $badge = dmh_normalize_badge((string)($input["badge"] ?? ""));
     $estado = trim((string)($input["estado"] ?? "borrador"));
 
     if ($id <= 0) {
@@ -69,8 +108,18 @@ try {
         exit;
     }
 
+    if ($badge === "__INVALID__") {
+        echo json_encode([
+            "ok" => false,
+            "error" => "La badge solo puede ser NEW, oferta o sin badge"
+        ]);
+        exit;
+    }
+
     if ($slug === "") {
         $slug = dmh_slugify($nombre);
+    } else {
+        $slug = dmh_slugify($slug);
     }
 
     $stmtExiste = $conexion->prepare("SELECT id FROM productos WHERE slug = :slug AND id <> :id LIMIT 1");
@@ -96,6 +145,7 @@ try {
             precio_base = :precio_base,
             precio_original = :precio_original,
             tipo = :tipo,
+            color = :color,
             badge = :badge,
             estado = :estado
         WHERE id = :id
@@ -109,7 +159,8 @@ try {
         "precio_base" => $precioBase,
         "precio_original" => $precioOriginal,
         "tipo" => $tipo !== "" ? $tipo : null,
-        "badge" => $badge !== "" ? $badge : null,
+        "color" => $color !== "" ? $color : null,
+        "badge" => $badge,
         "estado" => in_array($estado, ["borrador", "publicado", "archivado"], true) ? $estado : "borrador",
     ]);
 

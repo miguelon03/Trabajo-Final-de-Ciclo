@@ -6,7 +6,9 @@ export type AdminProducto = {
   precio_base: number;
   precio_original: number | null;
   tipo: string | null;
+  color: string | null;
   badge: string | null;
+  imagen: string | null;
   fecha_catalogo: string | null;
   estado: string;
   creado_en: string;
@@ -99,6 +101,25 @@ export async function updateAdminProducto(
   });
 
   await parseApiResponse<ApiResponse>(res, "Error al actualizar producto");
+}
+
+export async function updateAdminProductosBadge(
+  ids: number[],
+  badge: string,
+): Promise<void> {
+  const res = await fetch(
+    `${getAdminProductosBase()}/producto-badge-bulk-update.php`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ids, badge }),
+    },
+  );
+
+  await parseApiResponse<ApiResponse>(res, "Error al actualizar badges");
 }
 
 export async function deleteAdminProducto(id: number): Promise<void> {

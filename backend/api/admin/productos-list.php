@@ -37,16 +37,28 @@ try {
             p.precio_base,
             p.precio_original,
             p.tipo,
+            p.color,
             p.badge,
             p.fecha_catalogo,
             p.estado,
             p.creado_en,
             COALESCE(MIN(c.nombre), 'General') AS categoria,
-            COALESCE(SUM(v.stock), 0) AS stock_total
+            COALESCE(stock.stock_total, 0) AS stock_total,
+            (
+                SELECT ip.url_imagen
+                FROM imagenes_productos ip
+                WHERE ip.producto_id = p.id
+                ORDER BY ip.posicion ASC, ip.id ASC
+                LIMIT 1
+            ) AS imagen
         FROM productos p
         LEFT JOIN productos_categorias pc ON pc.producto_id = p.id
         LEFT JOIN categorias c ON c.id = pc.categoria_id
-        LEFT JOIN variantes_producto v ON v.producto_id = p.id
+        LEFT JOIN (
+            SELECT producto_id, SUM(stock) AS stock_total
+            FROM variantes_producto
+            GROUP BY producto_id
+        ) stock ON stock.producto_id = p.id
         WHERE 1=1
     ";
 
@@ -76,10 +88,12 @@ try {
             p.precio_base,
             p.precio_original,
             p.tipo,
+            p.color,
             p.badge,
             p.fecha_catalogo,
             p.estado,
-            p.creado_en
+            p.creado_en,
+            stock.stock_total
         ORDER BY p.creado_en DESC, p.id DESC
     ";
 

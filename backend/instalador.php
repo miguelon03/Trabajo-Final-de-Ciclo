@@ -773,34 +773,74 @@ try {
 
     $pasos[] = "Usuarios de prueba creados (password: test1234)";
 
-    // Seed de catalogo/reseñas/stock desde backend/seed/catalog_seed.php
-    $seedPath = __DIR__ . '/seed/catalog_seed.php';
-    if (file_exists($seedPath)) {
+// Seed de catalogo/reseñas/stock desde backend/seed/catalog_seed.php
+$seedPath = __DIR__ . '/seed/catalog_seed.php';
+
+if (file_exists($seedPath)) {
+    $stmtCountProductos = $conexion->query("SELECT COUNT(*) FROM productos");
+    $totalProductosExistentes = (int)$stmtCountProductos->fetchColumn();
+
+    if ($totalProductosExistentes > 0) {
+        $pasos[] = "Catalogo ya tiene productos; se omite seed para no borrar ni resetear productos existentes";
+    } else {
         $seed = require $seedPath;
         $seedProducts = is_array($seed['products'] ?? null) ? $seed['products'] : [];
         $seedStock = is_array($seed['stock'] ?? null) ? $seed['stock'] : [];
         $seedReviews = is_array($seed['reviews'] ?? null) ? $seed['reviews'] : [];
 
         $catalogLimit = 6;
+
         $seedProducts = array_slice($seedProducts, 0, $catalogLimit);
+
         $allowedSlugs = array_values(array_filter(array_map(
             static fn($product) => trim((string)($product['slug'] ?? '')),
             $seedProducts
         )));
+
         $allowedSlugMap = array_fill_keys($allowedSlugs, true);
+
         $seedStock = array_values(array_filter(
             $seedStock,
             static fn($entry) => isset($allowedSlugMap[(string)($entry['productSlug'] ?? '')])
         ));
+
         $seedReviews = array_values(array_filter(
             $seedReviews,
             static fn($entry) => isset($allowedSlugMap[(string)($entry['productSlug'] ?? '')])
         ));
 
-        $stmtCategoria = $conexion->prepare("INSERT INTO categorias (nombre, slug) VALUES (:nombre, :slug) ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)");
+        $stmtCategoria = $conexion->prepare("
+            INSERT INTO categorias (nombre, slug)
+            VALUES (:nombre, :slug)
+            ON DUPLICATE KEY UPDATE
+                nombre = VALUES(nombre)
+        ");
+
         $stmtProducto = $conexion->prepare("
-            INSERT INTO productos (nombre, slug, descripcion, precio_base, precio_original, tipo, color, badge, fecha_catalogo, estado)
-            VALUES (:nombre, :slug, :descripcion, :precio, :precio_original, :tipo, :color, :badge, :fecha_catalogo, 'publicado')
+            INSERT INTO productos (
+                nombre,
+                slug,
+                descripcion,
+                precio_base,
+                precio_original,
+                tipo,
+                color,
+                badge,
+                fecha_catalogo,
+                estado
+            )
+            VALUES (
+                :nombre,
+                :slug,
+                :descripcion,
+                :precio,
+                :precio_original,
+                :tipo,
+                :color,
+                :badge,
+                :fecha_catalogo,
+                'publicado'
+            )
             ON DUPLICATE KEY UPDATE
                 nombre = VALUES(nombre),
                 descripcion = VALUES(descripcion),
@@ -812,15 +852,41 @@ try {
                 fecha_catalogo = VALUES(fecha_catalogo),
                 estado = 'publicado'
         ");
-        $stmtGetCategoria = $conexion->prepare("SELECT id FROM categorias WHERE slug = :slug LIMIT 1");
-        $stmtGetProducto = $conexion->prepare("SELECT id FROM productos WHERE slug = :slug LIMIT 1");
-        $stmtDeleteOpinionesProducto = $conexion->prepare("DELETE FROM opiniones WHERE producto_id = :pid");
-        $stmtDeleteProdCat = $conexion->prepare("DELETE FROM productos_categorias WHERE producto_id = :pid");
-        $stmtDeleteProducto = $conexion->prepare("DELETE FROM productos WHERE id = :pid");
-        $stmtProdCat = $conexion->prepare("INSERT IGNORE INTO productos_categorias (producto_id, categoria_id) VALUES (:pid, :cid)");
-        $stmtDeleteImgs = $conexion->prepare("DELETE FROM imagenes_productos WHERE producto_id = :pid");
-        $stmtInsertImg = $conexion->prepare("INSERT INTO imagenes_productos (producto_id, url_imagen, posicion) VALUES (:pid, :url, :pos)");
-        $stmtDeleteVariantes = $conexion->prepare("DELETE FROM variantes_producto WHERE producto_id = :pid");
+
+        $stmtGetCategoria = $conexion->prepare("
+            SELECT id
+            FROM categorias
+            WHERE slug = :slug
+            LIMIT 1
+        ");
+
+        $stmtGetProducto = $conexion->prepare("
+            SELECT id
+            FROM productos
+            WHERE slug = :slug
+            LIMIT 1
+        ");
+
+        $stmtProdCat = $conexion->prepare("
+            INSERT IGNORE INTO productos_categorias (producto_id, categoria_id)
+            VALUES (:pid, :cid)
+        ");
+
+        $stmtDeleteImgs = $conexion->prepare("
+            DELETE FROM imagenes_productos
+            WHERE producto_id = :pid
+        ");
+
+        $stmtInsertImg = $conexion->prepare("
+            INSERT INTO imagenes_productos (producto_id, url_imagen, posicion)
+            VALUES (:pid, :url, :pos)
+        ");
+
+        $stmtDeleteVariantes = $conexion->prepare("
+            DELETE FROM variantes_producto
+            WHERE producto_id = :pid
+        ");
+
         $stmtInsertVariante = $conexion->prepare("
             INSERT INTO variantes_producto (producto_id, talla, color, sku, stock, precio_extra)
             VALUES (:pid, :talla, :color, :sku, :stock, 0)
@@ -829,40 +895,45 @@ try {
                 color = VALUES(color),
                 stock = VALUES(stock)
         ");
+
         $stmtUsuarioReview = $conexion->prepare("
             INSERT INTO usuarios (nombre, email, contrasena_hash, rol, estado)
             VALUES (:nombre, :email, :hash, 'cliente', 'activo')
-            ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), estado = 'activo'
+            ON DUPLICATE KEY UPDATE
+                nombre = VALUES(nombre),
+                estado = 'activo'
         ");
-        $stmtGetUsuarioReview = $conexion->prepare("SELECT id FROM usuarios WHERE email = :email LIMIT 1");
+
+        $stmtGetUsuarioReview = $conexion->prepare("
+            SELECT id
+            FROM usuarios
+            WHERE email = :email
+            LIMIT 1
+        ");
+
         $stmtOpinion = $conexion->prepare("
-            INSERT INTO opiniones (usuario_id, producto_id, puntuacion, comentario, estado, creado_en)
-            VALUES (:uid, :pid, :puntuacion, :comentario, 'aprobada', :creado_en)
+            INSERT INTO opiniones (
+                usuario_id,
+                producto_id,
+                puntuacion,
+                comentario,
+                estado,
+                creado_en
+            )
+            VALUES (
+                :uid,
+                :pid,
+                :puntuacion,
+                :comentario,
+                'aprobada',
+                :creado_en
+            )
             ON DUPLICATE KEY UPDATE
                 puntuacion = VALUES(puntuacion),
                 comentario = VALUES(comentario),
                 estado = VALUES(estado),
                 creado_en = VALUES(creado_en)
         ");
-        $stmtProductosSobrantes = $conexion->query("SELECT id, slug FROM productos");
-
-        foreach ($stmtProductosSobrantes->fetchAll(PDO::FETCH_ASSOC) as $productoExistente) {
-            $slugExistente = trim((string)($productoExistente['slug'] ?? ''));
-            if ($slugExistente === '' || isset($allowedSlugMap[$slugExistente])) {
-                continue;
-            }
-
-            $productoIdSobrante = (int)($productoExistente['id'] ?? 0);
-            if ($productoIdSobrante <= 0) {
-                continue;
-            }
-
-            $stmtDeleteOpinionesProducto->execute(['pid' => $productoIdSobrante]);
-            $stmtDeleteImgs->execute(['pid' => $productoIdSobrante]);
-            $stmtDeleteVariantes->execute(['pid' => $productoIdSobrante]);
-            $stmtDeleteProdCat->execute(['pid' => $productoIdSobrante]);
-            $stmtDeleteProducto->execute(['pid' => $productoIdSobrante]);
-        }
 
         $productoIdBySlug = [];
         $colorBySlug = [];
@@ -878,7 +949,10 @@ try {
                     'slug' => $slugCategoria,
                 ]);
 
-                $stmtGetCategoria->execute(['slug' => $slugCategoria]);
+                $stmtGetCategoria->execute([
+                    'slug' => $slugCategoria,
+                ]);
+
                 $categoriaIdBySlug[$slugCategoria] = (int)$stmtGetCategoria->fetchColumn();
             }
 
@@ -887,7 +961,9 @@ try {
                 'slug' => (string)($product['slug'] ?? ''),
                 'descripcion' => dmh_strip_color_mentions((string)($product['description'] ?? '')),
                 'precio' => (float)($product['price'] ?? 0),
-                'precio_original' => isset($product['originalPrice']) ? (float)$product['originalPrice'] : null,
+                'precio_original' => isset($product['originalPrice'])
+                    ? (float)$product['originalPrice']
+                    : null,
                 'tipo' => trim((string)($product['type'] ?? '')) ?: null,
                 'color' => trim((string)($product['color'] ?? '')) ?: null,
                 'badge' => trim((string)($product['badge'] ?? '')) ?: null,
@@ -896,8 +972,12 @@ try {
                     : null,
             ]);
 
-            $stmtGetProducto->execute(['slug' => (string)$product['slug']]);
+            $stmtGetProducto->execute([
+                'slug' => (string)$product['slug'],
+            ]);
+
             $productoId = (int)$stmtGetProducto->fetchColumn();
+
             if ($productoId <= 0) {
                 continue;
             }
@@ -910,7 +990,10 @@ try {
                 'cid' => $categoriaIdBySlug[$slugCategoria],
             ]);
 
-            $stmtDeleteImgs->execute(['pid' => $productoId]);
+            $stmtDeleteImgs->execute([
+                'pid' => $productoId,
+            ]);
+
             $imagenes = dmh_resolve_three_images(
                 is_array($product['images'] ?? null) ? $product['images'] : [],
                 isset($product['image']) ? (string)$product['image'] : null
@@ -928,11 +1011,15 @@ try {
         foreach ($seedStock as $stockEntry) {
             $slug = (string)($stockEntry['productSlug'] ?? '');
             $productoId = $productoIdBySlug[$slug] ?? 0;
+
             if ($productoId <= 0) {
                 continue;
             }
 
-            $stmtDeleteVariantes->execute(['pid' => $productoId]);
+            $stmtDeleteVariantes->execute([
+                'pid' => $productoId,
+            ]);
+
             $bySize = is_array($stockEntry['bySize'] ?? null) ? $stockEntry['bySize'] : [];
 
             foreach ($bySize as $talla => $variant) {
@@ -947,14 +1034,17 @@ try {
         }
 
         $reviewerIdByEmail = [];
+
         foreach ($seedReviews as $reviewGroup) {
             $slug = (string)($reviewGroup['productSlug'] ?? '');
             $productoId = $productoIdBySlug[$slug] ?? 0;
+
             if ($productoId <= 0) {
                 continue;
             }
 
             $items = is_array($reviewGroup['items'] ?? null) ? $reviewGroup['items'] : [];
+
             foreach ($items as $review) {
                 $reviewerName = trim((string)($review['user'] ?? 'Cliente'));
                 $reviewerSlug = dmh_slugify($reviewerName);
@@ -967,12 +1057,17 @@ try {
                         'hash' => password_hash('review1234', PASSWORD_DEFAULT),
                     ]);
 
-                    $stmtGetUsuarioReview->execute(['email' => $reviewerEmail]);
+                    $stmtGetUsuarioReview->execute([
+                        'email' => $reviewerEmail,
+                    ]);
+
                     $reviewerIdByEmail[$reviewerEmail] = (int)$stmtGetUsuarioReview->fetchColumn();
                 }
 
                 $date = trim((string)($review['date'] ?? ''));
-                $createdAt = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? ($date . ' 12:00:00') : date('Y-m-d H:i:s');
+                $createdAt = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+                    ? ($date . ' 12:00:00')
+                    : date('Y-m-d H:i:s');
 
                 $stmtOpinion->execute([
                     'uid' => $reviewerIdByEmail[$reviewerEmail],
@@ -984,11 +1079,11 @@ try {
             }
         }
 
-        $pasos[] = 'Seed de catalogo/stock/reseñas insertado en BD desde catalog_seed.php';
-    } else {
-        $pasos[] = 'Semilla catalog_seed.php no encontrada, se omite seed de catalogo';
+        $pasos[] = 'Seed de catalogo/stock/reseñas insertado porque la tabla productos estaba vacía';
     }
-
+} else {
+    $pasos[] = 'Semilla catalog_seed.php no encontrada, se omite seed de catalogo';
+}
     //devolvemos un json de que todo ha salido correctamente
     echo json_encode([
         "ok" => true,

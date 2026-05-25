@@ -28,10 +28,22 @@ function isActivePath(path: string) {
     </a>
 
     <nav id="siteNav" class="site-nav" aria-label="Navegación principal">
-      <a class={`site-nav__link ${isActivePath("/catalogo") ? "active" : ""}`} href="/catalogo">Catálogo</a>
-      <a class={`site-nav__link ${isActivePath("/novedades") ? "active" : ""}`} href="/novedades">Novedades</a>
-      <a class={`site-nav__link ${isActivePath("/accesorios") ? "active" : ""}`} href="/accesorios">Accesorios</a>
-      <a class={`site-nav__link ${isActivePath("/ofertas") ? "active" : ""}`} href="/ofertas">Ofertas</a>
+      <a
+        class={`site-nav__link ${isActivePath("/catalogo") ? "active" : ""}`}
+        href="/catalogo">Catálogo</a
+      >
+      <a
+        class={`site-nav__link ${isActivePath("/novedades") ? "active" : ""}`}
+        href="/novedades">Novedades</a
+      >
+      <a
+        class={`site-nav__link ${isActivePath("/accesorios") ? "active" : ""}`}
+        href="/accesorios">Accesorios</a
+      >
+      <a
+        class={`site-nav__link ${isActivePath("/ofertas") ? "active" : ""}`}
+        href="/ofertas">Ofertas</a
+      >
     </nav>
   </div>
 
@@ -217,10 +229,18 @@ function isActivePath(path: string) {
     }
 
     @keyframes badge-bump {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.55); }
-      70% { transform: scale(0.9); }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(1);
+      }
+      40% {
+        transform: scale(1.55);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        transform: scale(1);
+      }
     }
 
     .cart-badge.is-bumping {
@@ -378,7 +398,9 @@ function isActivePath(path: string) {
       height: 2px;
       border-radius: 999px;
       background: #f5f5f5;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
     }
 
     .menu-toggle.is-open span:nth-child(1) {
@@ -513,7 +535,7 @@ function isActivePath(path: string) {
     function updateCartBadge(bump = false) {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
       const total = Array.isArray(cart)
-        ? cart.reduce(function(sum, item) {
+        ? cart.reduce(function (sum, item) {
             return sum + (item && item.quantity ? item.quantity : 1);
           }, 0)
         : 0;
@@ -530,7 +552,7 @@ function isActivePath(path: string) {
           badge.classList.add("is-bumping");
           badge.addEventListener(
             "animationend",
-            function() {
+            function () {
               badge.classList.remove("is-bumping");
             },
             { once: true },
@@ -571,10 +593,16 @@ function isActivePath(path: string) {
           const isAdmin = data.usuario.rol === "admin";
 
           profileLink.setAttribute("href", isAdmin ? "/admin" : "/usuario");
-          ordersLink.setAttribute("href", isAdmin ? "/admin/pedidos" : "/usuario/pedidos");
-          favoritesLink.setAttribute("href", isAdmin ? "/admin" : "/usuario/favoritos");
+          ordersLink.setAttribute(
+            "href",
+            isAdmin ? "/admin/pedidos" : "/usuario/pedidos",
+          );
+          favoritesLink.setAttribute(
+            "href",
+            isAdmin ? "/admin" : "/usuario/favoritos",
+          );
 
-          accountButton.addEventListener("click", function(e) {
+          accountButton.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -582,7 +610,7 @@ function isActivePath(path: string) {
             accountButton.setAttribute("aria-expanded", String(isOpen));
           });
 
-          document.addEventListener("click", function(e) {
+          document.addEventListener("click", function (e) {
             const target = e.target;
 
             if (target instanceof Node && !accountMenu.contains(target)) {
@@ -591,7 +619,7 @@ function isActivePath(path: string) {
             }
           });
 
-          logoutBtn.addEventListener("click", async function() {
+          logoutBtn.addEventListener("click", async function () {
             try {
               const logoutResponse = await fetch("/backend/logout.php", {
                 method: "POST",
@@ -602,11 +630,14 @@ function isActivePath(path: string) {
 
               if (logoutData.ok) {
                 window.showToast?.("Sesión cerrada correctamente", "success");
-                setTimeout(function() {
+                setTimeout(function () {
                   window.location.href = "/";
                 }, 450);
               } else {
-                window.showToast?.(logoutData.error || "No se pudo cerrar sesión", "error");
+                window.showToast?.(
+                  logoutData.error || "No se pudo cerrar sesión",
+                  "error",
+                );
               }
             } catch (error) {
               window.showToast?.("Error cerrando sesión", "error");
@@ -614,12 +645,15 @@ function isActivePath(path: string) {
             }
           });
         } else {
-          profileLink.setAttribute("href", "/login");
-          ordersLink.setAttribute("href", "/login");
-          favoritesLink.setAttribute("href", "/login");
+          profileLink.setAttribute("href", "#");
+          ordersLink.setAttribute("href", "#");
+          favoritesLink.setAttribute("href", "#");
 
-          accountButton.addEventListener("click", function() {
-            window.location.href = "/login";
+          accountButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (typeof window.dmhOpenAuth === "function") {
+              window.dmhOpenAuth("login");
+            }
           });
 
           logoutBtn.style.display = "none";
@@ -637,14 +671,14 @@ function isActivePath(path: string) {
         return;
       }
 
-      menuToggle.addEventListener("click", function() {
+      menuToggle.addEventListener("click", function () {
         const isOpen = siteNav.classList.toggle("is-open");
         menuToggle.classList.toggle("is-open", isOpen);
         menuToggle.setAttribute("aria-expanded", String(isOpen));
       });
 
-      siteNav.querySelectorAll("a").forEach(function(link) {
-        link.addEventListener("click", function() {
+      siteNav.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
           if (window.innerWidth <= 900) {
             siteNav.classList.remove("is-open");
             menuToggle.classList.remove("is-open");
@@ -653,7 +687,7 @@ function isActivePath(path: string) {
         });
       });
 
-      window.addEventListener("resize", function() {
+      window.addEventListener("resize", function () {
         if (window.innerWidth > 900) {
           siteNav.classList.remove("is-open");
           menuToggle.classList.remove("is-open");
@@ -666,7 +700,7 @@ function isActivePath(path: string) {
     updateSessionUI();
     setupHamburgerMenu();
 
-    window.addEventListener("cart-updated", function() {
+    window.addEventListener("cart-updated", function () {
       updateCartBadge(true);
     });
   </script>
