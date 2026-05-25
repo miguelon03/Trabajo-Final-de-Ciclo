@@ -1,0 +1,86 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - Condiciones de uso" description="Condiciones de uso de DripMode Hood.">
+  <section class="info-page">
+    <div class="info-page__container">
+      <p class="info-page__eyebrow">Legal</p>
+      <h1>Condiciones de uso</h1>
+      <p>
+        Al navegar y comprar en DripMode Hood aceptas estas condiciones. Este sitio esta orientado a
+        usuarios mayores de edad o menores con autorizacion de su tutor legal.
+      </p>
+
+      <h2>Uso del sitio</h2>
+      <p>
+        No esta permitido utilizar la web para actividades ilicitas, automatizar ataques, manipular
+        precios o afectar la experiencia de otros usuarios.
+      </p>
+
+      <h2>Productos y pedidos</h2>
+      <p>
+        El stock y la disponibilidad pueden cambiar. Un pedido se considera completado cuando el pago
+        queda confirmado y recibes la correspondiente notificacion.
+      </p>
+
+      <h2>Propiedad intelectual</h2>
+      <p>
+        Los contenidos de marca, imagenes y textos del sitio pertenecen a DripMode Hood o a sus
+        respectivos titulares y no pueden reutilizarse sin autorizacion.
+      </p>
+
+      <h2>Contacto legal</h2>
+      <p>
+        Para cualquier consulta relacionada con estas condiciones puedes escribir a
+        <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a>.
+      </p>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .info-page {
+    min-height: 70vh;
+    padding: 2.5rem 1.2rem 4rem;
+    background: #111;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .info-page__container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-page__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    color: #c8ff00;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+    color: #fff;
+  }
+
+  h2 {
+    margin: 1.2rem 0 0.2rem;
+    color: #fff;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #c8ff00;
+  }
+</style>

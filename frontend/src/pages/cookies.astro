@@ -1,0 +1,86 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - Politica de cookies" description="Politica de cookies de DripMode Hood.">
+  <section class="info-page">
+    <div class="info-page__container">
+      <p class="info-page__eyebrow">Legal</p>
+      <h1>Politica de cookies</h1>
+      <p>
+        Este sitio utiliza cookies tecnicas y de sesion para su funcionamiento basico, asi como cookies
+        necesarias para mantener preferencias de navegacion.
+      </p>
+
+      <h2>Que son las cookies</h2>
+      <p>
+        Son pequenos archivos que se almacenan en tu navegador para recordar informacion durante o entre
+        visitas.
+      </p>
+
+      <h2>Tipos de cookies usadas</h2>
+      <p>
+        Se emplean principalmente cookies necesarias para autentificacion, carrito y navegacion de la
+        web.
+      </p>
+
+      <h2>Gestion de cookies</h2>
+      <p>
+        Puedes eliminar o bloquear cookies desde la configuracion de tu navegador. Ten en cuenta que
+        algunas funciones pueden dejar de funcionar correctamente.
+      </p>
+
+      <h2>Mas informacion</h2>
+      <p>
+        Para cualquier duda sobre cookies puedes contactar en
+        <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a>.
+      </p>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .info-page {
+    min-height: 70vh;
+    padding: 2.5rem 1.2rem 4rem;
+    background: #111;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .info-page__container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-page__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    color: #c8ff00;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+    color: #fff;
+  }
+
+  h2 {
+    margin: 1.2rem 0 0.2rem;
+    color: #fff;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #c8ff00;
+  }
+</style>

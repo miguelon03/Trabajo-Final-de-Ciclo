@@ -1,0 +1,86 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - Politica de privacidad" description="Politica de privacidad de DripMode Hood.">
+  <section class="info-page">
+    <div class="info-page__container">
+      <p class="info-page__eyebrow">Legal</p>
+      <h1>Politica de privacidad</h1>
+      <p>
+        En DripMode Hood tratamos tus datos personales con la finalidad de gestionar tu cuenta,
+        tramitar pedidos y mejorar el servicio.
+      </p>
+
+      <h2>Datos que recogemos</h2>
+      <p>
+        Podemos tratar datos de identificacion y contacto como nombre, email, direccion y telefono,
+        asi como informacion vinculada a pedidos y devoluciones.
+      </p>
+
+      <h2>Base del tratamiento</h2>
+      <p>
+        El tratamiento se basa en la ejecucion de la relacion contractual, cumplimiento legal y, cuando
+        aplique, en tu consentimiento.
+      </p>
+
+      <h2>Conservacion</h2>
+      <p>
+        Conservamos los datos durante el tiempo necesario para la finalidad indicada y los plazos
+        exigidos por normativa aplicable.
+      </p>
+
+      <h2>Derechos</h2>
+      <p>
+        Puedes solicitar acceso, rectificacion, supresion u oposicion escribiendo a
+        <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a>.
+      </p>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .info-page {
+    min-height: 70vh;
+    padding: 2.5rem 1.2rem 4rem;
+    background: #111;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .info-page__container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-page__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    color: #c8ff00;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+    color: #fff;
+  }
+
+  h2 {
+    margin: 1.2rem 0 0.2rem;
+    color: #fff;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #c8ff00;
+  }
+</style>

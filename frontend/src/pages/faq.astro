@@ -1,0 +1,80 @@
+---
+import HomeLayout from "../layouts/HomeLayout.astro";
+---
+
+<HomeLayout title="DMH - FAQ" description="Preguntas frecuentes de DripMode Hood.">
+  <section class="info-page">
+    <div class="info-page__container">
+      <p class="info-page__eyebrow">Servicios</p>
+      <h1>FAQ</h1>
+
+      <h2>Como puedo saber el estado de mi pedido?</h2>
+      <p>
+        Si tienes cuenta, revisa <a href="/usuario/pedidos">Mis pedidos</a>. Si compraste como invitado,
+        contacta por email con tus datos de compra.
+      </p>
+
+      <h2>Puedo devolver un producto?</h2>
+      <p>
+        Si, siempre que cumpla las condiciones de devolucion. Desde tu area de pedidos puedes iniciar la
+        solicitud cuando este disponible.
+      </p>
+
+      <h2>Cuando recibire respuesta de soporte?</h2>
+      <p>
+        Normalmente en 24-48 horas laborables.
+      </p>
+
+      <h2>Como contacto con vosotros?</h2>
+      <p>
+        Escribenos a <a href="mailto:dripmodehood@gmail.com">dripmodehood@gmail.com</a>.
+      </p>
+    </div>
+  </section>
+</HomeLayout>
+
+<style>
+  .info-page {
+    min-height: 70vh;
+    padding: 2.5rem 1.2rem 4rem;
+    background: #111;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .info-page__container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .info-page__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 0.78rem;
+    color: #c8ff00;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+    color: #fff;
+  }
+
+  h2 {
+    margin: 1rem 0 0.2rem;
+    color: #fff;
+    font-size: 1.08rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #c8ff00;
+  }
+</style>
