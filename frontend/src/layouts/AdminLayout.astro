@@ -36,7 +36,7 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
       .admin-layout {
         min-height: 100vh;
         display: grid;
-        grid-template-columns: 300px minmax(0, 1fr);
+        grid-template-columns: 200px minmax(0, 1fr);
       }
 
       .main {
@@ -82,7 +82,10 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
         text-decoration: none;
         font-size: 0.88rem;
         font-weight: 800;
-        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          color 0.15s ease;
       }
 
       .logout:hover {
@@ -97,7 +100,7 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
       @media (max-width: 1100px) {
         .admin-layout {
-          grid-template-columns: 270px minmax(0, 1fr);
+          grid-template-columns: 190px minmax(0, 1fr);
         }
       }
 
@@ -120,22 +123,152 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
       @media (max-width: 640px) {
         .topbar {
-          align-items: flex-start;
-          gap: 12px;
+          min-height: 58px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 42px;
+          align-items: center;
+          justify-content: stretch;
+          gap: 10px;
+          padding: 10px 12px;
+          position: sticky;
+          top: 0;
         }
 
         .admin-user {
+          min-width: 0;
           font-size: 0.9rem;
-          line-height: 1.35;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .logout {
-          width: 100%;
-          min-height: 40px;
+          width: 42px;
+          height: 42px;
+          min-height: 42px;
+          padding: 0;
+          border-radius: 12px;
+          font-size: 0;
+          justify-self: end;
+        }
+
+        .logout::before {
+          content: "×";
+          font-size: 1.55rem;
+          font-weight: 950;
+          line-height: 1;
         }
 
         .content {
           padding: 14px;
+        }
+      }
+    </style>
+    <style is:global>
+      .admin-section,
+      .returns-admin,
+      .reviews-admin,
+      .users-admin {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .table-wrap,
+      .returns-admin__table-wrap,
+      .reviews-admin__table-wrap,
+      .users-admin__table-wrap {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        border: 1px solid #1f1f1f !important;
+        border-radius: 16px !important;
+        background: #0f0f0f !important;
+        box-shadow: none !important;
+      }
+
+      .table-wrap table,
+      .returns-table,
+      .reviews-table,
+      .users-table {
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: fixed;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+      }
+
+      .table-wrap thead,
+      .returns-table thead,
+      .reviews-table thead,
+      .users-table thead {
+        background: #101010 !important;
+      }
+
+      .table-wrap th,
+      .returns-table thead th,
+      .reviews-table thead th,
+      .users-table thead th {
+        padding: 14px 16px !important;
+        color: #777 !important;
+        border-bottom: 1px solid #202020 !important;
+        font-size: 0.72rem !important;
+        font-weight: 950 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+      }
+
+      .table-wrap td,
+      .returns-table td,
+      .reviews-table td,
+      .users-table td {
+        padding: 16px !important;
+        border-bottom: 1px solid #191919 !important;
+        font-size: 0.86rem !important;
+        vertical-align: middle !important;
+      }
+
+      .table-wrap tbody tr,
+      .returns-table tbody tr,
+      .reviews-table tbody tr,
+      .users-table tbody tr {
+        background: #111 !important;
+      }
+
+      .table-wrap tbody tr:nth-child(even),
+      .returns-table tbody tr:nth-child(even),
+      .reviews-table tbody tr:nth-child(even),
+      .users-table tbody tr:nth-child(even) {
+        background: #0f0f0f !important;
+      }
+
+      .table-wrap tbody tr:hover,
+      .returns-table tbody tr:hover,
+      .reviews-table tbody tr:hover,
+      .users-table tbody tr:hover {
+        background: #151515 !important;
+      }
+
+      .table-wrap tbody tr:last-child td,
+      .returns-table tbody tr:last-child td,
+      .reviews-table tbody tr:last-child td,
+      .users-table tbody tr:last-child td {
+        border-bottom: 0 !important;
+      }
+
+      @media (max-width: 900px) {
+        .table-wrap,
+        .returns-admin__table-wrap,
+        .reviews-admin__table-wrap,
+        .users-admin__table-wrap {
+          overflow-x: auto;
+        }
+
+        .table-wrap table,
+        .returns-table,
+        .reviews-table,
+        .users-table {
+          min-width: 760px !important;
         }
       }
     </style>
@@ -169,7 +302,9 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
           });
 
           const data = await response.json();
-          const isAdmin = Boolean(data?.logueado && data?.usuario?.rol === "admin");
+          const isAdmin = Boolean(
+            data?.logueado && data?.usuario?.rol === "admin",
+          );
 
           if (!isAdmin) {
             window.location.href = "/login";
@@ -186,24 +321,26 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
       void ensureAdminSession();
 
-      document.getElementById("logoutLink")?.addEventListener("click", async (e) => {
-        e.preventDefault();
+      document
+        .getElementById("logoutLink")
+        ?.addEventListener("click", async (e) => {
+          e.preventDefault();
 
-        try {
-          const response = await fetch("/backend/logout.php", {
-            method: "POST",
-            credentials: "include",
-          });
+          try {
+            const response = await fetch("/backend/logout.php", {
+              method: "POST",
+              credentials: "include",
+            });
 
-          const data = await response.json();
+            const data = await response.json();
 
-          if (data.ok) {
-            window.location.href = "/";
+            if (data.ok) {
+              window.location.href = "/";
+            }
+          } catch (error) {
+            console.error("Error cerrando sesión:", error);
           }
-        } catch (error) {
-          console.error("Error cerrando sesión:", error);
-        }
-      });
+        });
     </script>
   </body>
 </html>

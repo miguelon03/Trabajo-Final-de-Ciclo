@@ -29,10 +29,8 @@ function getInitials(name: string): string {
 <section class="admin-section">
   <div class="title-row">
     <div>
-      <p class="eyebrow">Catálogo</p>
       <h1>PRODUCTOS</h1>
     </div>
-    <button class="new-btn" id="newProductBtn">+ Nuevo producto</button>
   </div>
 
   {
@@ -41,11 +39,6 @@ function getInitials(name: string): string {
     ) : (
       <>
         <div class="management-row">
-          <div class="list-summary">
-            <strong>{productos.length}</strong>
-            productos en el listado
-          </div>
-
           <div class="bulk-panel" aria-label="Acciones en bloque de productos">
             <label class="bulk-select-all">
               <input
@@ -82,9 +75,13 @@ function getInitials(name: string): string {
               Limpiar
             </button>
           </div>
+
+          <button class="new-btn" id="newProductBtn" type="button">
+            + Nuevo producto
+          </button>
         </div>
 
-        <p class="bulk-message" id="bulkBadgeMessage" />
+        <p class="bulk-message" id="bulkBadgeMessage"></p>
 
         <div class="table-wrap">
           <table>
@@ -92,16 +89,21 @@ function getInitials(name: string): string {
               <tr>
                 <th>Producto</th>
                 <th>Badge</th>
-                <th>Categoría</th>
                 <th>Precio</th>
                 <th>Stock</th>
                 <th>Estado</th>
                 <th class="actions-heading">Acciones</th>
               </tr>
             </thead>
+
             <tbody>
               {productos.map((p) => (
-                <tr>
+                <tr
+                  class="product-row"
+                  data-product-id={p.id}
+                  aria-selected="false"
+                  title="Pulsa la fila para seleccionarla y cambiar su badge"
+                >
                   <td class="product-cell" data-label="Producto">
                     <div class="product-inline">
                       <div class="product-thumb" aria-hidden={!p.imagen}>
@@ -141,10 +143,10 @@ function getInitials(name: string): string {
                     )}
                   </td>
 
-                  <td data-label="Categoría">{p.categoria}</td>
                   <td data-label="Precio">
                     {Number(p.precio_base).toFixed(2)}€
                   </td>
+
                   <td
                     data-label="Stock"
                     class={
@@ -157,6 +159,7 @@ function getInitials(name: string): string {
                   >
                     {p.stock_total} ud.
                   </td>
+
                   <td data-label="Estado">
                     <span
                       class:list={[
@@ -174,20 +177,21 @@ function getInitials(name: string): string {
                         : p.estado.charAt(0).toUpperCase() + p.estado.slice(1)}
                     </span>
                   </td>
-                  <td class="actions" data-label="Acciones">
-                    <div class="actions-inner">
-                      <label class="select-pill">
-                        <input
-                          class="product-select"
-                          type="checkbox"
-                          value={p.id}
-                          aria-label={`Seleccionar ${p.nombre}`}
-                        />
-                        <span>Seleccionar</span>
-                      </label>
 
+                  <td class="actions" data-label="Acciones">
+                    <input
+                      class="product-select"
+                      type="checkbox"
+                      value={p.id}
+                      hidden
+                      aria-hidden="true"
+                      tabindex="-1"
+                    />
+
+                    <div class="actions-inner">
                       <button
-                        class="btn-edit"
+                        class="btn-edit action-icon"
+                        type="button"
                         data-id={p.id}
                         data-nombre={p.nombre}
                         data-slug={p.slug}
@@ -197,13 +201,26 @@ function getInitials(name: string): string {
                         data-tipo={p.tipo ?? ""}
                         data-color={p.color ?? ""}
                         data-badge={p.badge ?? ""}
+                        data-categoria={p.categoria ?? "General"}
                         data-estado={p.estado}
+                        aria-label={`Editar ${p.nombre}`}
+                        title="Editar"
                       >
-                        Editar
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0l-1 1 2.7 2.7 1-1Z" />
+                        </svg>
                       </button>
 
-                      <button class="btn-delete" data-id={p.id}>
-                        Eliminar
+                      <button
+                        class="btn-delete action-icon"
+                        type="button"
+                        data-id={p.id}
+                        aria-label={`Eliminar ${p.nombre}`}
+                        title="Eliminar"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v8H9v-8Zm4 0h2v8h-2v-8Zm4 0h2v8h-2v-8ZM6 9h12l-1 11H7L6 9Z" />
+                        </svg>
                       </button>
                     </div>
                   </td>
@@ -231,12 +248,15 @@ function getInitials(name: string): string {
         <p class="modal-kicker">Producto</p>
         <h2 id="productModalTitle">Nuevo producto</h2>
       </div>
+
       <button
         class="modal-close"
         id="closeProductModal"
         type="button"
-        aria-label="Cerrar modal">×</button
+        aria-label="Cerrar modal"
       >
+        ×
+      </button>
     </div>
 
     <form id="productForm" class="modal-form">
@@ -263,6 +283,14 @@ function getInitials(name: string): string {
             <option value="publicado">Publicado</option>
             <option value="archivado">Archivado</option>
           </select>
+        </div>
+
+        <div class="field" id="productCategoriaField" hidden>
+          <label for="productCategoria">Categoría</label>
+          <input id="productCategoria" type="text" readonly />
+          <small class="field-help">
+            Solo lectura. La categoría no se muestra en la tabla.
+          </small>
         </div>
 
         <div class="field">
@@ -313,6 +341,7 @@ function getInitials(name: string): string {
             Solo se usa al crear. Crea una variante inicial de talla Única.
           </small>
         </div>
+
         <div class="field field-full" id="productImageField">
           <label for="productImagen">Imágenes del producto</label>
 
@@ -336,6 +365,7 @@ function getInitials(name: string): string {
             4MB.
           </small>
         </div>
+
         <div class="field field-full">
           <label for="productDescripcion">Descripción</label>
           <textarea id="productDescripcion" rows="5"></textarea>
@@ -348,6 +378,7 @@ function getInitials(name: string): string {
         <button type="button" class="btn-secondary" id="cancelProductModal">
           Cancelar
         </button>
+
         <button type="submit" class="btn-primary" id="saveProductBtn">
           Guardar
         </button>
@@ -358,10 +389,10 @@ function getInitials(name: string): string {
 
 <style>
   .admin-section {
+    width: 100%;
     min-width: 0;
   }
 
-  .eyebrow,
   .modal-kicker {
     color: #d7ff00;
     font-size: 0.78rem;
@@ -372,55 +403,38 @@ function getInitials(name: string): string {
   }
 
   .admin-section h1 {
-    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-size: clamp(2.15rem, 5vw, 3.7rem);
     font-weight: 950;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.07em;
+    color: #f4f4f4;
     line-height: 0.95;
+    margin: 0;
   }
 
   .title-row {
     display: flex;
-    justify-content: space-between;
     align-items: flex-end;
+    justify-content: space-between;
     gap: 18px;
     flex-wrap: wrap;
-    margin-bottom: 22px;
-  }
-
-  .new-btn {
-    min-height: 48px;
-    background: #d7ff00;
-    color: #111;
-    border: none;
-    border-radius: 14px;
-    padding: 0 22px;
-    font-weight: 900;
-    cursor: pointer;
-    box-shadow: 0 14px 28px rgba(215, 255, 0, 0.12);
+    margin-bottom: 28px;
   }
 
   .management-row {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  .list-summary {
-    color: #777;
-    font-size: 0.92rem;
-  }
-
-  .list-summary strong {
-    color: #f5f5f5;
+    gap: 16px;
+    margin-bottom: 18px;
   }
 
   .bulk-panel {
-    margin-left: auto;
+    flex: 1 1 auto;
+    max-width: 900px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 10px;
     flex-wrap: wrap;
     background: #101010;
@@ -430,15 +444,35 @@ function getInitials(name: string): string {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
   }
 
+  .new-btn {
+    flex: 0 0 auto;
+    min-height: 48px;
+    background: #d7ff00;
+    color: #111;
+    border: none;
+    border-radius: 14px;
+    padding: 0 24px;
+    font-weight: 950;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(215, 255, 0, 0.12);
+    white-space: nowrap;
+  }
+
+  .new-btn:hover,
+  .btn-bulk:hover,
+  .btn-edit:hover,
+  .btn-primary:hover {
+    filter: brightness(1.04);
+  }
+
   .bulk-select-all,
-  .bulk-counter,
-  .select-pill {
+  .bulk-counter {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     color: #dcdcdc;
     font-size: 0.86rem;
-    font-weight: 800;
+    font-weight: 850;
     white-space: nowrap;
   }
 
@@ -451,8 +485,7 @@ function getInitials(name: string): string {
     cursor: pointer;
   }
 
-  .bulk-select-all input,
-  .product-select {
+  .bulk-select-all input {
     width: 18px;
     height: 18px;
     accent-color: #d7ff00;
@@ -475,7 +508,7 @@ function getInitials(name: string): string {
     border-radius: 12px;
     color: #f4f4f4;
     padding: 0 34px 0 12px;
-    font-weight: 800;
+    font-weight: 850;
     outline: none;
   }
 
@@ -484,7 +517,7 @@ function getInitials(name: string): string {
     min-height: 38px;
     border-radius: 12px;
     padding: 0 14px;
-    font-weight: 900;
+    font-weight: 950;
     cursor: pointer;
   }
 
@@ -497,6 +530,7 @@ function getInitials(name: string): string {
   .btn-bulk:disabled {
     cursor: not-allowed;
     opacity: 0.45;
+    filter: grayscale(0.35);
   }
 
   .btn-clear-selection {
@@ -505,45 +539,52 @@ function getInitials(name: string): string {
     border: 1px solid #303030;
   }
 
+  .btn-clear-selection:hover {
+    color: #f0f0f0;
+    border-color: #444;
+  }
+
   .bulk-message {
     min-height: 20px;
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     color: #ff6b6b;
     font-size: 0.9rem;
   }
 
   .table-wrap {
+    width: 100%;
     background: #0f0f0f;
     border: 1px solid #232323;
-    border-radius: 20px;
+    border-radius: 18px;
     overflow: hidden;
-    overflow-x: auto;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+    box-shadow: none;
   }
 
   table {
     width: 100%;
-    border-collapse: collapse;
-    min-width: 980px;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
   }
 
   thead {
-    background: #0b0b0b;
+    background: #101010;
   }
 
   th,
   td {
-    padding: 18px 16px;
+    padding: 16px 14px;
     text-align: left;
-    border-bottom: 1px solid #1b1b1b;
-    font-size: 0.95rem;
+    border-bottom: 1px solid #191919;
+    font-size: 0.9rem;
     vertical-align: middle;
   }
 
   th {
-    color: #737373;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    color: #777;
+    font-weight: 950;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     font-size: 0.72rem;
   }
@@ -553,11 +594,31 @@ function getInitials(name: string): string {
   }
 
   tbody tr {
-    transition: background 0.16s ease;
+    background: #111;
+    transition:
+      background 0.16s ease,
+      box-shadow 0.16s ease;
   }
 
-  tbody tr:hover {
-    background: #121212;
+  tbody tr:nth-child(even) {
+    background: #0f0f0f;
+  }
+
+  tbody tr.product-row {
+    cursor: pointer;
+  }
+
+  tbody tr.product-row:hover {
+    background: #151515;
+  }
+
+  tbody tr.product-row.is-selected {
+    background: rgba(215, 255, 0, 0.055);
+    box-shadow: inset 4px 0 0 #d7ff00;
+  }
+
+  tbody tr.product-row.is-selected .product-thumb {
+    border-color: rgba(215, 255, 0, 0.65);
   }
 
   tbody tr:last-child td {
@@ -565,7 +626,34 @@ function getInitials(name: string): string {
   }
 
   .product-cell {
-    min-width: 310px;
+    width: 42%;
+    min-width: 0;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 115px;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 95px;
+  }
+
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 95px;
+  }
+
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 125px;
+  }
+
+  .actions-heading,
+  .actions {
+    width: 112px;
+    text-align: right;
   }
 
   .product-inline {
@@ -576,10 +664,10 @@ function getInitials(name: string): string {
   }
 
   .product-thumb {
-    width: 68px;
-    height: 68px;
-    flex: 0 0 68px;
-    border-radius: 16px;
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    border-radius: 14px;
     overflow: hidden;
     background: linear-gradient(145deg, #242424, #101010);
     border: 1px solid #2b2b2b;
@@ -587,7 +675,7 @@ function getInitials(name: string): string {
     align-items: center;
     justify-content: center;
     color: #d7ff00;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     font-weight: 950;
     letter-spacing: 0.08em;
   }
@@ -606,16 +694,23 @@ function getInitials(name: string): string {
   .product-copy strong {
     display: block;
     color: #f4f4f4;
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.25;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .muted {
     color: #6c6c6c;
-    font-size: 0.84rem;
+    font-size: 0.8rem;
     display: block;
     margin-top: 5px;
-    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .product-badge,
@@ -623,11 +718,11 @@ function getInitials(name: string): string {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 30px;
-    padding: 0 11px;
+    min-height: 28px;
+    padding: 0 10px;
     border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 900;
+    font-size: 0.74rem;
+    font-weight: 950;
     letter-spacing: 0.04em;
     white-space: nowrap;
   }
@@ -646,23 +741,23 @@ function getInitials(name: string): string {
 
   .no-badge {
     color: #626262;
-    font-size: 0.86rem;
-    font-weight: 700;
+    font-size: 0.82rem;
+    font-weight: 750;
   }
 
   .stock-ok {
     color: #1ecb70;
-    font-weight: 900;
+    font-weight: 950;
   }
 
   .stock-low {
     color: #ffb800;
-    font-weight: 900;
+    font-weight: 950;
   }
 
   .stock-out {
     color: #ff4d4d;
-    font-weight: 900;
+    font-weight: 950;
   }
 
   .published {
@@ -685,47 +780,60 @@ function getInitials(name: string): string {
     color: #ff4d4d;
   }
 
-  .actions-heading {
-    text-align: right;
-  }
-
   .actions-inner {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
-  .select-pill {
+  .action-icon {
+    width: 40px;
+    height: 38px;
+    min-width: 40px;
     min-height: 38px;
-    background: #171717;
-    border: 1px solid #2b2b2b;
-    border-radius: 12px;
-    padding: 0 10px;
+    padding: 0;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    transition:
+      filter 0.15s ease,
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
 
-  .btn-edit,
-  .btn-delete {
-    min-height: 38px;
-    padding: 0 14px;
-    border-radius: 12px;
-    border: 1px solid #232323;
-    cursor: pointer;
-    font-weight: 900;
+  .action-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .action-icon:hover {
+    transform: translateY(-1px);
+  }
+
+  .action-icon:active {
+    transform: translateY(0);
   }
 
   .btn-edit {
     background: #d7ff00;
     color: #111;
-    border: none;
+    border: 1px solid #d7ff00;
   }
 
   .btn-delete {
-    background: transparent;
+    background: rgba(255, 77, 77, 0.05);
     color: #ff4d4d;
-    border-color: rgba(255, 77, 77, 0.22);
+    border: 1px solid rgba(255, 77, 77, 0.25);
+  }
+
+  .btn-delete:hover {
+    border-color: rgba(255, 77, 77, 0.48);
+    background: rgba(255, 77, 77, 0.1);
   }
 
   .footer-row {
@@ -801,6 +909,11 @@ function getInitials(name: string): string {
     flex: 0 0 auto;
   }
 
+  .modal-close:hover {
+    color: #fff;
+    border-color: #444;
+  }
+
   .modal-form {
     padding: clamp(16px, 2.4vw, 28px);
     overflow-y: auto;
@@ -829,7 +942,7 @@ function getInitials(name: string): string {
   .field label {
     color: #a3a3a3;
     font-size: clamp(0.82rem, 1.4vw, 0.92rem);
-    font-weight: 800;
+    font-weight: 850;
   }
 
   .field input,
@@ -845,6 +958,12 @@ function getInitials(name: string): string {
     font-size: clamp(0.88rem, 1.4vw, 0.96rem);
     outline: none;
     box-sizing: border-box;
+  }
+
+  .field input[readonly] {
+    color: #8a8a8a;
+    background: #131313;
+    cursor: not-allowed;
   }
 
   .field textarea {
@@ -886,7 +1005,7 @@ function getInitials(name: string): string {
     min-height: 44px;
     border-radius: 12px;
     padding: 0 18px;
-    font-weight: 900;
+    font-weight: 950;
     cursor: pointer;
   }
 
@@ -902,32 +1021,146 @@ function getInitials(name: string): string {
     border: 1px solid #303030;
   }
 
+  .btn-secondary:hover {
+    border-color: #444;
+  }
+
+  .image-upload-box {
+    position: relative;
+    min-height: 180px;
+    border: 1px dashed #3a3a3a;
+    border-radius: 16px;
+    background: #171717;
+    color: #8d8d8d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+      border-color 0.16s ease,
+      background 0.16s ease,
+      color 0.16s ease;
+  }
+
+  .image-upload-box:hover {
+    border-color: rgba(215, 255, 0, 0.55);
+    background: #1b1b1b;
+    color: #d7ff00;
+  }
+
+  .image-upload-box input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 4;
+  }
+
+  .image-upload-box span {
+    position: relative;
+    z-index: 1;
+    font-weight: 850;
+    font-size: 0.92rem;
+  }
+
+  .image-upload-box.has-preview {
+    border-style: solid;
+    border-color: #2f2f2f;
+    justify-content: flex-start;
+  }
+
+  .image-preview-grid {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .image-preview-item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #101010;
+    border: 1px solid #2c2c2c;
+  }
+
+  .image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .image-preview-index {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #d7ff00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 950;
+  }
+
   @media (max-width: 1180px) {
-    table {
-      min-width: 920px;
+    th,
+    td {
+      padding: 14px 11px;
+      font-size: 0.84rem;
     }
 
     .product-cell {
-      min-width: 270px;
+      width: 38%;
     }
 
     .product-thumb {
-      width: 58px;
-      height: 58px;
-      flex-basis: 58px;
-      border-radius: 14px;
+      width: 52px;
+      height: 52px;
+      flex-basis: 52px;
+      border-radius: 13px;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 100px;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 86px;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 86px;
+    }
+
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 112px;
+    }
+
+    .actions-heading,
+    .actions {
+      width: 108px;
     }
   }
 
-  @media (max-width: 900px) {
-    .title-row {
-      align-items: stretch;
-    }
-
-    .new-btn {
-      width: 100%;
-    }
-
+  @media (max-width: 980px) {
     .management-row {
       align-items: stretch;
       flex-direction: column;
@@ -935,14 +1168,30 @@ function getInitials(name: string): string {
 
     .bulk-panel {
       width: 100%;
-      margin-left: 0;
+      max-width: none;
       justify-content: flex-start;
+    }
+
+    .new-btn {
+      width: 100%;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      min-width: 760px;
     }
   }
 
   @media (max-width: 760px) {
     .admin-section h1 {
       font-size: 2rem;
+    }
+
+    .title-row {
+      margin-bottom: 18px;
     }
 
     .table-wrap {
@@ -977,15 +1226,24 @@ function getInitials(name: string): string {
       gap: 12px;
     }
 
-    tbody tr {
+    tbody tr.product-row {
       background: #0f0f0f;
       border: 1px solid #232323;
       border-radius: 18px;
       padding: 14px;
     }
 
-    tbody tr:hover {
+    tbody tr.product-row:nth-child(even) {
       background: #0f0f0f;
+    }
+
+    tbody tr.product-row:hover {
+      background: #111;
+    }
+
+    tbody tr.product-row.is-selected {
+      background: rgba(215, 255, 0, 0.06);
+      box-shadow: inset 4px 0 0 #d7ff00;
     }
 
     tbody tr td {
@@ -1002,13 +1260,14 @@ function getInitials(name: string): string {
       display: block;
       color: #676767;
       font-size: 0.72rem;
-      font-weight: 900;
+      font-weight: 950;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       margin-bottom: 5px;
     }
 
     .product-cell {
+      width: 100%;
       min-width: 0;
     }
 
@@ -1018,15 +1277,26 @@ function getInitials(name: string): string {
       flex-basis: 62px;
     }
 
+    .product-copy strong,
+    .muted {
+      white-space: normal;
+    }
+
+    .actions,
+    .actions-heading {
+      width: 100%;
+      text-align: left;
+    }
+
     .actions-inner {
       justify-content: flex-start;
     }
 
-    .select-pill,
-    .btn-edit,
-    .btn-delete {
-      flex: 1 1 130px;
-      justify-content: center;
+    .action-icon {
+      width: 42px;
+      height: 40px;
+      min-width: 42px;
+      min-height: 40px;
     }
 
     .modal {
@@ -1049,10 +1319,6 @@ function getInitials(name: string): string {
   }
 
   @media (max-width: 560px) {
-    .title-row {
-      margin-bottom: 16px;
-    }
-
     .new-btn {
       min-height: 44px;
     }
@@ -1141,6 +1407,7 @@ function getInitials(name: string): string {
     .field-help {
       font-size: 0.72rem;
     }
+
     .image-upload-box {
       min-height: 145px;
       border-radius: 12px;
@@ -1195,96 +1462,6 @@ function getInitials(name: string): string {
       margin-top: 12px;
     }
   }
-  .image-upload-box {
-    position: relative;
-    min-height: 180px;
-    border: 1px dashed #3a3a3a;
-    border-radius: 16px;
-    background: #171717;
-    color: #8d8d8d;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    text-align: center;
-    padding: 16px;
-    cursor: pointer;
-    overflow: hidden;
-    transition:
-      border-color 0.16s ease,
-      background 0.16s ease,
-      color 0.16s ease;
-  }
-
-  .image-upload-box:hover {
-    border-color: rgba(215, 255, 0, 0.55);
-    background: #1b1b1b;
-    color: #d7ff00;
-  }
-
-  .image-upload-box input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 4;
-  }
-
-  .image-upload-box span {
-    position: relative;
-    z-index: 1;
-    font-weight: 800;
-    font-size: 0.92rem;
-  }
-
-  .image-upload-box.has-preview {
-    border-style: solid;
-    border-color: #2f2f2f;
-    justify-content: flex-start;
-  }
-
-  .image-preview-grid {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    pointer-events: none;
-  }
-
-  .image-preview-item {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #101010;
-    border: 1px solid #2c2c2c;
-  }
-
-  .image-preview-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .image-preview-index {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 24px;
-    height: 24px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.72);
-    color: #d7ff00;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78rem;
-    font-weight: 900;
-  }
 </style>
 
 <script>
@@ -1311,6 +1488,10 @@ function getInitials(name: string): string {
   const productTipo = document.getElementById("productTipo");
   const productColor = document.getElementById("productColor");
   const productBadge = document.getElementById("productBadge");
+  const productCategoria = document.getElementById("productCategoria");
+  const productCategoriaField = document.getElementById(
+    "productCategoriaField",
+  );
   const productStockInicial = document.getElementById("productStockInicial");
   const initialStockField = document.getElementById("initialStockField");
   const productImagen = document.getElementById("productImagen");
@@ -1333,6 +1514,9 @@ function getInitials(name: string): string {
     "clearProductSelectionBtn",
   );
   const selectAllProducts = document.getElementById("selectAllProducts");
+  const productRows = Array.from(
+    document.querySelectorAll<HTMLTableRowElement>(".product-row"),
+  );
   const productCheckboxes = Array.from(
     document.querySelectorAll<HTMLInputElement>(".product-select"),
   );
@@ -1390,6 +1574,12 @@ function getInitials(name: string): string {
 
     if (productImagen instanceof HTMLInputElement) {
       productImagen.disabled = !visible;
+    }
+  }
+
+  function setProductCategoriaVisible(visible: boolean) {
+    if (productCategoriaField instanceof HTMLElement) {
+      productCategoriaField.hidden = !visible;
     }
   }
 
@@ -1496,6 +1686,25 @@ function getInitials(name: string): string {
     return imagenes;
   }
 
+  function isInteractiveTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false;
+
+    return Boolean(
+      target.closest("button, a, input, label, select, textarea"),
+    );
+  }
+
+  function setRowSelected(row: HTMLTableRowElement, selected: boolean) {
+    const checkbox = row.querySelector<HTMLInputElement>(".product-select");
+
+    if (checkbox) {
+      checkbox.checked = selected;
+    }
+
+    row.classList.toggle("is-selected", selected);
+    row.setAttribute("aria-selected", selected ? "true" : "false");
+  }
+
   function getSelectedProductIds(): number[] {
     return productCheckboxes
       .filter((checkbox) => checkbox.checked)
@@ -1507,6 +1716,14 @@ function getInitials(name: string): string {
     const selectedIds = getSelectedProductIds();
     const total = productCheckboxes.length;
     const selected = selectedIds.length;
+
+    productRows.forEach((row) => {
+      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
+      const checked = Boolean(checkbox?.checked);
+
+      row.classList.toggle("is-selected", checked);
+      row.setAttribute("aria-selected", checked ? "true" : "false");
+    });
 
     if (selectedProductsCount instanceof HTMLElement) {
       selectedProductsCount.textContent = String(selected);
@@ -1547,6 +1764,7 @@ function getInitials(name: string): string {
     const tipoInput = asField(productTipo);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
+    const categoriaInput = asField(productCategoria);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -1559,6 +1777,7 @@ function getInitials(name: string): string {
       !tipoInput ||
       !colorInput ||
       !badgeInput ||
+      !categoriaInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -1574,10 +1793,12 @@ function getInitials(name: string): string {
     tipoInput.value = "";
     colorInput.value = "";
     badgeInput.value = "";
+    categoriaInput.value = "";
     stockInicialInput.value = "";
     estadoInput.value = "borrador";
     slugWasManuallyEdited = false;
 
+    setProductCategoriaVisible(false);
     setInitialStockVisible(true);
     resetImageInput();
     setProductImageVisible(true);
@@ -1599,6 +1820,7 @@ function getInitials(name: string): string {
     const tipoInput = asField(productTipo);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
+    const categoriaInput = asField(productCategoria);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -1611,6 +1833,7 @@ function getInitials(name: string): string {
       !tipoInput ||
       !colorInput ||
       !badgeInput ||
+      !categoriaInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -1626,9 +1849,12 @@ function getInitials(name: string): string {
     tipoInput.value = button.dataset.tipo || "";
     colorInput.value = button.dataset.color || "";
     badgeInput.value = normalizeBadgeValue(button.dataset.badge || "");
+    categoriaInput.value = button.dataset.categoria || "General";
     stockInicialInput.value = "";
     estadoInput.value = button.dataset.estado || "borrador";
     slugWasManuallyEdited = true;
+
+    setProductCategoriaVisible(true);
     setInitialStockVisible(false);
     resetImageInput();
     setProductImageVisible(false);
@@ -1638,23 +1864,44 @@ function getInitials(name: string): string {
     }
   }
 
-  productCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener("change", updateBulkToolbar);
+  productRows.forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (isInteractiveTarget(event.target)) return;
+
+      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
+      if (!checkbox) return;
+
+      setRowSelected(row, !checkbox.checked);
+      updateBulkToolbar();
+    });
+
+    row.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      if (isInteractiveTarget(event.target)) return;
+
+      event.preventDefault();
+
+      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
+      if (!checkbox) return;
+
+      setRowSelected(row, !checkbox.checked);
+      updateBulkToolbar();
+    });
   });
 
   selectAllProducts?.addEventListener("change", () => {
     if (!(selectAllProducts instanceof HTMLInputElement)) return;
 
-    productCheckboxes.forEach((checkbox) => {
-      checkbox.checked = selectAllProducts.checked;
+    productRows.forEach((row) => {
+      setRowSelected(row, selectAllProducts.checked);
     });
 
     updateBulkToolbar();
   });
 
   clearProductSelectionBtn?.addEventListener("click", () => {
-    productCheckboxes.forEach((checkbox) => {
-      checkbox.checked = false;
+    productRows.forEach((row) => {
+      setRowSelected(row, false);
     });
 
     if (bulkBadgeSelect instanceof HTMLSelectElement) {
@@ -1710,6 +1957,7 @@ function getInitials(name: string): string {
     const value = productSlug.value.trim();
     productSlug.value = value ? slugify(value) : "";
   });
+
   productImagen?.addEventListener("change", () => {
     if (!(productImagen instanceof HTMLInputElement)) return;
 
@@ -1740,6 +1988,7 @@ function getInitials(name: string): string {
       productFormMessage.textContent = "";
     }
   });
+
   document.getElementById("newProductBtn")?.addEventListener("click", () => {
     resetForm();
 
@@ -1852,6 +2101,7 @@ function getInitials(name: string): string {
         }
       }
     }
+
     try {
       if (isEditing) {
         await updateAdminProducto({
