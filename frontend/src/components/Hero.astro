@@ -1,6 +1,5 @@
 ---
 /* No se reciben props ni imports en este componente */
-/* Hero principal: presenta propuesta de valor y CTA hacia catálogo. */
 ---
 
 <section class="hero">
@@ -29,17 +28,15 @@
 </section>
 
 <style>
-  /* Contenedor general del hero */
   .hero {
     min-height: calc(100vh - 140px);
     width: 100%;
-    padding: 3.5rem 1.75rem;
+    padding: 3.5rem 3rem;
     display: flex;
     align-items: center;
     background: #1a1a1a;
   }
 
-  /* Distribución en dos columnas */
   .hero-grid {
     width: 100%;
     max-width: 1400px;
@@ -50,12 +47,10 @@
     align-items: center;
   }
 
-  /* Bloque de texto */
   .hero-copy {
     max-width: 640px;
   }
 
-  /* Texto superior pequeño */
   .eyebrow {
     display: inline-block;
     letter-spacing: 0.5em;
@@ -65,7 +60,6 @@
     margin-bottom: 1.5rem;
   }
 
-  /* Título principal */
   h1 {
     margin: 0;
     font-size: clamp(3.8rem, 8vw, 7rem);
@@ -75,7 +69,6 @@
     text-transform: uppercase;
   }
 
-  /* Texto descriptivo */
   p {
     max-width: 34rem;
     margin: 1.5rem 0 2.5rem;
@@ -84,7 +77,6 @@
     line-height: 1.9;
   }
 
-  /* Botones del hero */
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
@@ -117,7 +109,6 @@
     background: rgba(255, 255, 255, 0.04);
   }
 
-  /* Parte visual del hero */
   .hero-visual {
     display: flex;
     justify-content: flex-end;
@@ -137,7 +128,6 @@
     font-size: 0.95rem;
   }
 
-  /* Responsive */
   @media (max-width: 900px) {
     .hero-grid {
       grid-template-columns: 1fr;
@@ -164,8 +154,9 @@
 </style>
 
 <script>
-  // Prepara la BD si no existe.
-  // El instalador debe ser seguro: crear si falta, pero no borrar datos existentes.
+  // Ejecutamos el instalador al cargar la home para que, si la base de datos
+  // fue eliminada, la aplicación pueda reconstruirse sola.
+  // El instalador debe ser idempotente: crear lo que falte sin pisar datos existentes.
   fetch("/backend/instalador.php", {
     credentials: "include"
   })
@@ -175,7 +166,7 @@
       try {
         const data = JSON.parse(text);
         console.log("Instalador:", data);
-      } catch (error) {
+      } catch (_error) {
         console.error("Respuesta no válida del instalador:", text);
       }
     })
