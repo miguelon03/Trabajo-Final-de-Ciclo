@@ -23,119 +23,50 @@ if (!isset($_SESSION["usuario_id"]) || ($_SESSION["usuario_rol"] ?? "") !== "adm
 
 require_once __DIR__ . "/../../conexion.php";
 
-function dmh_slugify(string $value): string {
-    $value = trim($value);
-
-    if (function_exists("iconv")) {
-        $normalized = iconv("UTF-8", "ASCII//TRANSLIT", $value);
-        if ($normalized !== false) {
-            $value = $normalized;
-        }
-    }
-
-    $value = strtolower($value);
+function dmh_slugify(string $value): string
+{
+    $value = strtolower(trim($value));
     $value = preg_replace('/[^a-z0-9]+/i', '-', $value) ?? '';
     $value = trim($value, '-');
-
     return $value !== '' ? $value : 'producto';
 }
 
-function dmh_normalize_badge(string $badge): ?string {
-    $badge = trim($badge);
-
-    if ($badge === "" || $badge === "sin_badge") {
-        return null;
-    }
-
-    $lower = strtolower($badge);
-
-    if ($lower === "new") {
-        return "NEW";
-    }
-
-    if ($lower === "oferta") {
-        return "Oferta";
-    }
-
-    return "__INVALID__";
+function dmh_build_sku(string $slug): string
+{
+    $sku = strtoupper(str_replace('-', '', $slug));
+    $sku = preg_replace('/[^A-Z0-9]/', '', $sku) ?? '';
+    return $sku !== '' ? substr($sku, 0, 24) : 'PRODUCTO';
 }
 
-function dmh_build_unique_sku(PDO $conexion, string $slug): string {
-    $base = strtoupper(preg_replace('/[^A-Z0-9]+/i', '-', $slug) ?? 'PRODUCTO');
-    $base = trim($base, '-');
-    $base = $base !== '' ? $base : 'PRODUCTO';
-    $base = substr($base, 0, 80);
-
-    $candidate = $base . '-UNICA';
-    $suffix = 1;
-
-    $stmt = $conexion->prepare("SELECT COUNT(*) FROM variantes_producto WHERE sku = :sku");
-
-    while (true) {
-        $stmt->execute(["sku" => $candidate]);
-        $exists = (int)$stmt->fetchColumn() > 0;
-
-        if (!$exists) {
-            return $candidate;
-        }
-
-        $suffix++;
-        $candidate = substr($base, 0, 74) . '-UNICA-' . $suffix;
-    }
+function dmh_build_variant_sku(string $slug, string $talla): string
+{
+    $base = dmh_build_sku($slug);
+    $size = strtoupper(trim($talla));
+    $size = preg_replace('/[^A-Z0-9]/', '', $size) ?? '';
+    $size = $size !== '' ? $size : 'UNICA';
+    return substr($base . '-' . $size, 0, 32);
 }
 
-function dmh_get_product_images_input(array $input): array {
-    $images = [];
-
-    if (isset($input["imagenes"]) && is_array($input["imagenes"])) {
-        foreach ($input["imagenes"] as $image) {
-            if (!is_array($image)) {
-                continue;
-            }
-
-            $dataUrl = trim((string)($image["data_url"] ?? ""));
-            if ($dataUrl === "") {
-                continue;
-            }
-
-            $images[] = [
-                "data_url" => $dataUrl,
-                "nombre" => trim((string)($image["nombre"] ?? "")),
-            ];
-        }
-    }
-
-    // Compatibilidad con el sistema anterior de una sola imagen.
-    if (count($images) === 0) {
-        $legacyDataUrl = trim((string)($input["imagen_data_url"] ?? ""));
-        if ($legacyDataUrl !== "") {
-            $images[] = [
-                "data_url" => $legacyDataUrl,
-                "nombre" => trim((string)($input["imagen_nombre"] ?? "")),
-            ];
-        }
-    }
-
-    return $images;
-}
-
-function dmh_save_uploaded_product_image(string $dataUrl, string $slug, int $position): string {
-    $dataUrl = trim($dataUrl);
+function dmh_save_product_image(array $image, string $slug, int $position): string
+{
+    $dataUrl = trim((string)($image["data_url"] ?? ""));
 
     if ($dataUrl === "") {
         throw new RuntimeException("Imagen vacía");
     }
 
-    if (!preg_match('/^data:(image\/(?:jpeg|jpg|png|webp));base64,(.+)$/', $dataUrl, $matches)) {
-        throw new RuntimeException("Las imágenes deben ser JPG, PNG o WEBP");
+    if (!preg_match('/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i', $dataUrl, $matches)) {
+        throw new RuntimeException("Formato de imagen no válido");
     }
 
-    $mime = strtolower($matches[1]);
-    $base64 = $matches[2];
-    $binary = base64_decode($base64, true);
+    $extension = strtolower($matches[1]);
+    if ($extension === "jpeg") {
+        $extension = "jpg";
+    }
 
+    $binary = base64_decode($matches[2], true);
     if ($binary === false) {
-        throw new RuntimeException("No se pudo leer una de las imágenes subidas");
+        throw new RuntimeException("No se pudo decodificar una imagen");
     }
 
     $maxBytes = 4 * 1024 * 1024;
@@ -143,61 +74,31 @@ function dmh_save_uploaded_product_image(string $dataUrl, string $slug, int $pos
         throw new RuntimeException("Cada imagen no puede superar los 4MB");
     }
 
-    $extensionByMime = [
-        "image/jpeg" => "jpg",
-        "image/jpg" => "jpg",
-        "image/png" => "png",
-        "image/webp" => "webp",
-    ];
-
-    $extension = $extensionByMime[$mime] ?? null;
-    if ($extension === null) {
-        throw new RuntimeException("Formato de imagen no permitido");
+    $allowed = ["jpg", "png", "webp"];
+    if (!in_array($extension, $allowed, true)) {
+        throw new RuntimeException("Las imágenes deben ser JPG, PNG o WEBP");
     }
 
-    $safeSlug = dmh_slugify($slug);
+    $projectRoot = dirname(__DIR__, 3);
+    $uploadDir = $projectRoot . "/frontend/public/uploads/productos";
 
-    $uploadDir = realpath(__DIR__ . "/../../../frontend/public/productos");
-
-    if ($uploadDir === false) {
-        $uploadDir = __DIR__ . "/../../../frontend/public/productos";
-
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
-            throw new RuntimeException("No se pudo crear la carpeta de imágenes");
-        }
-
-        $uploadDir = realpath($uploadDir);
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+        throw new RuntimeException("No se pudo crear la carpeta de imágenes");
     }
 
-    if ($uploadDir === false || !is_dir($uploadDir)) {
-        throw new RuntimeException("La carpeta de imágenes no existe");
+    $safeSlug = preg_replace('/[^a-z0-9\\-]/', '', strtolower($slug)) ?: 'producto';
+    $filename = $safeSlug . "-" . time() . "-" . $position . "." . $extension;
+    $absolutePath = $uploadDir . "/" . $filename;
+
+    if (file_put_contents($absolutePath, $binary) === false) {
+        throw new RuntimeException("No se pudo guardar una imagen");
     }
 
-    if (!is_writable($uploadDir)) {
-        throw new RuntimeException("La carpeta frontend/public/productos no tiene permisos de escritura");
-    }
-
-    $random = bin2hex(random_bytes(4));
-    $fileName = $safeSlug . '-' . date('YmdHis') . '-' . $position . '-' . $random . '.' . $extension;
-    $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
-
-    if (file_put_contents($targetPath, $binary) === false) {
-        throw new RuntimeException("No se pudo guardar una de las imágenes del producto");
-    }
-
-    return "/productos/" . $fileName;
+    return "/uploads/productos/" . $filename;
 }
 
 try {
     $input = json_decode(file_get_contents("php://input"), true);
-
-    if (!is_array($input)) {
-        echo json_encode([
-            "ok" => false,
-            "error" => "Datos de producto no válidos"
-        ]);
-        exit;
-    }
 
     $nombre = trim((string)($input["nombre"] ?? ""));
     $slug = trim((string)($input["slug"] ?? ""));
@@ -207,14 +108,11 @@ try {
         ? (float)$input["precio_original"]
         : null;
     $tipo = trim((string)($input["tipo"] ?? ""));
-    $color = trim((string)($input["color"] ?? ""));
-    $badge = dmh_normalize_badge((string)($input["badge"] ?? ""));
+    $badge = trim((string)($input["badge"] ?? ""));
     $estado = trim((string)($input["estado"] ?? "borrador"));
-
-    $stockInicialRaw = $input["stock_inicial"] ?? 0;
-    $stockInicial = is_numeric($stockInicialRaw) ? (int)$stockInicialRaw : -1;
-
-    $imagenes = dmh_get_product_images_input($input);
+    $stockInicial = max(0, (int)($input["stock_inicial"] ?? 0));
+    $variantes = is_array($input["variantes"] ?? null) ? $input["variantes"] : [];
+    $imagenes = is_array($input["imagenes"] ?? null) ? $input["imagenes"] : [];
 
     if ($nombre === "") {
         echo json_encode([
@@ -232,39 +130,13 @@ try {
         exit;
     }
 
-    if ($badge === "__INVALID__") {
-        echo json_encode([
-            "ok" => false,
-            "error" => "La badge solo puede ser NEW, oferta o sin badge"
-        ]);
-        exit;
-    }
-
-    if ($stockInicial < 0) {
-        echo json_encode([
-            "ok" => false,
-            "error" => "El stock inicial no puede ser negativo"
-        ]);
-        exit;
+    if ($slug === "") {
+        $slug = dmh_slugify($nombre);
     }
 
     if (count($imagenes) > 3) {
-        echo json_encode([
-            "ok" => false,
-            "error" => "Solo puedes subir hasta 3 imágenes por producto"
-        ]);
-        exit;
+        throw new RuntimeException("Solo puedes subir hasta 3 imágenes");
     }
-
-    if ($slug === "") {
-        $slug = dmh_slugify($nombre);
-    } else {
-        $slug = dmh_slugify($slug);
-    }
-
-    $estadoFinal = in_array($estado, ["borrador", "publicado", "archivado"], true)
-        ? $estado
-        : "borrador";
 
     $stmtExiste = $conexion->prepare("SELECT id FROM productos WHERE slug = :slug LIMIT 1");
     $stmtExiste->execute(["slug" => $slug]);
@@ -285,7 +157,7 @@ try {
             tipo, color, badge, fecha_catalogo, estado
         ) VALUES (
             :nombre, :slug, :descripcion, :precio_base, :precio_original,
-            :tipo, :color, :badge, CURDATE(), :estado
+            :tipo, NULL, :badge, CURDATE(), :estado
         )
     ");
 
@@ -296,49 +168,63 @@ try {
         "precio_base" => $precioBase,
         "precio_original" => $precioOriginal,
         "tipo" => $tipo !== "" ? $tipo : null,
-        "color" => $color !== "" ? $color : null,
-        "badge" => $badge,
-        "estado" => $estadoFinal,
+        "badge" => $badge !== "" ? $badge : null,
+        "estado" => in_array($estado, ["borrador", "publicado", "archivado"], true) ? $estado : "borrador",
     ]);
 
     $productoId = (int)$conexion->lastInsertId();
 
-    if (count($imagenes) > 0) {
+    if ($stockInicial > 0) {
+        $stockCalculado = 0;
+
+        foreach ($variantes as $variante) {
+            $stockCalculado += max(0, (int)($variante["stock"] ?? 0));
+        }
+
+        if ($stockCalculado !== $stockInicial) {
+            throw new RuntimeException("La suma del stock por tallas no coincide con el stock inicial");
+        }
+
+        $stmtVariante = $conexion->prepare("
+            INSERT INTO variantes_producto (
+                producto_id, talla, color, sku, stock, precio_extra
+            ) VALUES (
+                :producto_id, :talla, NULL, :sku, :stock, 0
+            )
+        ");
+
+        foreach ($variantes as $variante) {
+            $talla = trim((string)($variante["talla"] ?? "Única"));
+            $stock = max(0, (int)($variante["stock"] ?? 0));
+
+            if ($stock <= 0) {
+                continue;
+            }
+
+            $stmtVariante->execute([
+                "producto_id" => $productoId,
+                "talla" => $talla !== "" ? $talla : "Única",
+                "sku" => dmh_build_variant_sku($slug, $talla),
+                "stock" => $stock,
+            ]);
+        }
+    }
+
+    if (!empty($imagenes)) {
         $stmtImagen = $conexion->prepare("
             INSERT INTO imagenes_productos (producto_id, url_imagen, posicion)
             VALUES (:producto_id, :url_imagen, :posicion)
         ");
 
         foreach ($imagenes as $index => $imagen) {
-            $imageUrl = dmh_save_uploaded_product_image(
-                (string)$imagen["data_url"],
-                $slug,
-                $index
-            );
+            $urlImagen = dmh_save_product_image($imagen, $slug, $index + 1);
 
             $stmtImagen->execute([
                 "producto_id" => $productoId,
-                "url_imagen" => $imageUrl,
-                "posicion" => $index,
+                "url_imagen" => $urlImagen,
+                "posicion" => $index + 1,
             ]);
         }
-    }
-
-    if ($stockInicial > 0) {
-        $sku = dmh_build_unique_sku($conexion, $slug);
-
-        $stmtVariante = $conexion->prepare("
-            INSERT INTO variantes_producto (producto_id, talla, color, sku, stock, precio_extra)
-            VALUES (:producto_id, :talla, :color, :sku, :stock, 0)
-        ");
-
-        $stmtVariante->execute([
-            "producto_id" => $productoId,
-            "talla" => "Única",
-            "color" => $color !== "" ? $color : null,
-            "sku" => $sku,
-            "stock" => $stockInicial,
-        ]);
     }
 
     $conexion->commit();
@@ -349,7 +235,7 @@ try {
         "id" => $productoId
     ]);
 } catch (Throwable $e) {
-    if (isset($conexion) && $conexion->inTransaction()) {
+    if (isset($conexion) && $conexion instanceof PDO && $conexion->inTransaction()) {
         $conexion->rollBack();
     }
 

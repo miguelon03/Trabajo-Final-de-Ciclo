@@ -334,18 +334,11 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
             const data = await response.json();
 
-<<<<<<< HEAD
-          if (data.ok) {
-            localStorage.removeItem("cart");
-            window.dispatchEvent(new Event("cart-updated"));
-            window.location.href = "/";
-=======
             if (data.ok) {
               window.location.href = "/";
             }
           } catch (error) {
             console.error("Error cerrando sesión:", error);
->>>>>>> ef98756840461d0e8efbf5ff013428b360fc49a1
           }
         });
     </script>

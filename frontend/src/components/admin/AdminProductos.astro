@@ -198,9 +198,7 @@ function getInitials(name: string): string {
                         data-descripcion={p.descripcion ?? ""}
                         data-precio-base={p.precio_base}
                         data-precio-original={p.precio_original ?? ""}
-                        data-categoria={p.categoria ?? "General"}
                         data-tipo={p.tipo ?? ""}
-                        data-color={p.color ?? ""}
                         data-badge={p.badge ?? ""}
                         data-estado={p.estado}
                         aria-label={`Editar ${p.nombre}`}
@@ -271,9 +269,6 @@ function getInitials(name: string): string {
         <div class="field">
           <label for="productSlug">Slug</label>
           <input id="productSlug" type="text" />
-          <small class="field-help">
-            Se genera al salir del nombre, pero puedes editarlo manualmente.
-          </small>
         </div>
 
         <div class="field">
@@ -306,17 +301,7 @@ function getInitials(name: string): string {
           <input id="productTipo" type="text" />
         </div>
 
-        <div class="field">
-          <label for="productCategoria">Categoría</label>
-          <input id="productCategoria" type="text" required placeholder="Ej: Sudaderas" />
-        </div>
-
-        <div class="field">
-          <label for="productColor">Color</label>
-          <input id="productColor" type="text" />
-        </div>
-
-        <div class="field">
+        <div class="field field--accent">
           <label for="productBadge">Badge</label>
           <select id="productBadge">
             <option value="">Sin badge</option>
@@ -325,42 +310,31 @@ function getInitials(name: string): string {
           </select>
         </div>
 
-        <div class="field" id="initialStockField">
-          <label for="productStockInicial">Stock inicial</label>
+        <div class="field field--accent">
+          <label id="productStockLabel" for="productStockInicial">Stock</label>
           <input
             id="productStockInicial"
             type="number"
             min="0"
             step="1"
-            placeholder="Ej: 20"
+            value="0"
           />
-          <small class="field-help">
-            Solo se usa al crear. Crea una variante inicial de talla Única.
-          </small>
         </div>
 
         <div class="field field-full" id="productImageField">
           <label for="productImagen">Imágenes del producto</label>
-
           <label class="image-upload-box" for="productImagen">
             <input
               id="productImagen"
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/jpeg,image/png,image/webp"
               multiple
             />
-
             <span id="productImageUploadText">
               Seleccionar hasta 3 imágenes JPG, PNG o WEBP
             </span>
-
-            <div class="image-preview-grid" id="productImagePreviewGrid"></div>
+            <div id="productImagePreviewGrid" class="image-preview-grid"></div>
           </label>
-
-          <small class="field-help">
-            Puedes añadir hasta 3 imágenes. Cada imagen puede pesar como máximo
-            4MB.
-          </small>
         </div>
 
         <div class="field field-full">
@@ -368,8 +342,6 @@ function getInitials(name: string): string {
           <textarea id="productDescripcion" rows="5"></textarea>
         </div>
       </div>
-
-      <p id="productFormMessage" class="form-message"></p>
 
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="cancelProductModal">
@@ -379,6 +351,62 @@ function getInitials(name: string): string {
         <button type="submit" class="btn-primary" id="saveProductBtn">
           Guardar
         </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="stockSplitModalBackdrop">
+  <div
+    class="modal modal--compact"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="stockSplitModalTitle"
+  >
+    <div class="modal-header">
+      <h2 id="stockSplitModalTitle">Repartir stock por tallas</h2>
+      <button
+        class="modal-close"
+        id="closeStockSplitModal"
+        type="button"
+        aria-label="Cerrar reparto de stock"
+      >
+        ×
+      </button>
+    </div>
+
+    <form id="stockSplitForm" class="modal-form">
+      <div class="stock-split__summary">
+        <div class="stock-split__summary-head">
+          <span class="stock-split__eyebrow">Producto</span>
+          <strong id="stockSplitProductName">Producto</strong>
+        </div>
+
+        <div class="stock-split__stats">
+          <div class="stock-split__stat">
+            <span>Total</span>
+            <strong id="stockSplitTotal">0</strong>
+          </div>
+
+          <div class="stock-split__stat">
+            <span>Repartido</span>
+            <strong id="stockSplitAssigned">0</strong>
+          </div>
+
+          <div class="stock-split__stat">
+            <span>Objetivo</span>
+            <strong id="stockSplitExpected">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div id="stockSplitGrid" class="stock-split__grid"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="backToProductModalBtn">
+          Volver
+        </button>
+        <button type="submit" class="btn-primary">Guardar producto</button>
       </div>
     </form>
   </div>
@@ -976,19 +1004,6 @@ function getInitials(name: string): string {
     border-color: rgba(215, 255, 0, 0.5);
   }
 
-  .field-help {
-    color: #696969;
-    font-size: 0.78rem;
-    line-height: 1.35;
-  }
-
-  .form-message {
-    min-height: 22px;
-    margin: 16px 0 0;
-    color: #ff6b6b;
-    font-size: 0.92rem;
-  }
-
   .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -1401,8 +1416,30 @@ function getInitials(name: string): string {
       min-height: 82px;
     }
 
-    .field-help {
-      font-size: 0.72rem;
+    .stock-split__stats {
+      grid-template-columns: 1fr;
+    }
+
+    .stock-split__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .stock-split__summary {
+      padding: 16px;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stock-split__field {
+      min-height: 128px;
+      padding: 16px;
+      border-radius: 16px;
+    }
+
+    .stock-split__input {
+      min-height: 44px;
+      padding: 0 14px;
+      font-size: 1.05rem;
     }
 
     .image-upload-box {
@@ -1459,6 +1496,188 @@ function getInitials(name: string): string {
       margin-top: 12px;
     }
   }
+
+  .modal--compact {
+    max-width: 760px;
+  }
+
+  .stock-split__summary {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 22px;
+    padding: 18px 20px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.035),
+        rgba(255, 255, 255, 0.015)
+      );
+    border: 1px solid #2a2a2a;
+    border-radius: 18px;
+    color: #bdbdbd;
+  }
+
+  .stock-split__summary-head {
+    display: grid;
+    gap: 6px;
+  }
+
+  .stock-split__eyebrow {
+    color: #d7ff00;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .stock-split__summary-head strong {
+    color: #f4f4f4;
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1.1;
+  }
+
+  .stock-split__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .stock-split__stat {
+    display: grid;
+    gap: 6px;
+    min-height: 88px;
+    padding: 14px 16px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 16px;
+    align-content: center;
+  }
+
+  .stock-split__stat span {
+    color: #8f8f8f;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .stock-split__stat strong {
+    color: #f5f5f5;
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    line-height: 1;
+  }
+
+  .stock-split__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .stock-split__field {
+    display: grid;
+    gap: 12px;
+    min-height: 142px;
+    padding: 18px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.028),
+        rgba(255, 255, 255, 0.012)
+      );
+    border: 1px solid #2b2b2b;
+    border-radius: 18px;
+    align-content: start;
+    justify-items: center;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .stock-split__field label {
+    margin: 0;
+    width: 100%;
+    min-height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d7ff00;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .stock-split__field::after {
+    content: "Unidades asignadas";
+    width: 100%;
+    color: #7d7d7d;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .stock-split__input {
+    width: 100%;
+    min-height: 56px;
+    background: #101010;
+    border: 1px solid #363636;
+    border-radius: 14px;
+    color: #f5f5f5;
+    padding: 0 16px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    outline: none;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  }
+
+  .stock-split__input::-webkit-outer-spin-button,
+  .stock-split__input::-webkit-inner-spin-button {
+    margin: 0;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus,
+  .bulk-toolbar__input:focus,
+  .stock-split__input:focus {
+    border-color: rgba(215, 255, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(215, 255, 0, 0.1);
+  }
+
+  .field--accent {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0.01)
+    );
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .field--accent label {
+    color: #d7ff00;
+  }
+
+  .field--accent .field-hint {
+    color: #8c8c8c;
+  }
+
+  #productBadge,
+  #productEstado {
+    cursor: pointer;
+  }
+
+  .modal-header {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0)
+    );
+  }
 </style>
 
 <script>
@@ -1472,7 +1691,6 @@ function getInitials(name: string): string {
   const modalBackdrop = document.getElementById("productModalBackdrop");
   const modalTitle = document.getElementById("productModalTitle");
   const productForm = document.getElementById("productForm");
-  const productFormMessage = document.getElementById("productFormMessage");
 
   const productId = document.getElementById("productId");
   const productNombre = document.getElementById("productNombre");
@@ -1483,11 +1701,10 @@ function getInitials(name: string): string {
     "productPrecioOriginal",
   );
   const productTipo = document.getElementById("productTipo");
-  const productCategoria = document.getElementById("productCategoria");
-  const productColor = document.getElementById("productColor");
   const productBadge = document.getElementById("productBadge");
+  const productEstado = document.getElementById("productEstado");
   const productStockInicial = document.getElementById("productStockInicial");
-  const initialStockField = document.getElementById("initialStockField");
+  const productStockLabel = document.getElementById("productStockLabel");
   const productImagen = document.getElementById("productImagen");
   const productImageField = document.getElementById("productImageField");
   const productImagePreviewGrid = document.getElementById(
@@ -1496,8 +1713,6 @@ function getInitials(name: string): string {
   const productImageUploadText = document.getElementById(
     "productImageUploadText",
   );
-  const productEstado = document.getElementById("productEstado");
-
   const selectedProductsCount = document.getElementById(
     "selectedProductsCount",
   );
@@ -1514,7 +1729,43 @@ function getInitials(name: string): string {
   const productCheckboxes = Array.from(
     document.querySelectorAll<HTMLInputElement>(".product-select"),
   );
+  const stockSplitModalBackdrop = document.getElementById(
+    "stockSplitModalBackdrop",
+  );
+  const stockSplitForm = document.getElementById("stockSplitForm");
+  const stockSplitGrid = document.getElementById("stockSplitGrid");
+  const stockSplitProductName = document.getElementById(
+    "stockSplitProductName",
+  );
+  const stockSplitTotal = document.getElementById("stockSplitTotal");
+  const stockSplitAssigned = document.getElementById("stockSplitAssigned");
+  const stockSplitExpected = document.getElementById("stockSplitExpected");
 
+  type StockVariantDraft = {
+    talla: string;
+    stock: number;
+  };
+
+  type PendingCreatePayload = {
+    id?: number;
+    nombre: string;
+    slug: string;
+    descripcion: string;
+    precio_base: number;
+    precio_original: string;
+    tipo: string;
+    badge: string;
+    estado: string;
+    stock_inicial: number;
+    imagenes?: {
+      data_url: string;
+      nombre: string;
+    }[];
+    variantes?: StockVariantDraft[];
+  };
+
+  let pendingCreatePayload: PendingCreatePayload | null = null;
+  let stockSplitSizes: string[] = [];
   let slugWasManuallyEdited = false;
 
   function asField(
@@ -1549,16 +1800,6 @@ function getInitials(name: string): string {
     if (normalized === "oferta") return "Oferta";
 
     return "";
-  }
-
-  function setInitialStockVisible(visible: boolean) {
-    if (initialStockField instanceof HTMLElement) {
-      initialStockField.hidden = !visible;
-    }
-
-    if (productStockInicial instanceof HTMLInputElement) {
-      productStockInicial.disabled = !visible;
-    }
   }
 
   function setProductImageVisible(visible: boolean) {
@@ -1677,9 +1918,7 @@ function getInitials(name: string): string {
   function isInteractiveTarget(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false;
 
-    return Boolean(
-      target.closest("button, a, input, label, select, textarea"),
-    );
+    return Boolean(target.closest("button, a, input, label, select, textarea"));
   }
 
   function setRowSelected(row: HTMLTableRowElement, selected: boolean) {
@@ -1741,6 +1980,16 @@ function getInitials(name: string): string {
     document.body.style.overflow = "";
   }
 
+  function openStockSplitModal() {
+    stockSplitModalBackdrop?.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeStockSplitModal() {
+    stockSplitModalBackdrop?.classList.remove("is-open");
+    document.body.style.overflow = "";
+  }
+
   function resetForm() {
     if (!(productId instanceof HTMLInputElement)) return;
 
@@ -1750,8 +1999,6 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
-    const categoriaInput = asField(productCategoria);
-    const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
@@ -1763,8 +2010,6 @@ function getInitials(name: string): string {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
-      !categoriaInput ||
-      !colorInput ||
       !badgeInput ||
       !stockInicialInput ||
       !estadoInput
@@ -1779,19 +2024,18 @@ function getInitials(name: string): string {
     precioBaseInput.value = "";
     precioOriginalInput.value = "";
     tipoInput.value = "";
-    categoriaInput.value = "";
-    colorInput.value = "";
     badgeInput.value = "";
-    stockInicialInput.value = "";
+    stockInicialInput.value = "0";
+    stockInicialInput.disabled = false;
     estadoInput.value = "borrador";
     slugWasManuallyEdited = false;
-
-    setInitialStockVisible(true);
+    pendingCreatePayload = null;
+    stockSplitSizes = [];
     resetImageInput();
     setProductImageVisible(true);
 
-    if (productFormMessage instanceof HTMLElement) {
-      productFormMessage.textContent = "";
+    if (productStockLabel instanceof HTMLElement) {
+      productStockLabel.textContent = "Stock";
     }
   }
 
@@ -1805,8 +2049,6 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
-    const categoriaInput = asField(productCategoria);
-    const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
@@ -1818,8 +2060,6 @@ function getInitials(name: string): string {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
-      !categoriaInput ||
-      !colorInput ||
       !badgeInput ||
       !stockInicialInput ||
       !estadoInput
@@ -1834,19 +2074,16 @@ function getInitials(name: string): string {
     precioBaseInput.value = button.dataset.precioBase || "";
     precioOriginalInput.value = button.dataset.precioOriginal || "";
     tipoInput.value = button.dataset.tipo || "";
-    categoriaInput.value = button.dataset.categoria || "General";
-    colorInput.value = button.dataset.color || "";
     badgeInput.value = normalizeBadgeValue(button.dataset.badge || "");
-    stockInicialInput.value = "";
+    stockInicialInput.value = "0";
+    stockInicialInput.disabled = false;
     estadoInput.value = button.dataset.estado || "borrador";
     slugWasManuallyEdited = true;
-
-    setInitialStockVisible(false);
     resetImageInput();
     setProductImageVisible(false);
 
-    if (productFormMessage instanceof HTMLElement) {
-      productFormMessage.textContent = "";
+    if (productStockLabel instanceof HTMLElement) {
+      productStockLabel.textContent = "Añadir stock";
     }
   }
 
@@ -1959,21 +2196,119 @@ function getInitials(name: string): string {
     } catch (error) {
       productImagen.value = "";
       resetImageInput();
-
-      if (productFormMessage instanceof HTMLElement) {
-        productFormMessage.textContent =
-          error instanceof Error ? error.message : "Imágenes no válidas";
-      }
+      alert(error instanceof Error ? error.message : "Imágenes no válidas");
 
       return;
     }
 
     renderImagePreviews(files);
-
-    if (productFormMessage instanceof HTMLElement) {
-      productFormMessage.textContent = "";
-    }
   });
+
+  function normalizeType(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function getSizesForType(tipo: string): string[] {
+    const normalized = normalizeType(tipo);
+
+    if (normalized.includes("accesorio")) {
+      return ["Única"];
+    }
+
+    if (normalized.includes("pantalon")) {
+      return ["28", "36", "40", "42", "44"];
+    }
+
+    return ["XS", "S", "M", "L", "XL"];
+  }
+
+  function renderStockSplitGrid(totalStock: number, sizes: string[]) {
+    if (!(stockSplitGrid instanceof HTMLElement)) return;
+
+    stockSplitGrid.innerHTML = sizes
+      .map(
+        (size) => `
+        <div class="stock-split__field">
+          <label for="stock-size-${size}">Talla ${size}</label>
+          <input
+            id="stock-size-${size}"
+            class="stock-split__input stock-size-input"
+            type="number"
+            min="0"
+            step="1"
+            value="0"
+            data-size="${size}"
+          />
+        </div>
+      `,
+      )
+      .join("");
+
+    stockSplitGrid.querySelectorAll(".stock-size-input").forEach((input) => {
+      input.addEventListener("input", updateStockSplitSummary);
+    });
+
+    if (stockSplitExpected instanceof HTMLElement) {
+      stockSplitExpected.textContent = String(totalStock);
+    }
+
+    updateStockSplitSummary();
+  }
+
+  function updateStockSplitSummary() {
+    const assigned = Array.from(document.querySelectorAll(".stock-size-input"))
+      .filter((input) => input instanceof HTMLInputElement)
+      .reduce((sum, input) => sum + Math.max(0, Number(input.value || 0)), 0);
+
+    if (stockSplitAssigned instanceof HTMLElement) {
+      stockSplitAssigned.textContent = String(assigned);
+    }
+  }
+
+  function prepareStockSplitModal(payload: PendingCreatePayload) {
+    const totalStock = Math.max(0, Number(payload.stock_inicial || 0));
+    const sizes = getSizesForType(payload.tipo || "");
+
+    pendingCreatePayload = payload;
+    stockSplitSizes = sizes;
+
+    if (stockSplitProductName instanceof HTMLElement) {
+      stockSplitProductName.textContent = payload.nombre || "Producto";
+    }
+
+    if (stockSplitTotal instanceof HTMLElement) {
+      stockSplitTotal.textContent = String(totalStock);
+    }
+
+    renderStockSplitGrid(totalStock, sizes);
+  }
+
+  function collectVariantsFromSplit(totalStock: number): StockVariantDraft[] {
+    const inputs = Array.from(
+      document.querySelectorAll(".stock-size-input"),
+    ).filter((input) => input instanceof HTMLInputElement);
+
+    const variants = inputs.map((input) => ({
+      talla: input.dataset.size || "Única",
+      stock: Math.max(0, Number(input.value || 0)),
+    }));
+
+    const assigned = variants.reduce((sum, item) => sum + item.stock, 0);
+
+    if (assigned !== totalStock) {
+      throw new Error(
+        `La suma por tallas debe ser ${totalStock}. Ahora mismo es ${assigned}.`,
+      );
+    }
+
+    return variants.filter(
+      (item) => item.stock > 0 || stockSplitSizes.length === 1,
+    );
+  }
 
   document.getElementById("newProductBtn")?.addEventListener("click", () => {
     resetForm();
@@ -2024,15 +2359,44 @@ function getInitials(name: string): string {
     .getElementById("cancelProductModal")
     ?.addEventListener("click", closeModal);
 
+  document
+    .getElementById("closeStockSplitModal")
+    ?.addEventListener("click", () => {
+      closeStockSplitModal();
+      openModal();
+    });
+
+  document
+    .getElementById("backToProductModalBtn")
+    ?.addEventListener("click", () => {
+      closeStockSplitModal();
+      openModal();
+    });
+
   modalBackdrop?.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) {
       closeModal();
     }
   });
 
+  stockSplitModalBackdrop?.addEventListener("click", (e) => {
+    if (e.target === stockSplitModalBackdrop) {
+      closeStockSplitModal();
+      openModal();
+    }
+  });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modalBackdrop?.classList.contains("is-open")) {
       closeModal();
+    }
+
+    if (
+      e.key === "Escape" &&
+      stockSplitModalBackdrop?.classList.contains("is-open")
+    ) {
+      closeStockSplitModal();
+      openModal();
     }
   });
 
@@ -2047,66 +2411,111 @@ function getInitials(name: string): string {
       !(productPrecioBase instanceof HTMLInputElement) ||
       !(productPrecioOriginal instanceof HTMLInputElement) ||
       !(productTipo instanceof HTMLInputElement) ||
-      !(productCategoria instanceof HTMLInputElement) ||
-      !(productColor instanceof HTMLInputElement) ||
       !(productBadge instanceof HTMLSelectElement) ||
-      !(productStockInicial instanceof HTMLInputElement) ||
-      !(productEstado instanceof HTMLSelectElement)
+      !(productEstado instanceof HTMLSelectElement) ||
+      !(productStockInicial instanceof HTMLInputElement)
     ) {
       return;
     }
 
-    if (productFormMessage instanceof HTMLElement) {
-      productFormMessage.textContent = "";
-    }
+    const stockValue = Math.max(0, Number(productStockInicial.value || 0));
 
-    const isEditing = productId.value.trim() !== "";
-
-    const payload: Record<string, unknown> = {
+    const basePayload: PendingCreatePayload = {
       nombre: productNombre.value.trim(),
       slug: productSlug.value.trim(),
       descripcion: productDescripcion.value.trim(),
       precio_base: Number(productPrecioBase.value),
       precio_original: productPrecioOriginal.value.trim(),
       tipo: productTipo.value.trim(),
-      categoria: productCategoria.value.trim(),
-      color: productColor.value.trim(),
       badge: productBadge.value,
       estado: productEstado.value,
+      stock_inicial: stockValue,
     };
 
-    if (!isEditing) {
-      payload.stock_inicial = productStockInicial.value.trim()
-        ? Number(productStockInicial.value)
-        : 0;
+    if (productImagen instanceof HTMLInputElement) {
+      const files = Array.from(productImagen.files ?? []);
 
-      if (productImagen instanceof HTMLInputElement) {
-        const files = Array.from(productImagen.files ?? []);
-
-        if (files.length > 0) {
-          validateProductImages(files);
-          payload.imagenes = await buildProductImagesPayload(files);
-        }
+      if (files.length > 0) {
+        validateProductImages(files);
+        basePayload.imagenes = await buildProductImagesPayload(files);
       }
     }
 
     try {
-      if (isEditing) {
+      if (productId.value) {
+        if (stockValue > 0) {
+          prepareStockSplitModal({
+            id: Number(productId.value),
+            ...basePayload,
+          });
+          closeModal();
+          openStockSplitModal();
+          return;
+        }
+
         await updateAdminProducto({
           id: Number(productId.value),
-          ...payload,
+          ...basePayload,
+          variantes: [],
         });
-      } else {
-        await createAdminProducto(payload);
+
+        closeModal();
+        window.location.reload();
+        return;
       }
 
+      if (stockValue <= 0) {
+        await createAdminProducto({
+          ...basePayload,
+          variantes: [],
+        });
+        closeModal();
+        window.location.reload();
+        return;
+      }
+
+      prepareStockSplitModal(basePayload);
       closeModal();
+      openStockSplitModal();
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Error al preparar producto",
+      );
+    }
+  });
+
+  stockSplitForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!pendingCreatePayload) {
+      return;
+    }
+
+    try {
+      const totalStock = Math.max(
+        0,
+        Number(pendingCreatePayload.stock_inicial || 0),
+      );
+      const variantes = collectVariantsFromSplit(totalStock);
+
+      if (pendingCreatePayload.id) {
+        await updateAdminProducto({
+          ...pendingCreatePayload,
+          variantes,
+        });
+      } else {
+        await createAdminProducto({
+          ...pendingCreatePayload,
+          variantes,
+        });
+      }
+
+      closeStockSplitModal();
       window.location.reload();
     } catch (error) {
-      if (productFormMessage instanceof HTMLElement) {
-        productFormMessage.textContent =
-          error instanceof Error ? error.message : "Error al guardar producto";
-      }
+      alert(
+        error instanceof Error ? error.message : "Error al guardar producto",
+      );
     }
   });
 
