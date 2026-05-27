@@ -50,7 +50,11 @@ try {
         WHERE p.id = :id
         LIMIT 1
     ");
-    $stmtPedido->execute(["id" => $pedidoId]);
+
+    $stmtPedido->execute([
+        "id" => $pedidoId
+    ]);
+
     $pedido = $stmtPedido->fetch(PDO::FETCH_ASSOC);
 
     if (!$pedido) {
@@ -64,22 +68,60 @@ try {
 
     $stmtItems = $conexion->prepare("
         SELECT
-            slug,
-            nombre_producto AS nombre,
-            talla,
-            COALESCE(color, '') AS color,
-            COALESCE(sku, '') AS sku,
-            cantidad,
-            precio_unitario AS precio,
-            subtotal
-        FROM items_pedido
-        WHERE pedido_id = :pedido_id
-        ORDER BY id ASC
+            i.id AS item_pedido_id,
+            i.slug,
+            i.nombre_producto AS nombre,
+            i.talla,
+            COALESCE(i.color, '') AS color,
+            COALESCE(i.sku, '') AS sku,
+            i.cantidad,
+            i.precio_unitario AS precio,
+            i.subtotal,
+            COALESCE(dev.cantidad_devuelta, 0) AS cantidad_devuelta,
+            COALESCE(dev.estados, '') AS devolucion_estado,
+            COALESCE(dev.slugs, '') AS devolucion_slug
+        FROM items_pedido i
+        LEFT JOIN (
+            SELECT
+                item_pedido_id,
+                SUM(cantidad_devuelta) AS cantidad_devuelta,
+                GROUP_CONCAT(DISTINCT estado ORDER BY estado SEPARATOR ', ') AS estados,
+                GROUP_CONCAT(slug ORDER BY id ASC SEPARATOR ', ') AS slugs
+            FROM devoluciones
+            WHERE pedido_id = :pedido_id_devoluciones
+              AND estado IN ('pendiente', 'aceptada')
+            GROUP BY item_pedido_id
+        ) dev ON dev.item_pedido_id = i.id
+        WHERE i.pedido_id = :pedido_id
+        ORDER BY i.id ASC
     ");
-    $stmtItems->execute(["pedido_id" => $pedidoId]);
+
+    $stmtItems->execute([
+        "pedido_id" => $pedidoId,
+        "pedido_id_devoluciones" => $pedidoId
+    ]);
+
     $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
 
-    $pedido["items"] = $items;
+    $items = array_map(function (array $item): array {
+        $cantidadDevuelta = (int)($item["cantidad_devuelta"] ?? 0);
+
+        $item["item_pedido_id"] = (int)($item["item_pedido_id"] ?? 0);
+        $item["cantidad"] = (int)($item["cantidad"] ?? 0);
+        $item["cantidad_devuelta"] = $cantidadDevuelta;
+        $item["precio"] = (float)($item["precio"] ?? 0);
+        $item["subtotal"] = (float)($item["subtotal"] ?? 0);
+        $item["es_devuelto"] = $cantidadDevuelta > 0;
+
+        return $item;
+    }, $items);
+
+    $itemsDevueltos = array_values(array_filter($items, function (array $item): bool {
+        return (int)($item["cantidad_devuelta"] ?? 0) > 0;
+    }));
+
+    $pedido["items"] = count($itemsDevueltos) > 0 ? $itemsDevueltos : $items;
+    $pedido["mostrando_devoluciones"] = count($itemsDevueltos) > 0;
 
     echo json_encode([
         "ok" => true,

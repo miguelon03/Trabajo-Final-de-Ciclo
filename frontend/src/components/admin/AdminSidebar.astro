@@ -69,94 +69,111 @@ const currentPath = Astro.url.pathname;
 <style>
   .sidebar {
     min-height: 100vh;
-    background: linear-gradient(180deg, #1c1c1c 0%, #141414 100%);
-    border-right: 1px solid #2a2a2a;
-    padding: 24px 18px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
+    border-right: 1px solid #242424;
+    padding: 20px 12px;
     position: sticky;
     top: 0;
     align-self: start;
+    overflow: hidden;
   }
 
   .brand {
-    min-height: 58px;
+    min-height: 50px;
     display: flex;
     align-items: center;
-    padding: 0 14px 20px;
+    padding: 0 10px 18px;
     color: #d7ff00;
-    font-size: 1.06rem;
-    font-weight: 900;
-    letter-spacing: 0.18em;
-    border-bottom: 1px solid #292929;
+    font-size: 0.92rem;
+    font-weight: 950;
+    letter-spacing: 0.14em;
+    border-bottom: 1px solid #272727;
     white-space: nowrap;
   }
 
   .section-label {
-    color: #606060;
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
+    color: #5c5c5c;
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    margin: 26px 14px 10px;
-    font-weight: 900;
+    margin: 22px 10px 9px;
+    font-weight: 950;
   }
 
   .nav {
     display: grid;
-    gap: 8px;
+    gap: 6px;
   }
 
   .nav a {
-    min-height: 52px;
+    min-height: 44px;
     display: grid;
-    grid-template-columns: 22px 1fr;
+    grid-template-columns: 18px 1fr;
     align-items: center;
-    gap: 14px;
+    gap: 11px;
     text-decoration: none;
-    color: #a3a3a3;
-    padding: 0 16px;
-    border-radius: 14px;
-    font-size: 0.98rem;
-    font-weight: 800;
-    transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    color: #a7a7a7;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 850;
+    line-height: 1;
+    transition:
+      background 0.16s ease,
+      color 0.16s ease,
+      transform 0.16s ease;
   }
 
   .nav a:hover {
-    background: #232323;
-    color: #efefef;
-    transform: translateX(2px);
+    background: #202020;
+    color: #f0f0f0;
+    transform: translateX(1px);
   }
 
   .nav a.active {
     background: #d7ff00;
     color: #111;
+    box-shadow: 0 10px 24px rgba(215, 255, 0, 0.1);
   }
 
   .nav-icon {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
   .nav-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 17px;
+    height: 17px;
     fill: currentColor;
   }
 
   @media (max-width: 1100px) {
     .sidebar {
-      padding: 22px 14px;
+      padding: 18px 10px;
     }
 
     .brand {
-      font-size: 0.96rem;
-      letter-spacing: 0.16em;
+      font-size: 0.84rem;
+      letter-spacing: 0.12em;
+      padding-left: 8px;
+      padding-right: 8px;
     }
 
     .nav a {
-      min-height: 50px;
-      font-size: 0.93rem;
+      min-height: 42px;
+      grid-template-columns: 17px 1fr;
+      gap: 10px;
+      padding: 0 10px;
+      font-size: 0.84rem;
+    }
+
+    .nav-icon,
+    .nav-icon svg {
+      width: 16px;
+      height: 16px;
     }
   }
 
@@ -166,73 +183,87 @@ const currentPath = Astro.url.pathname;
       position: static;
       border-right: 0;
       border-bottom: 1px solid #272727;
-      padding: 18px 16px 12px;
+      padding: 14px 12px 12px;
+      overflow: hidden;
     }
 
     .brand {
       min-height: auto;
-      font-size: 1.25rem;
-      letter-spacing: 0.16em;
-      margin-bottom: 16px;
+      font-size: 1rem;
+      letter-spacing: 0.13em;
+      margin-bottom: 12px;
       padding: 0;
       border-bottom: 0;
     }
 
     .section-label {
-      font-size: 0.68rem;
-      margin: 16px 0 8px;
+      display: none;
     }
 
     .nav {
       display: flex;
       flex-direction: row;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       gap: 8px;
-      overflow-x: auto;
-      padding: 0 0 5px;
-      scrollbar-width: none;
+      overflow: visible;
+      padding: 0;
+      margin-top: 8px;
     }
 
-    .nav::-webkit-scrollbar {
-      display: none;
+    .nav:first-of-type {
+      margin-top: 0;
     }
 
     .nav a {
       white-space: nowrap;
-      flex-shrink: 0;
-      min-height: 42px;
-      grid-template-columns: 18px auto;
-      padding: 0 14px;
-      font-size: 0.86rem;
+      flex: 0 0 auto;
+      min-height: 40px;
+      grid-template-columns: 17px auto;
+      padding: 0 12px;
+      font-size: 0.82rem;
       border-radius: 12px;
+    }
+
+    .nav-icon,
+    .nav-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .sidebar {
+      padding: 12px;
+    }
+
+    .brand {
+      font-size: 0.92rem;
+      letter-spacing: 0.11em;
+      margin-bottom: 10px;
+    }
+
+    .nav {
+      gap: 7px;
+    }
+
+    .nav a {
+      width: 40px;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border-radius: 12px;
+    }
+
+    .nav a span:not(.nav-icon) {
+      display: none;
     }
 
     .nav-icon,
     .nav-icon svg {
       width: 17px;
       height: 17px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .sidebar {
-      padding: 14px 12px 8px;
-    }
-
-    .brand {
-      font-size: 1rem;
-      letter-spacing: 0.12em;
-      margin-bottom: 12px;
-    }
-
-    .section-label {
-      margin: 12px 0 7px;
-    }
-
-    .nav a {
-      min-height: 38px;
-      padding: 0 12px;
-      font-size: 0.8rem;
     }
   }
 </style>

@@ -8,8 +8,12 @@
       Pendientes (<span id="tabCountPending">0</span>)
     </button>
     <button type="button" class="returns-tab" data-filter="all">Todas</button>
-    <button type="button" class="returns-tab" data-filter="aceptada">Aceptadas</button>
-    <button type="button" class="returns-tab" data-filter="rechazada">Rechazadas</button>
+    <button type="button" class="returns-tab" data-filter="aceptada"
+      >Aceptadas</button
+    >
+    <button type="button" class="returns-tab" data-filter="rechazada"
+      >Rechazadas</button
+    >
   </div>
 
   <div id="returnsMessage" class="returns-admin__message" hidden></div>
@@ -26,8 +30,6 @@
           <th>Referencia</th>
           <th>Cliente / Pedido</th>
           <th>Producto</th>
-          <th>Motivo</th>
-          <th>Cant.</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -40,6 +42,26 @@
     <h2>No hay devoluciones para mostrar</h2>
     <p>Prueba con otro filtro o espera nuevas solicitudes.</p>
   </div>
+  <section id="returnDetailSection" class="return-detail-shell" hidden>
+    <div class="return-detail-card">
+      <div class="return-detail__header">
+        <div>
+          <p class="return-detail__eyebrow">Detalle de devolución</p>
+          <h2 id="returnDetailTitle">Devolución</h2>
+        </div>
+
+        <button
+          id="closeReturnDetail"
+          class="return-detail__close"
+          type="button"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <div id="returnDetailContent" class="return-detail__grid"></div>
+    </div>
+  </section>
 </section>
 
 <script>
@@ -51,7 +73,12 @@
   const tableBody = document.getElementById("returnsTableBody");
   const emptyBox = document.getElementById("returnsEmpty");
   const pendingCount = document.getElementById("tabCountPending");
+  const returnDetailSection = document.getElementById("returnDetailSection");
+  const returnDetailTitle = document.getElementById("returnDetailTitle");
+  const returnDetailContent = document.getElementById("returnDetailContent");
+  const closeReturnDetail = document.getElementById("closeReturnDetail");
 
+  let activeReturnId = null;
   let allReturns = [];
   let currentFilter = "pendiente";
   const stickyVisibleIds = new Set();
@@ -61,7 +88,10 @@
       return window.dmhFetchJson(endpoint, options || {});
     }
 
-    const response = await fetch(`/backend/api/${String(endpoint || "").replace(/^\/+/, "")}`, options || {});
+    const response = await fetch(
+      `/backend/api/${String(endpoint || "").replace(/^\/+/, "")}`,
+      options || {},
+    );
     let data = null;
 
     try {
@@ -74,7 +104,8 @@
       ok: response.ok,
       status: response.status,
       data,
-      error: data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
+      error:
+        data?.error || (!response.ok ? `Error HTTP ${response.status}` : null),
     };
   }
 
@@ -138,6 +169,12 @@
     if (!id) return "PED-—";
     return `PED-${String(id).padStart(6, "0")}`;
   }
+  function formatMoney(value) {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+    }).format(Number(value || 0));
+  }
 
   function updateTabs() {
     const countPending = allReturns.filter(
@@ -180,24 +217,102 @@
 
     if (status === "pendiente") {
       return `
-        <div class="return-actions">
-          <button type="button" class="btn-action is-accept" data-id="${Number(entry.id)}" data-state="aceptada">
-            Aceptar
-          </button>
-          <button type="button" class="btn-action is-reject" data-id="${Number(entry.id)}" data-state="rechazada">
-            Rechazar
-          </button>
-        </div>
-      `;
+      <div class="return-actions">
+        <button
+          type="button"
+          class="btn-action is-accept"
+          data-id="${Number(entry.id)}"
+          data-state="aceptada"
+          aria-label="Aceptar devolución"
+          title="Aceptar devolución"
+        >
+          ✅
+        </button>
+
+        <button
+          type="button"
+          class="btn-action is-reject"
+          data-id="${Number(entry.id)}"
+          data-state="rechazada"
+          aria-label="Rechazar devolución"
+          title="Rechazar devolución"
+        >
+          ❌
+        </button>
+      </div>
+    `;
     }
 
     if (status === "aceptada") {
-      return `<span class="return-action-text is-stock">Stock +${Number(entry.cantidad_devuelta || 0)} ✓</span>`;
+      return `<span class="return-action-text is-stock">Stock restaurado</span>`;
     }
 
-    return `<span class="return-action-text is-muted">—</span>`;
+    return `<span class="return-action-text is-muted">Sin acciones</span>`;
+  }
+  function renderReturnDetail(entry) {
+    if (!returnDetailSection || !returnDetailTitle || !returnDetailContent)
+      return;
+
+    const productLabel = entry?.talla
+      ? `${entry?.nombre_producto || "Producto"} · ${entry.talla}`
+      : `${entry?.nombre_producto || "Producto"} · Única`;
+
+    returnDetailTitle.textContent = entry?.slug || "Devolución";
+
+    returnDetailContent.innerHTML = `
+    <article class="return-detail__block">
+      <h3>Información general</h3>
+
+      <p><strong>Referencia</strong><span>${escapeHtml(entry?.slug || "-")}</span></p>
+      <p><strong>Estado</strong><span>${escapeHtml(getStatusLabel(entry?.estado))}</span></p>
+      <p><strong>Creada</strong><span>${escapeHtml(formatDate(entry?.creado_en))}</span></p>
+      <p><strong>Actualizada</strong><span>${escapeHtml(formatDate(entry?.actualizado_en))}</span></p>
+      <p><strong>Motivo</strong><span>${escapeHtml(entry?.motivo || "Sin motivo")}</span></p>
+    </article>
+
+    <article class="return-detail__block">
+      <h3>Cliente y pedido</h3>
+
+      <p><strong>Cliente</strong><span>${escapeHtml(entry?.usuario_nombre || "-")}</span></p>
+      <p><strong>Email</strong><span>${escapeHtml(entry?.usuario_email || "-")}</span></p>
+      <p><strong>Pedido</strong><span>${escapeHtml(formatPedidoRef(entry?.pedido_id))}</span></p>
+      <p><strong>Estado pedido</strong><span>${escapeHtml(entry?.pedido_estado || "-")}</span></p>
+    </article>
+
+    <article class="return-detail__block">
+      <h3>Producto</h3>
+
+      <p><strong>Producto</strong><span>${escapeHtml(productLabel)}</span></p>
+      <p><strong>Slug</strong><span>${escapeHtml(entry?.producto_slug || "-")}</span></p>
+      <p><strong>Talla</strong><span>${escapeHtml(entry?.talla || "Única")}</span></p>
+      <p><strong>Color</strong><span>${escapeHtml(entry?.color || "Sin color")}</span></p>
+      <p><strong>SKU</strong><span>${escapeHtml(entry?.sku || "-")}</span></p>
+    </article>
+
+    <article class="return-detail__block">
+      <h3>Cantidades e importe</h3>
+
+      <p><strong>Compradas</strong><span>${Number(entry?.cantidad_comprada || 0)} ud.</span></p>
+      <p><strong>Devueltas</strong><span>${Number(entry?.cantidad_devuelta || 0)} ud.</span></p>
+      <p><strong>Precio unitario</strong><span>${formatMoney(entry?.precio_unitario)}</span></p>
+      <p><strong>Subtotal</strong><span>${formatMoney(entry?.subtotal)}</span></p>
+    </article>
+  `;
+
+    returnDetailSection.hidden = false;
+    returnDetailSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function openReturnDetail(returnId) {
+    activeReturnId = Number(returnId || 0);
+
+    const entry = allReturns.find(
+      (item) => Number(item?.id || 0) === activeReturnId,
+    );
+    if (!entry) return;
+
+    renderReturnDetail(entry);
+  }
   function renderReturns() {
     if (!tableWrap || !tableBody || !emptyBox) return;
 
@@ -213,42 +328,54 @@
 
     emptyBox.hidden = true;
 
-    tableBody.innerHTML = filtered.map((entry) => {
-      const status = String(entry?.estado || "pendiente").toLowerCase();
-      const rowClass = status === "pendiente" ? "" : "is-dimmed";
-      const productLabel = entry?.talla
-        ? `${entry?.nombre_producto || "Producto"} · ${entry.talla}`
-        : `${entry?.nombre_producto || "Producto"} · Única`;
+    tableBody.innerHTML = filtered
+      .map((entry) => {
+        const status = String(entry?.estado || "pendiente").toLowerCase();
+        const productLabel = entry?.talla
+          ? `${entry?.nombre_producto || "Producto"} · ${entry.talla}`
+          : `${entry?.nombre_producto || "Producto"} · Única`;
 
-      return `
-        <tr class="${rowClass}">
-          <td>
-            <p class="cell-ref">${escapeHtml(entry.slug || "DEV-")}</p>
-            <span class="cell-sub">${escapeHtml(formatDate(entry.creado_en))}</span>
-          </td>
-          <td>
-            <p class="cell-main">${escapeHtml(entry.usuario_nombre || "-")}</p>
-            <span class="cell-sub">${escapeHtml(formatPedidoRef(entry.pedido_id))}</span>
-          </td>
-          <td>
-            <p class="cell-main">${escapeHtml(productLabel)}</p>
-          </td>
-          <td>
-            <p class="cell-reason">${escapeHtml(entry.motivo || "—")}</p>
-          </td>
-          <td>
-            <p class="cell-main">×${Number(entry.cantidad_devuelta || 0)}</p>
-          </td>
-          <td>
-            <span class="return-status ${getStatusClass(status)}">${getStatusLabel(status)}</span>
-          </td>
-          <td>
-            ${renderActions(entry)}
-          </td>
-        </tr>
-      `;
-    }).join("");
+        return `
+    <tr>
+      <td>
+        <button
+          type="button"
+          class="return-ref-button"
+          data-view-return="${Number(entry.id || 0)}"
+          title="Ver detalle de la devolución"
+        >
+          ${escapeHtml(entry.slug || "DEV-")}
+        </button>
+        <span class="cell-sub">${escapeHtml(formatDate(entry.creado_en))}</span>
+      </td>
 
+      <td>
+        <p class="cell-main">${escapeHtml(entry.usuario_nombre || "-")}</p>
+        <span class="cell-sub">${escapeHtml(formatPedidoRef(entry.pedido_id))}</span>
+      </td>
+
+      <td>
+        <p class="cell-main">${escapeHtml(productLabel)}</p>
+      </td>
+
+      <td>
+        <span class="return-status ${getStatusClass(status)}">${getStatusLabel(status)}</span>
+      </td>
+
+      <td>
+        ${renderActions(entry)}
+      </td>
+    </tr>
+  `;
+      })
+      .join("");
+    tableBody.querySelectorAll("[data-view-return]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const returnId = Number(button.getAttribute("data-view-return") || 0);
+        if (!returnId) return;
+        openReturnDetail(returnId);
+      });
+    });
     tableBody.querySelectorAll(".btn-action").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const devolucionId = Number(btn.getAttribute("data-id") || 0);
@@ -267,7 +394,9 @@
           });
 
           if (!result.ok) {
-            throw new Error(result.error || "No se pudo actualizar la devolución");
+            throw new Error(
+              result.error || "No se pudo actualizar la devolución",
+            );
           }
 
           if (currentFilter === "pendiente") {
@@ -275,16 +404,30 @@
           }
 
           await loadReturns();
-          showMessage(`Devolución actualizada a ${getStatusLabel(estado)}`, "success");
+          showMessage(
+            `Devolución actualizada a ${getStatusLabel(estado)}`,
+            "success",
+          );
         } catch (error) {
-          showMessage(error instanceof Error ? error.message : "No se pudo actualizar la devolución", "error");
+          showMessage(
+            error instanceof Error
+              ? error.message
+              : "No se pudo actualizar la devolución",
+            "error",
+          );
         }
       });
     });
 
     tableWrap.hidden = false;
   }
+  closeReturnDetail?.addEventListener("click", () => {
+    activeReturnId = null;
 
+    if (returnDetailSection) {
+      returnDetailSection.hidden = true;
+    }
+  });
   async function loadReturns() {
     setLoading(true);
     showMessage("");
@@ -295,7 +438,9 @@
       });
 
       if (!result.ok) {
-        throw new Error(result.error || "No se pudieron cargar las devoluciones");
+        throw new Error(
+          result.error || "No se pudieron cargar las devoluciones",
+        );
       }
 
       allReturns = result.data?.devoluciones || [];
@@ -303,7 +448,12 @@
     } catch (error) {
       allReturns = [];
       renderReturns();
-      showMessage(error instanceof Error ? error.message : "No se pudieron cargar las devoluciones", "error");
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cargar las devoluciones",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -335,7 +485,7 @@
   }
 
   .returns-admin__head h1 {
-    font-size: 1.04rem;
+    font-size: 2rem;
     font-weight: 900;
     letter-spacing: 0.06em;
     color: #f4f4f4;
@@ -440,9 +590,8 @@
   }
 
   .returns-table tbody tr.is-dimmed {
-    opacity: 0.42;
-  }
-
+  opacity: 1;
+}
   .returns-table td {
     padding: 9px 10px;
     border-bottom: 1px solid #141414;
@@ -539,7 +688,10 @@
     color: #ddd;
     cursor: pointer;
     box-shadow: none;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
   }
 
   .btn-action.is-accept {
@@ -590,4 +742,155 @@
       min-width: 760px;
     }
   }
+  .return-ref-button {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: #d7ff00;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: none;
+}
+
+.return-ref-button:hover {
+  text-decoration: underline;
+}
+
+.return-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-action {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.return-action-text {
+  font-size: 0.78rem;
+}
+
+.return-detail-shell {
+  margin-top: 16px;
+}
+
+.return-detail-card {
+  background: #111;
+  border: 1px solid #202020;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.return-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.return-detail__eyebrow {
+  margin: 0 0 6px;
+  color: #d7ff00;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.return-detail__header h2 {
+  margin: 0;
+  color: #f4f4f4;
+  font-size: 1.15rem;
+}
+
+.return-detail__close {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #303030;
+  background: #171717;
+  color: #e5e5e5;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.return-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.return-detail__block {
+  background: #0c0c0c;
+  border: 1px solid #1d1d1d;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.return-detail__block h3 {
+  margin: 0 0 12px;
+  color: #d7ff00;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.return-detail__block p {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #191919;
+  color: #dcdcdc;
+  font-size: 0.86rem;
+}
+
+.return-detail__block p:last-child {
+  border-bottom: 0;
+}
+
+.return-detail__block strong {
+  color: #777;
+}
+
+.return-detail__block span {
+  min-width: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 760px) {
+  .return-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .return-detail__block p {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+.return-status {
+  min-width: 78px !important;
+  min-height: 26px !important;
+  padding: 0 12px !important;
+  font-size: 0.62rem !important;
+  font-weight: 900 !important;
+}
+
+.returns-table tbody tr.is-dimmed {
+  opacity: 1 !important;
+}
 </style>

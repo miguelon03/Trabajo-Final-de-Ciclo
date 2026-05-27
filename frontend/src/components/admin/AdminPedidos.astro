@@ -48,106 +48,123 @@ try {
           </select>
         </div>
 
-        {
-          pedidos.length === 0 ? (
-            <div class="empty-state">
-              <h2>No hay pedidos todavia</h2>
-              <p>Cuando entren compras nuevas apareceran en esta tabla.</p>
-            </div>
-          ) : (
-            <>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Referencia</th>
-                      <th>Cliente</th>
-                      <th>Articulos</th>
-                      <th>Total</th>
-                      <th>Estado</th>
-                      <th>Fecha</th>
-                      <th>Acciones</th>
+        {pedidos.length === 0 ? (
+          <div class="empty-state">
+            <h2>No hay pedidos todavia</h2>
+            <p>Cuando entren compras nuevas apareceran en esta tabla.</p>
+          </div>
+        ) : (
+          <>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Referencia</th>
+                    <th>Cliente</th>
+                    <th>Articulos</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="ordersTableBody">
+                  {pedidos.map((pedido: AdminPedido) => (
+                    <tr
+                      data-pedido-row
+                      data-id={pedido.id}
+                      data-estado={pedido.estado}
+                      data-fecha={pedido.fecha}
+                      data-search={`${pedido.referencia} ${pedido.cliente_nombre} ${pedido.cliente_email}`}
+                    >
+                      <td class="ref">{pedido.referencia}</td>
+                      <td>{pedido.cliente_nombre}</td>
+                      <td>{pedido.articulos}</td>
+                      <td>{Number(pedido.total).toFixed(2)}€</td>
+                      <td>
+                        <span
+                          class:list={[
+                            "badge",
+                            pedido.estado === "pendiente" && "pending",
+                            pedido.estado === "pagado" && "paid",
+                            pedido.estado === "enviado" && "shipped",
+                            pedido.estado === "entregado" && "delivered",
+                            pedido.estado === "cancelado" && "cancelled",
+                            pedido.estado === "devuelto" && "returned",
+                          ]}
+                          data-order-badge
+                        >
+                          {pedido.estado === "pendiente" && "Pendiente"}
+                          {pedido.estado === "pagado" && "Pagado"}
+                          {pedido.estado === "enviado" && "Enviado"}
+                          {pedido.estado === "entregado" && "Entregado"}
+                          {pedido.estado === "cancelado" && "Cancelado"}
+                          {pedido.estado === "devuelto" && "Devuelto"}
+                        </span>
+                      </td>
+                      <td>
+                        {new Date(pedido.fecha).toLocaleDateString("es-ES")}
+                      </td>
+                      <td>
+                        <button
+                          class="btn-view btn-eye"
+                          type="button"
+                          data-view-detail={pedido.id}
+                          aria-label={`Ver detalle de ${pedido.referencia}`}
+                          title="Ver detalle"
+                        >
+                          👁
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  <tbody id="ordersTableBody">
-                    {pedidos.map((pedido: AdminPedido) => (
-                      <tr
-                        data-pedido-row
-                        data-id={pedido.id}
-                        data-estado={pedido.estado}
-                        data-fecha={pedido.fecha}
-                        data-search={`${pedido.referencia} ${pedido.cliente_nombre} ${pedido.cliente_email}`}
-                      >
-                        <td class="ref">{pedido.referencia}</td>
-                        <td>
-                          {pedido.cliente_nombre}
-                          <span class="muted">{pedido.cliente_email}</span>
-                        </td>
-                        <td>{pedido.articulos}</td>
-                        <td>{Number(pedido.total).toFixed(2)}€</td>
-                        <td>
-                          <span
-                            class:list={[
-                              "badge",
-                              pedido.estado === "pendiente" && "pending",
-                              pedido.estado === "pagado" && "paid",
-                              pedido.estado === "enviado" && "shipped",
-                              pedido.estado === "entregado" && "delivered",
-                              pedido.estado === "cancelado" && "cancelled",
-                              pedido.estado === "devuelto" && "returned",
-                            ]}
-                            data-order-badge
-                          >
-                            {pedido.estado === "pendiente" && "Pendiente"}
-                            {pedido.estado === "pagado" && "Pagado"}
-                            {pedido.estado === "enviado" && "Enviado"}
-                            {pedido.estado === "entregado" && "Entregado"}
-                            {pedido.estado === "cancelado" && "Cancelado"}
-                            {pedido.estado === "devuelto" && "Devuelto"}
-                          </span>
-                        </td>
-                        <td>{new Date(pedido.fecha).toLocaleDateString("es-ES")}</td>
-                        <td>
-                          <button class="btn-view" type="button" data-view-detail={pedido.id}>
-                            Ver detalle
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <p id="ordersNoResults" class="empty-inline" hidden>
+              No hay pedidos que coincidan con el filtro actual.
+            </p>
 
-              <p id="ordersNoResults" class="empty-inline" hidden>
-                No hay pedidos que coincidan con el filtro actual.
-              </p>
-
-              <div class="footer-row">
-                <span id="ordersCountLabel">Mostrando {pedidos.length} pedidos</span>
-              </div>
-            </>
-          )
-        }
+            <div class="footer-row">
+              <span id="ordersCountLabel">
+                Mostrando {pedidos.length} pedidos
+              </span>
+            </div>
+          </>
+        )}
 
         <section id="orderDetailSection" class="detail-shell" hidden>
           <div class="detail-grid">
             <div class="detail-card">
               <div class="detail-header">
                 <h2 id="orderDetailTitle">DETALLE</h2>
-                <button id="closeOrderDetail" class="btn-detail-close" type="button">
+                <button
+                  id="closeOrderDetail"
+                  class="btn-detail-close"
+                  type="button"
+                >
                   Cerrar
                 </button>
               </div>
 
               <div class="detail-meta">
-                <p><strong>Cliente:</strong> <span id="orderDetailClient"></span></p>
-                <p><strong>Email:</strong> <span id="orderDetailEmail"></span></p>
-                <p><strong>Direccion:</strong> <span id="orderDetailAddress"></span></p>
-                <p><strong>Fecha:</strong> <span id="orderDetailDate"></span></p>
+                <p>
+                  <strong>Cliente:</strong> <span id="orderDetailClient" />
+                </p>
+                <p>
+                  <strong>Email:</strong> <span id="orderDetailEmail" />
+                </p>
+                <p>
+                  <strong>Direccion:</strong> <span id="orderDetailAddress" />
+                </p>
+                <p>
+                  <strong>Fecha:</strong> <span id="orderDetailDate" />
+                </p>
               </div>
 
-              <div id="orderDetailItems" class="detail-items"></div>
+              <div id="orderDetailItems" class="detail-items" />
 
               <div class="detail-total">
                 <strong>Total</strong>
@@ -158,17 +175,27 @@ try {
             <div class="detail-card">
               <h2>CAMBIAR ESTADO</h2>
               <div id="orderStatusActions" class="status-actions">
-                <button type="button" data-estado="pendiente">Pendiente</button>
-                <button type="button" data-estado="pagado">Pagado</button>
-                <button type="button" data-estado="enviado">Enviado</button>
-                <button type="button" data-estado="entregado">Entregado</button>
+                <button type="button" data-estado="pendiente">
+                  Pendiente
+                </button>
+                <button type="button" data-estado="pagado">
+                  Pagado
+                </button>
+                <button type="button" data-estado="enviado">
+                  Enviado
+                </button>
+                <button type="button" data-estado="entregado">
+                  Entregado
+                </button>
                 <button type="button" data-estado="cancelado" class="danger">
                   Cancelado
                 </button>
-                <button type="button" data-estado="devuelto">Devuelto</button>
+                <button type="button" data-estado="devuelto">
+                  Devuelto
+                </button>
               </div>
 
-              <p id="orderDetailMessage" class="detail-message"></p>
+              <p id="orderDetailMessage" class="detail-message" />
             </div>
           </div>
         </section>
@@ -179,7 +206,7 @@ try {
 
 <style>
   .admin-section h1 {
-    font-size: 2.3rem;
+    font-size: 2rem;
     font-weight: 900;
     letter-spacing: 0.04em;
   }
@@ -473,43 +500,78 @@ try {
       align-items: flex-start;
     }
   }
+  table th:nth-child(3),
+  table td:nth-child(3) {
+    text-align: center;
+  }
+
+  table td:nth-child(3) {
+    font-weight: 900;
+  }
+  .btn-view.btn-eye {
+  width: 46px;
+  min-width: 46px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.btn-view.btn-eye.is-active {
+  background: #2d2d2d;
+  color: #f5f5f5;
+}
+
+.detail-item.is-returned-item {
+  border-color: rgba(215, 255, 0, 0.18);
+}
+
+.detail-return-info {
+  color: #d7ff00 !important;
+  font-size: 0.78rem !important;
+  margin-top: 5px !important;
+}
 </style>
 
 <script>
   import {
-  fetchPedidoDetalle,
-  updatePedidoEstado,
-  type PedidoDetalle,
-} from "../../lib/admin-pedidos-api";
+    fetchPedidoDetalle,
+    updatePedidoEstado,
+    type PedidoDetalle,
+  } from "../../lib/admin-pedidos-api";
   const tableBody = document.getElementById("ordersTableBody");
-const searchInput = document.getElementById("ordersSearchInput");
-const statusFilter = document.getElementById("ordersStatusFilter");
-const dateSort = document.getElementById("ordersDateSort");
-const noResults = document.getElementById("ordersNoResults");
-const countLabel = document.getElementById("ordersCountLabel");
+  const searchInput = document.getElementById("ordersSearchInput");
+  const statusFilter = document.getElementById("ordersStatusFilter");
+  const dateSort = document.getElementById("ordersDateSort");
+  const noResults = document.getElementById("ordersNoResults");
+  const countLabel = document.getElementById("ordersCountLabel");
 
-const detailSection = document.getElementById("orderDetailSection");
-const detailTitle = document.getElementById("orderDetailTitle");
-const detailClient = document.getElementById("orderDetailClient");
-const detailEmail = document.getElementById("orderDetailEmail");
-const detailAddress = document.getElementById("orderDetailAddress");
-const detailDate = document.getElementById("orderDetailDate");
-const detailItems = document.getElementById("orderDetailItems");
-const detailTotal = document.getElementById("orderDetailTotal");
-const detailMessage = document.getElementById("orderDetailMessage");
-const closeDetailButton = document.getElementById("closeOrderDetail");
-const statusActions = document.getElementById("orderStatusActions");
+  const detailSection = document.getElementById("orderDetailSection");
+  const detailTitle = document.getElementById("orderDetailTitle");
+  const detailClient = document.getElementById("orderDetailClient");
+  const detailEmail = document.getElementById("orderDetailEmail");
+  const detailAddress = document.getElementById("orderDetailAddress");
+  const detailDate = document.getElementById("orderDetailDate");
+  const detailItems = document.getElementById("orderDetailItems");
+  const detailTotal = document.getElementById("orderDetailTotal");
+  const detailMessage = document.getElementById("orderDetailMessage");
+  const closeDetailButton = document.getElementById("closeOrderDetail");
+  const statusActions = document.getElementById("orderStatusActions");
 
-const rows = Array.from(
-  document.querySelectorAll<HTMLTableRowElement>("[data-pedido-row]"),
-);
-const viewButtons = Array.from(
-  document.querySelectorAll<HTMLButtonElement>("[data-view-detail]"),
-);
+  const rows = Array.from(
+    document.querySelectorAll<HTMLTableRowElement>("[data-pedido-row]"),
+  );
+  const viewButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-view-detail]"),
+  );
 
-let activeOrderId: number | null = null;
-let activeOrderDetail: PedidoDetalle | null = null;
-let isUpdatingStatus = false;
+  let activeOrderId: number | null = null;
+  let activeOrderDetail: PedidoDetalle | null = null;
+  let isUpdatingStatus = false;
 
   function euro(value: number | string | null | undefined) {
     return new Intl.NumberFormat("es-ES", {
@@ -592,9 +654,18 @@ let isUpdatingStatus = false;
     });
 
     viewButtons.forEach((button) => {
-      const isActive = Number(button.getAttribute("data-view-detail")) === activeOrderId;
+      const isActive =
+        Number(button.getAttribute("data-view-detail")) === activeOrderId;
       button.classList.toggle("is-active", isActive);
-      button.textContent = isActive ? "Ocultar detalle" : "Ver detalle";
+      button.textContent = isActive ? "🙈" : "👁";
+      button.setAttribute(
+        "title",
+        isActive ? "Ocultar detalle" : "Ver detalle",
+      );
+      button.setAttribute(
+        "aria-label",
+        isActive ? "Ocultar detalle" : "Ver detalle",
+      );
     });
   }
 
@@ -622,37 +693,66 @@ let isUpdatingStatus = false;
     if (detailTitle) detailTitle.textContent = `DETALLE - ${detail.referencia}`;
     if (detailClient) detailClient.textContent = detail.cliente_nombre || "-";
     if (detailEmail) detailEmail.textContent = detail.cliente_email || "-";
-    if (detailAddress) detailAddress.textContent = detail.direccion_envio || "-";
+    if (detailAddress)
+      detailAddress.textContent = detail.direccion_envio || "-";
     if (detailDate) detailDate.textContent = formatDate(detail.fecha);
-    if (detailTotal) detailTotal.textContent = euro(detail.total);
+    const showingReturns = Boolean(detail.mostrando_devoluciones);
+    const visibleItems = detail.items || [];
+
+    const visibleTotal = showingReturns
+      ? visibleItems.reduce((sum, item) => {
+          const qty = Number(item.cantidad_devuelta || item.cantidad || 0);
+          return sum + Number(item.precio || 0) * qty;
+        }, 0)
+      : Number(detail.total || 0);
+
+    if (detailTotal) detailTotal.textContent = euro(visibleTotal);
 
     if (detailItems) {
       detailItems.innerHTML =
-        (detail.items || []).length > 0
-          ? (detail.items || [])
+        visibleItems.length > 0
+          ? visibleItems
               .map((item: PedidoDetalle["items"][number]) => {
-                const talla = item.talla || "Unica";
+                const talla = item.talla || "Única";
                 const color = item.color || "Sin color";
+                const qty = showingReturns
+                  ? Number(item.cantidad_devuelta || item.cantidad || 0)
+                  : Number(item.cantidad || 0);
+
+                const lineTotal = showingReturns
+                  ? Number(item.precio || 0) * qty
+                  : Number(item.subtotal ?? item.precio);
+
+                const returnInfo = showingReturns
+                  ? `
+                <span class="detail-return-info">
+                  Devuelto: ${qty} de ${Number(item.cantidad || 0)} ud.
+                  ${item.devolucion_slug ? `· ${escapeHtml(item.devolucion_slug)}` : ""}
+                </span>
+              `
+                  : "";
+
                 return `
-                  <div class="detail-item">
-                    <div>
-                      <strong>${escapeHtml(item.nombre)} x ${Number(item.cantidad || 0)}</strong>
-                      <span>${escapeHtml(talla)} · ${escapeHtml(color)}</span>
-                    </div>
-                    <strong>${euro(item.subtotal ?? item.precio)}</strong>
-                  </div>
-                `;
+              <div class="detail-item ${showingReturns ? "is-returned-item" : ""}">
+                <div>
+                  <strong>${escapeHtml(item.nombre)} x ${qty}</strong>
+                  <span>${escapeHtml(talla)} · ${escapeHtml(color)}</span>
+                  ${returnInfo}
+                </div>
+                <strong>${euro(lineTotal)}</strong>
+              </div>
+            `;
               })
               .join("")
           : `
-              <div class="detail-item">
-                <div>
-                  <strong>Sin articulos</strong>
-                  <span>Este pedido no tiene productos asociados.</span>
-                </div>
-                <strong>${euro(0)}</strong>
-              </div>
-            `;
+          <div class="detail-item">
+            <div>
+              <strong>Sin artículos</strong>
+              <span>Este pedido no tiene productos asociados.</span>
+            </div>
+            <strong>${euro(0)}</strong>
+          </div>
+        `;
     }
 
     renderStatusButtons(detail.estado);
@@ -665,7 +765,9 @@ let isUpdatingStatus = false;
   }
 
   function updateRowStatus(orderId: number, estado: string) {
-    const row = rows.find((item) => Number(item.getAttribute("data-id")) === orderId);
+    const row = rows.find(
+      (item) => Number(item.getAttribute("data-id")) === orderId,
+    );
     if (!row) return;
 
     row.setAttribute("data-estado", estado);
@@ -680,7 +782,8 @@ let isUpdatingStatus = false;
   function sortRows() {
     if (!(tableBody instanceof HTMLElement)) return;
 
-    const direction = dateSort instanceof HTMLSelectElement ? dateSort.value : "recent";
+    const direction =
+      dateSort instanceof HTMLSelectElement ? dateSort.value : "recent";
     const sorted = [...rows].sort((a, b) => {
       const aDate = new Date(a.getAttribute("data-fecha") || "").getTime();
       const bDate = new Date(b.getAttribute("data-fecha") || "").getTime();
@@ -822,7 +925,9 @@ let isUpdatingStatus = false;
         renderStatusButtons(activeOrderDetail.estado);
       }
       setDetailMessage(
-        error instanceof Error ? error.message : "No se pudo actualizar el estado",
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar el estado",
         "error",
       );
     } finally {

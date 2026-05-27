@@ -18,16 +18,21 @@ export type PedidoDetalle = {
   estado: string;
   fecha: string;
   items: {
+    item_pedido_id?: number;
     slug: string;
     nombre: string;
     talla: string;
     color: string;
     sku: string;
     cantidad: number;
+    cantidad_devuelta?: number;
+    devolucion_estado?: string;
+    devolucion_slug?: string;
     precio: number;
     subtotal: number;
   }[];
   total: number;
+  mostrando_devoluciones?: boolean;
 };
 
 type PedidosListResponse = {
