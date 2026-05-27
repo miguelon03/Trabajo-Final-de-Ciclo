@@ -202,7 +202,6 @@ function getInitials(name: string): string {
                         data-tipo={p.tipo ?? ""}
                         data-color={p.color ?? ""}
                         data-badge={p.badge ?? ""}
-                        data-categoria={p.categoria ?? "General"}
                         data-estado={p.estado}
                         aria-label={`Editar ${p.nombre}`}
                         title="Editar"
@@ -284,14 +283,6 @@ function getInitials(name: string): string {
             <option value="publicado">Publicado</option>
             <option value="archivado">Archivado</option>
           </select>
-        </div>
-
-        <div class="field" id="productCategoriaField" hidden>
-          <label for="productCategoria">Categoría</label>
-          <input id="productCategoria" type="text" readonly />
-          <small class="field-help">
-            Solo lectura. La categoría no se muestra en la tabla.
-          </small>
         </div>
 
         <div class="field">
@@ -1495,10 +1486,6 @@ function getInitials(name: string): string {
   const productCategoria = document.getElementById("productCategoria");
   const productColor = document.getElementById("productColor");
   const productBadge = document.getElementById("productBadge");
-  const productCategoria = document.getElementById("productCategoria");
-  const productCategoriaField = document.getElementById(
-    "productCategoriaField",
-  );
   const productStockInicial = document.getElementById("productStockInicial");
   const initialStockField = document.getElementById("initialStockField");
   const productImagen = document.getElementById("productImagen");
@@ -1581,12 +1568,6 @@ function getInitials(name: string): string {
 
     if (productImagen instanceof HTMLInputElement) {
       productImagen.disabled = !visible;
-    }
-  }
-
-  function setProductCategoriaVisible(visible: boolean) {
-    if (productCategoriaField instanceof HTMLElement) {
-      productCategoriaField.hidden = !visible;
     }
   }
 
@@ -1772,7 +1753,6 @@ function getInitials(name: string): string {
     const categoriaInput = asField(productCategoria);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
-    const categoriaInput = asField(productCategoria);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -1786,7 +1766,6 @@ function getInitials(name: string): string {
       !categoriaInput ||
       !colorInput ||
       !badgeInput ||
-      !categoriaInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -1800,15 +1779,13 @@ function getInitials(name: string): string {
     precioBaseInput.value = "";
     precioOriginalInput.value = "";
     tipoInput.value = "";
-    categoriaInput.value = "General";
+    categoriaInput.value = "";
     colorInput.value = "";
     badgeInput.value = "";
-    categoriaInput.value = "";
     stockInicialInput.value = "";
     estadoInput.value = "borrador";
     slugWasManuallyEdited = false;
 
-    setProductCategoriaVisible(false);
     setInitialStockVisible(true);
     resetImageInput();
     setProductImageVisible(true);
@@ -1831,7 +1808,6 @@ function getInitials(name: string): string {
     const categoriaInput = asField(productCategoria);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
-    const categoriaInput = asField(productCategoria);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -1845,7 +1821,6 @@ function getInitials(name: string): string {
       !categoriaInput ||
       !colorInput ||
       !badgeInput ||
-      !categoriaInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -1862,12 +1837,10 @@ function getInitials(name: string): string {
     categoriaInput.value = button.dataset.categoria || "General";
     colorInput.value = button.dataset.color || "";
     badgeInput.value = normalizeBadgeValue(button.dataset.badge || "");
-    categoriaInput.value = button.dataset.categoria || "General";
     stockInicialInput.value = "";
     estadoInput.value = button.dataset.estado || "borrador";
     slugWasManuallyEdited = true;
 
-    setProductCategoriaVisible(true);
     setInitialStockVisible(false);
     resetImageInput();
     setProductImageVisible(false);
