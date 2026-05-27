@@ -15,6 +15,11 @@
   --border-radius-modal: 20px;
   --border-radius-avatar: 1000px;
   --transition-fast: 180ms ease;
+  --interactive-hover-lift: -1px;
+  --interactive-hover-brightness: 1.04;
+  --interactive-hover-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  --primary-hover-bg: var(--color-primary-dark);
+  --primary-hover-shadow: 0 8px 22px rgba(200, 255, 0, 0.26);
 }
 
 * {
@@ -114,6 +119,59 @@ button,
 a.button {
   border-radius: var(--border-radius-normal);
   transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* Hover base unificado para elementos clicables */
+a[href],
+button,
+[role='button'],
+summary,
+input[type='button'],
+input[type='submit'],
+input[type='reset'] {
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    filter var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+a[href]:hover {
+  opacity: 0.92;
+}
+
+button:hover:not(:disabled),
+[role='button']:hover,
+summary:hover,
+input[type='button']:hover:not(:disabled),
+input[type='submit']:hover:not(:disabled),
+input[type='reset']:hover:not(:disabled) {
+  transform: translateY(var(--interactive-hover-lift));
+  filter: brightness(var(--interactive-hover-brightness));
+  box-shadow: var(--interactive-hover-shadow);
+}
+
+/* Hover unificado para botones verdes */
+:is(
+  .btn-primary,
+  .button.primary,
+  a.button.primary,
+  button.primary,
+  .auth-btn--primary,
+  .btn-checkout-confirm,
+  .cart-checkout-btn,
+  .cart-empty__cta,
+  .promo-banner__button
+):hover:not(:disabled) {
+  background: var(--primary-hover-bg) !important;
+  color: #090909 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--primary-hover-shadow) !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
 
 button.sm,
@@ -260,6 +318,50 @@ a.button.secondary:hover {
 .dmh-toast__btn--cancel {
   background: rgba(255, 255, 255, 0.1);
   color: #f5f5f5;
+}
+
+/* Paginacion unificada (catalogo + wishlist) */
+.catalog__page-status,
+.wishlist-page-status {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.catalog-pagination {
+  margin-top: 1.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.catalog-pagination__btn {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f5;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.catalog-pagination__btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.catalog-pagination__btn.is-active {
+  background: #C8FF00;
+  border-color: #C8FF00;
+  color: #090909;
 }
 
 @media (max-width: 640px) {

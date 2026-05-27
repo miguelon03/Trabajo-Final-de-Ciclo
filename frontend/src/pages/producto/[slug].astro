@@ -4,24 +4,19 @@ import {
   fetchCatalogData,
   type CatalogProduct as Product,
   type CatalogStockEntry as StockEntry,
-  type CatalogReviewEntry as ReviewEntry,
-  type CatalogReviewItem as ReviewItem,
 } from "../../lib/catalog-api";
 
-export async function getStaticPaths() {
-  const { products } = await fetchCatalogData();
-  return (products as Product[]).map((product: Product) => ({
-    params: { slug: product.slug },
-    props: { slug: product.slug },
-  }));
+export const prerender = false;
+
+const slug = String(Astro.params.slug || "").trim();
+
+if (!slug) {
+  throw new Error("Slug de producto no válido");
 }
 
-const { products, stock, reviews } = await fetchCatalogData();
+const { products, stock } = await fetchCatalogData(slug);
 const allProducts = products as Product[];
 const allStock = stock as StockEntry[];
-const allReviews = reviews as ReviewEntry[];
-
-const { slug } = Astro.props;
 const sourceLinks: Record<string, { href: string; label: string }> = {
   catalogo: { href: "/catalogo", label: "Catálogo" },
   novedades: { href: "/novedades", label: "Novedades" },
@@ -85,12 +80,6 @@ const sizeOptions = sizesArray.map((size: string) => {
     sku: productStock?.bySize?.[size]?.sku ?? `DMH-${product.id}-${size}`,
   };
 });
-
-const relatedProducts = allProducts
-  .filter(
-    (item: Product) => item.id !== product.id && item.type === product.type,
-  )
-  .slice(0, 4);
 ---
 
 <HomeLayout title={`DMH - ${product.title}`} description={product.description}>
@@ -257,6 +246,37 @@ const relatedProducts = allProducts
             ♡ Añadir a wishlist
           </button>
 
+          <div
+            id="wishlistGuestModal"
+            class="wishlist-guest-modal"
+            hidden
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="wishlistGuestTitle"
+          >
+            <div class="wishlist-guest-modal__backdrop" id="wishlistGuestBackdrop"></div>
+            <div class="wishlist-guest-modal__panel" role="document">
+              <button
+                class="wishlist-guest-modal__close"
+                id="wishlistGuestClose"
+                type="button"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+              <p class="wishlist-guest-modal__eyebrow">Wishlist solo para miembros</p>
+              <h3 id="wishlistGuestTitle">Guarda tus favoritos</h3>
+              <p>
+                Para usar la wishlist necesitas una cuenta. Inicia sesión o regístrate para guardar productos y
+                acceder a ellos cuando quieras.
+              </p>
+              <div class="wishlist-guest-modal__actions">
+                <button type="button" class="btn-primary" id="wishlistGuestLoginBtn">Iniciar sesión</button>
+                <button type="button" class="btn-secondary" id="wishlistGuestRegisterBtn">Crear cuenta</button>
+              </div>
+            </div>
+          </div>
+
           <ul class="selling-points">
             <li>Envío en 24-48h laborables</li>
             <li>Cambios y devoluciones en 30 días</li>
@@ -281,38 +301,6 @@ const relatedProducts = allProducts
           <p>Comparte cómo talla, cómo cae y qué te ha parecido el acabado.</p>
         </div>
         <div id="reviewFormContainer"></div>
-      </section>
-
-      <section class="related">
-        <div class="section-head">
-          <h2>También te puede gustar</h2>
-        </div>
-        <div class="related__grid">
-          {
-            relatedProducts.map((item: Product) => (
-              <article
-                class="related-card"
-                data-slug={item.slug}
-                tabindex="0"
-                role="link"
-                aria-label={`Ver ${item.title}`}
-              >
-                <div class="related-card__image">
-                  {item.image.startsWith("/") ||
-                  item.image.startsWith("http") ? (
-                    <img src={item.image} alt={item.title} loading="lazy" />
-                  ) : (
-                    <span class="related-card__image-placeholder">
-                      {item.image}
-                    </span>
-                  )}
-                </div>
-                <h3>{item.title}</h3>
-                <p>{item.price.toFixed(2)}€</p>
-              </article>
-            ))
-          }
-        </div>
       </section>
     </div>
   </section>
@@ -831,13 +819,6 @@ const relatedProducts = allProducts
       sourceBreadcrumbLink.textContent = currentSourceLink.label;
     }
 
-    function productUrlWithSource(targetSlug) {
-      const suffix = currentSourceSlug
-        ? `?from=${encodeURIComponent(currentSourceSlug)}`
-        : "";
-      return `/producto/${targetSlug}${suffix}`;
-    }
-
     // --- Carrusel ---
     const carouselSlides = document.querySelectorAll(".gallery__slide");
     const dots = document.querySelectorAll(".carousel__dot");
@@ -870,6 +851,11 @@ const relatedProducts = allProducts
     const addToCartBtn = document.getElementById("addToCartBtn");
     const productInfo = document.getElementById("productInfo");
     const toggleWishlistBtn = document.getElementById("toggleWishlistBtn");
+    const wishlistGuestModal = document.getElementById("wishlistGuestModal");
+    const wishlistGuestBackdrop = document.getElementById("wishlistGuestBackdrop");
+    const wishlistGuestClose = document.getElementById("wishlistGuestClose");
+    const wishlistGuestLoginBtn = document.getElementById("wishlistGuestLoginBtn");
+    const wishlistGuestRegisterBtn = document.getElementById("wishlistGuestRegisterBtn");
 
     /** @returns {HTMLInputElement | null} */
     function getSelectedSizeInput() {
@@ -1041,6 +1027,22 @@ const relatedProducts = allProducts
       toggleWishlistBtn.classList.toggle("is-active", isFavorite);
     }
 
+    function openWishlistGuestModal() {
+      if (!(wishlistGuestModal instanceof HTMLElement)) {
+        return;
+      }
+      wishlistGuestModal.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeWishlistGuestModal() {
+      if (!(wishlistGuestModal instanceof HTMLElement)) {
+        return;
+      }
+      wishlistGuestModal.hidden = true;
+      document.body.style.overflow = "";
+    }
+
     async function initWishlistButton() {
       if (!(toggleWishlistBtn instanceof HTMLButtonElement)) {
         return;
@@ -1063,6 +1065,29 @@ const relatedProducts = allProducts
       }
 
       paintWishlistButton(currentSet.includes(slug));
+
+      if (!authorized) {
+        toggleWishlistBtn.addEventListener("click", () => {
+          openWishlistGuestModal();
+        });
+
+        wishlistGuestBackdrop?.addEventListener("click", closeWishlistGuestModal);
+        wishlistGuestClose?.addEventListener("click", closeWishlistGuestModal);
+        wishlistGuestLoginBtn?.addEventListener("click", () => {
+          closeWishlistGuestModal();
+          window.dmhOpenAuth?.("login", false);
+        });
+        wishlistGuestRegisterBtn?.addEventListener("click", () => {
+          closeWishlistGuestModal();
+          window.dmhOpenAuth?.("register", false);
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            closeWishlistGuestModal();
+          }
+        });
+        return;
+      }
 
       toggleWishlistBtn.addEventListener("click", async () => {
         if (!authorized) {
@@ -1106,21 +1131,6 @@ const relatedProducts = allProducts
 
     initWishlistButton();
 
-    // --- Related cards navigation ---
-    document.querySelectorAll(".related-card").forEach((card) => {
-      const slug = card.getAttribute("data-slug");
-      if (!slug) return;
-      card.addEventListener("click", () => {
-        window.location.href = productUrlWithSource(slug);
-      });
-      card.addEventListener("keydown", (e) => {
-        if (!(e instanceof KeyboardEvent)) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          window.location.href = productUrlWithSource(slug);
-        }
-      });
-    });
   </script>
 </HomeLayout>
 
@@ -1271,9 +1281,6 @@ const relatedProducts = allProducts
   .carousel__btn--next {
     right: 0.75rem;
   }
-  .carousel__btn:hover {
-    background: rgba(0, 0, 0, 0.8);
-  }
   .gallery__slide {
     position: absolute;
     inset: 0;
@@ -1349,8 +1356,10 @@ const relatedProducts = allProducts
     transition: background var(--transition-fast);
   }
 
-  .carousel__btn:hover {
+  .carousel__btn:hover,
+  .carousel__btn:focus-visible {
     background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) !important;
   }
 
   .carousel__btn--prev {
@@ -1541,6 +1550,7 @@ const relatedProducts = allProducts
   }
 
   .btn-secondary {
+    position: relative;
     min-height: 42px;
     border-radius: var(--border-radius-normal);
     border: 1px solid rgba(255, 255, 255, 0.16);
@@ -1554,6 +1564,81 @@ const relatedProducts = allProducts
     border-color: rgba(200, 255, 0, 0.55);
     color: #c8ff00;
     background: rgba(200, 255, 0, 0.08);
+  }
+
+  .wishlist-guest-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+  }
+
+  .wishlist-guest-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 6, 6, 0.72);
+    backdrop-filter: blur(2px);
+  }
+
+  .wishlist-guest-modal__panel {
+    position: relative;
+    width: min(520px, 100%);
+    background: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    padding: 1.25rem 1.2rem 1.15rem;
+    display: grid;
+    gap: 0.8rem;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .wishlist-guest-modal__close {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.86);
+    cursor: pointer;
+  }
+
+  .wishlist-guest-modal__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #c8ff00;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .wishlist-guest-modal h3 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #fff;
+  }
+
+  .wishlist-guest-modal p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.78);
+    line-height: 1.55;
+  }
+
+  .wishlist-guest-modal__actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+  }
+
+  .wishlist-guest-modal__actions .btn-primary,
+  .wishlist-guest-modal__actions .btn-secondary {
+    min-height: 42px;
+    padding: 0 0.9rem;
   }
 
   .selling-points {
@@ -1897,58 +1982,6 @@ const relatedProducts = allProducts
     font-size: 0.95rem;
   }
 
-  .related__grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .related-card {
-    background: #111111;
-    border-radius: var(--border-radius-card);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 1rem;
-    display: grid;
-    gap: 0.65rem;
-    cursor: pointer;
-    transition: border-color var(--transition-fast);
-  }
-
-  .related-card:hover {
-    border-color: rgba(200, 255, 0, 0.35);
-  }
-
-  .related-card__image {
-    height: 190px;
-    border-radius: var(--border-radius-normal);
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.03),
-      rgba(0, 0, 0, 0.22)
-    );
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-  }
-
-  .related-card__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .related-card__image-placeholder {
-    color: rgba(255, 255, 255, 0.28);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-
-  .related-card h3,
-  .related-card p {
-    margin: 0;
-  }
-
   @media (max-width: 1024px) {
     .product-detail {
       padding: 1.8rem 1.6rem 3rem;
@@ -1960,10 +1993,6 @@ const relatedProducts = allProducts
 
     .gallery__carousel {
       min-height: 430px;
-    }
-
-    .related__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
@@ -1978,14 +2007,6 @@ const relatedProducts = allProducts
 
     .buy-box {
       grid-template-columns: 1fr;
-    }
-
-    .related__grid {
-      grid-template-columns: 1fr;
-    }
-
-    .related-card__image {
-      height: 220px;
     }
 
     .review-form__footer {

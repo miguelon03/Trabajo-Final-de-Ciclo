@@ -194,6 +194,7 @@ function getInitials(name: string): string {
                         data-descripcion={p.descripcion ?? ""}
                         data-precio-base={p.precio_base}
                         data-precio-original={p.precio_original ?? ""}
+                        data-categoria={p.categoria ?? "General"}
                         data-tipo={p.tipo ?? ""}
                         data-color={p.color ?? ""}
                         data-badge={p.badge ?? ""}
@@ -284,6 +285,11 @@ function getInitials(name: string): string {
         <div class="field">
           <label for="productTipo">Tipo</label>
           <input id="productTipo" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="productCategoria">Categoría</label>
+          <input id="productCategoria" type="text" required placeholder="Ej: Sudaderas" />
         </div>
 
         <div class="field">
@@ -1309,6 +1315,7 @@ function getInitials(name: string): string {
     "productPrecioOriginal",
   );
   const productTipo = document.getElementById("productTipo");
+  const productCategoria = document.getElementById("productCategoria");
   const productColor = document.getElementById("productColor");
   const productBadge = document.getElementById("productBadge");
   const productStockInicial = document.getElementById("productStockInicial");
@@ -1545,6 +1552,7 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
+    const categoriaInput = asField(productCategoria);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
@@ -1557,6 +1565,7 @@ function getInitials(name: string): string {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
+      !categoriaInput ||
       !colorInput ||
       !badgeInput ||
       !stockInicialInput ||
@@ -1572,6 +1581,7 @@ function getInitials(name: string): string {
     precioBaseInput.value = "";
     precioOriginalInput.value = "";
     tipoInput.value = "";
+    categoriaInput.value = "General";
     colorInput.value = "";
     badgeInput.value = "";
     stockInicialInput.value = "";
@@ -1597,6 +1607,7 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
+    const categoriaInput = asField(productCategoria);
     const colorInput = asField(productColor);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
@@ -1609,6 +1620,7 @@ function getInitials(name: string): string {
       !precioBaseInput ||
       !precioOriginalInput ||
       !tipoInput ||
+      !categoriaInput ||
       !colorInput ||
       !badgeInput ||
       !stockInicialInput ||
@@ -1624,6 +1636,7 @@ function getInitials(name: string): string {
     precioBaseInput.value = button.dataset.precioBase || "";
     precioOriginalInput.value = button.dataset.precioOriginal || "";
     tipoInput.value = button.dataset.tipo || "";
+    categoriaInput.value = button.dataset.categoria || "General";
     colorInput.value = button.dataset.color || "";
     badgeInput.value = normalizeBadgeValue(button.dataset.badge || "");
     stockInicialInput.value = "";
@@ -1812,6 +1825,7 @@ function getInitials(name: string): string {
       !(productPrecioBase instanceof HTMLInputElement) ||
       !(productPrecioOriginal instanceof HTMLInputElement) ||
       !(productTipo instanceof HTMLInputElement) ||
+      !(productCategoria instanceof HTMLInputElement) ||
       !(productColor instanceof HTMLInputElement) ||
       !(productBadge instanceof HTMLSelectElement) ||
       !(productStockInicial instanceof HTMLInputElement) ||
@@ -1833,6 +1847,7 @@ function getInitials(name: string): string {
       precio_base: Number(productPrecioBase.value),
       precio_original: productPrecioOriginal.value.trim(),
       tipo: productTipo.value.trim(),
+      categoria: productCategoria.value.trim(),
       color: productColor.value.trim(),
       badge: productBadge.value,
       estado: productEstado.value,

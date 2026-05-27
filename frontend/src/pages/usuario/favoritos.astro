@@ -25,10 +25,9 @@ const allProducts = products as Array<{
       <header class="wishlist-header">
         <p class="wishlist-kicker">Perfil</p>
         <h1>Mi wishlist</h1>
+        <p class="wishlist-page-status" id="wishlistPageStatus">Página 1 de 1</p>
         <p>Guarda aquí tus prendas favoritas y añádelas al carrito cuando quieras.</p>
       </header>
-
-      <div class="page-indicator" id="wishlistPageIndicator">Página nº 1</div>
 
       <div id="wishlistEmpty" class="wishlist-empty" hidden>
         <p>Aún no tienes favoritos guardados.</p>
@@ -42,10 +41,10 @@ const allProducts = products as Array<{
       </div>
 
       <div class="catalog__grid-wrapper">
-        <button class="pagination__side pagination__prev" id="wishlistPrevPage" type="button" aria-label="Página anterior">←</button>
         <div id="wishlistGrid" class="products-grid"></div>
-        <button class="pagination__side pagination__next" id="wishlistNextPage" type="button" aria-label="Página siguiente">→</button>
       </div>
+
+      <div class="catalog-pagination" id="wishlistPagination" aria-label="Paginación de wishlist"></div>
     </div>
   </section>
 
@@ -136,47 +135,53 @@ const allProducts = products as Array<{
     }
 
     function updatePagination(totalItems) {
-      const prevBtn = document.getElementById("wishlistPrevPage");
-      const nextBtn = document.getElementById("wishlistNextPage");
-      const indicator = document.getElementById("wishlistPageIndicator");
+      const pagination = document.getElementById("wishlistPagination");
+      const pageStatus = document.getElementById("wishlistPageStatus");
 
-      if (!prevBtn || !nextBtn || !indicator) {
+      if (!(pagination instanceof HTMLElement)) {
         return;
       }
 
       const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
-      indicator.textContent = `Página nº ${currentPage}`;
-
-      prevBtn.style.visibility = currentPage === 1 ? "hidden" : "visible";
-      nextBtn.style.visibility = currentPage === totalPages ? "hidden" : "visible";
-
-      if (totalItems <= PAGE_SIZE) {
-        prevBtn.style.visibility = "hidden";
-        nextBtn.style.visibility = "hidden";
+      if (pageStatus instanceof HTMLElement) {
+        pageStatus.textContent = `Página ${currentPage} de ${totalPages}`;
       }
 
-      prevBtn.onclick = () => {
-        if (currentPage > 1) {
-          currentPage -= 1;
-          renderWishlist();
-        }
-      };
+      if (totalPages <= 1) {
+        pagination.innerHTML = "";
+        pagination.style.display = "none";
+        return;
+      }
 
-      nextBtn.onclick = () => {
-        if (currentPage < totalPages) {
-          currentPage += 1;
-          renderWishlist();
+      pagination.style.display = "flex";
+      pagination.innerHTML = "";
+
+      for (let page = 1; page <= totalPages; page += 1) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "catalog-pagination__btn";
+        if (page === currentPage) {
+          button.classList.add("is-active");
         }
-      };
+        button.textContent = String(page);
+        button.setAttribute("aria-label", `Ir a la página ${page}`);
+        button.setAttribute("aria-current", page === currentPage ? "page" : "false");
+        button.addEventListener("click", () => {
+          if (currentPage === page) {
+            return;
+          }
+          currentPage = page;
+          renderWishlist();
+        });
+        pagination.appendChild(button);
+      }
     }
 
     async function renderWishlist() {
       const grid = document.getElementById("wishlistGrid");
       const empty = document.getElementById("wishlistEmpty");
-      const prevBtn = document.getElementById("wishlistPrevPage");
-      const nextBtn = document.getElementById("wishlistNextPage");
-      const pageIndicator = document.getElementById("wishlistPageIndicator");
+      const pagination = document.getElementById("wishlistPagination");
       if (!grid || !empty) {
         return;
       }
@@ -187,9 +192,10 @@ const allProducts = products as Array<{
         if (!authorized) {
           grid.innerHTML = "";
           empty.hidden = false;
-          if (prevBtn) prevBtn.style.visibility = "hidden";
-          if (nextBtn) nextBtn.style.visibility = "hidden";
-          if (pageIndicator) pageIndicator.textContent = "Página nº 1";
+          if (pagination instanceof HTMLElement) {
+            pagination.innerHTML = "";
+            pagination.style.display = "none";
+          }
           empty.innerHTML =
             '<p>Necesitas iniciar sesión para ver tu wishlist.</p><a href="/login">Ir a login</a>';
           if (error && error !== "Debes iniciar sesión" && error !== "Inicia sesión para continuar") {
@@ -204,9 +210,10 @@ const allProducts = products as Array<{
         if (!favoriteProducts.length) {
           grid.innerHTML = "";
           empty.hidden = false;
-          if (prevBtn) prevBtn.style.visibility = "hidden";
-          if (nextBtn) nextBtn.style.visibility = "hidden";
-          if (pageIndicator) pageIndicator.textContent = "Página nº 1";
+          if (pagination instanceof HTMLElement) {
+            pagination.innerHTML = "";
+            pagination.style.display = "none";
+          }
           return;
         }
 
@@ -458,13 +465,12 @@ const allProducts = products as Array<{
       color: rgba(255, 255, 255, 0.75);
     }
 
-    .page-indicator {
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #C8FF00;
+    .wishlist-page-status {
+      margin: 0.35rem 0 0;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
     }
 
     .wishlist-empty {
@@ -496,36 +502,42 @@ const allProducts = products as Array<{
     }
 
     .catalog__grid-wrapper {
-      display: grid;
-      grid-template-columns: 48px 1fr 48px;
-      align-items: center;
-      gap: 1rem;
+      display: block;
       width: 100%;
     }
 
-    .pagination__side {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.08);
-      color: #f5f5f5;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
+    .catalog-pagination {
+      margin-top: 1.3rem;
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s ease, border-color 0.2s ease;
+      gap: 0.55rem;
     }
 
-    .pagination__side:hover {
+    .catalog-pagination__btn {
+      min-width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      color: #f5f5f5;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0 0.7rem;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .catalog-pagination__btn:hover {
       background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.22);
     }
 
-    .pagination__side:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
+    .catalog-pagination__btn.is-active {
+      background: #C8FF00;
+      border-color: #C8FF00;
+      color: #090909;
     }
 
     .products-grid.is-loading {
@@ -729,37 +741,14 @@ const allProducts = products as Array<{
         padding: 1.5rem;
       }
 
-      .catalog__grid-wrapper {
-        grid-template-columns: 40px 1fr 40px;
-      }
-
       .products-grid {
         grid-template-columns: repeat(2, 1fr);
-      }
-
-      .pagination__side {
-        width: 40px;
-        height: 40px;
       }
     }
 
     @media (max-width: 640px) {
-      .catalog__grid-wrapper {
-        grid-template-columns: 36px 1fr 36px;
-      }
-
       .products-grid {
         grid-template-columns: 1fr;
-      }
-
-      .pagination__side {
-        width: 36px;
-        height: 36px;
-      }
-
-      .page-indicator {
-        font-size: 0.9rem;
-        margin-top: 0.5rem;
       }
     }
   </style>

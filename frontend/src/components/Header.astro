@@ -629,6 +629,9 @@ function isActivePath(path: string) {
               const logoutData = await logoutResponse.json();
 
               if (logoutData.ok) {
+                // El carrito es propio de la sesion del usuario actual.
+                localStorage.removeItem("cart");
+                window.dispatchEvent(new Event("cart-updated"));
                 window.showToast?.("Sesión cerrada correctamente", "success");
                 setTimeout(function () {
                   window.location.href = "/";

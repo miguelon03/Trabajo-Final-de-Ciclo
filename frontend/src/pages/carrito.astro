@@ -167,7 +167,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       <label class="checkout-modal__checkline">
         <input type="checkbox" id="checkoutPolicy" />
-        <span>Acepto las condiciones de compra y la política de privacidad.</span>
+        <span>Acepto la <a class="checkout-policy-link" href="/privacidad" target="_blank" rel="noopener noreferrer" title="Se abre en una pestaña nueva">política de privacidad</a>.</span>
       </label>
 
       <p id="checkoutError" class="checkout-modal__error" hidden></p>
@@ -971,7 +971,7 @@ let stripeCard = null;
       }
 
       if (!(policyEl instanceof HTMLInputElement) || !policyEl.checked) {
-        showCheckoutError('Debes aceptar las condiciones de compra para continuar');
+        showCheckoutError('Debes aceptar la política de privacidad para continuar');
         return;
       }
 
@@ -1407,6 +1407,23 @@ let stripeCard = null;
     .checkout-modal label.checkout-modal__checkline input {
       margin-top: 0;
       accent-color: #c8ff00;
+    }
+
+    .checkout-modal .checkout-policy-link {
+      color: #d9ff66;
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 2px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: color .15s ease, text-decoration-color .15s ease;
+    }
+
+    .checkout-modal .checkout-policy-link:hover,
+    .checkout-modal .checkout-policy-link:focus-visible {
+      color: #f0ffae;
+      text-decoration-color: #f0ffae;
+      outline: none;
     }
 
     #saveCardRow {

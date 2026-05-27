@@ -12,13 +12,12 @@ const productCards = Array.from(document.querySelectorAll(".product-card")).filt
 );
 const noResults = document.getElementById("noResults");
 const productCount = document.getElementById("productCount");
-const prevPageBtn = document.getElementById("prevPage");
-const nextPageBtn = document.getElementById("nextPage");
-const pageIndicator = document.getElementById("pageIndicator");
+const pageStatus = document.getElementById("catalogPageStatus");
+const paginationContainer = document.getElementById("catalogPagination");
 const toggleFiltersBtn = document.getElementById("toggleFilters");
 const sidebar = document.getElementById("sidebar");
 const quickAddIcon = productsGrid?.getAttribute("data-quick-add-icon") || "";
-const hasPaginationControls = Boolean(prevPageBtn || nextPageBtn || pageIndicator);
+const hasPaginationControls = Boolean(paginationContainer);
 let currentFavorites = window.dmhFavorites?.get?.() || [];
 
 function getCart() {
@@ -786,40 +785,45 @@ function sortCards(cards) {
 }
 
 function updatePagination(totalPages) {
+  if (pageStatus) {
+    pageStatus.textContent = `Página ${currentPage} de ${totalPages}`;
+  }
+
   if (!hasPaginationControls) {
     return;
   }
 
-  if (pageIndicator) {
-    pageIndicator.textContent = `Página nº ${currentPage}`;
+  if (!(paginationContainer instanceof HTMLElement)) {
+    return;
   }
 
-  if (prevPageBtn) {
-    if (currentPage === 1) {
-      prevPageBtn.style.visibility = "hidden";
-    } else {
-      prevPageBtn.style.visibility = "visible";
-      prevPageBtn.onclick = () => {
-        if (currentPage > 1) {
-          currentPage -= 1;
-          applyFiltersAndPagination();
-        }
-      };
-    }
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = "";
+    paginationContainer.style.display = "none";
+    return;
   }
 
-  if (nextPageBtn) {
-    if (currentPage === totalPages) {
-      nextPageBtn.style.visibility = "hidden";
-    } else {
-      nextPageBtn.style.visibility = "visible";
-      nextPageBtn.onclick = () => {
-        if (currentPage < totalPages) {
-          currentPage += 1;
-          applyFiltersAndPagination();
-        }
-      };
+  paginationContainer.style.display = "flex";
+  paginationContainer.innerHTML = "";
+
+  for (let page = 1; page <= totalPages; page += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "catalog-pagination__btn";
+    if (page === currentPage) {
+      button.classList.add("is-active");
     }
+    button.textContent = String(page);
+    button.setAttribute("aria-label", `Ir a la página ${page}`);
+    button.setAttribute("aria-current", page === currentPage ? "page" : "false");
+    button.addEventListener("click", () => {
+      if (currentPage === page) {
+        return;
+      }
+      currentPage = page;
+      applyFiltersAndPagination();
+    });
+    paginationContainer.appendChild(button);
   }
 }
 

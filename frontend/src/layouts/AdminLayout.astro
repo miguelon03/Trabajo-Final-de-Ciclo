@@ -198,6 +198,8 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
           const data = await response.json();
 
           if (data.ok) {
+            localStorage.removeItem("cart");
+            window.dispatchEvent(new Event("cart-updated"));
             window.location.href = "/";
           }
         } catch (error) {
