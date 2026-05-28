@@ -107,7 +107,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         <p class="checkout-modal__hint">
           Como miembro acumulas 1 punto por cada 1,00 € gastado y puedes canjear en bloques de 100 puntos = 10,00 € de descuento.
         </p>
-        <a class="checkout-modal__link" href="/registro">Crear cuenta ahora</a>
+        <a class="checkout-modal__link" href="/?auth=register">Crear cuenta ahora</a>
       </div>
 
       <label>
@@ -217,7 +217,22 @@ import HomeLayout from "../layouts/HomeLayout.astro";
     let stockCachePromise: Promise<void> | null = null;
 
     function normalizeStockSize(size: string) {
-      return String(size || '').trim().toLowerCase();
+      const normalized = String(size || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ');
+
+      if (
+        normalized === 'unica' ||
+        normalized === 'talla unica' ||
+        normalized === 'tallaunica'
+      ) {
+        return 'unica';
+      }
+
+      return normalized;
     }
 
     function getStockKey(slug: string, size: string) {
@@ -1031,7 +1046,11 @@ let stripeCard = null;
           if (!isLoggedIn && (result.status === 409 || result.data?.code === 'EMAIL_ALREADY_REGISTERED')) {
             window.showToast?.('Ese email ya tiene cuenta. Inicia sesión para terminar la compra.', 'info');
             setTimeout(() => {
-              window.location.href = '/login';
+              if (typeof window.dmhOpenAuth === 'function') {
+                window.dmhOpenAuth('login', false);
+              } else {
+                window.location.href = '/?auth=login';
+              }
             }, 900);
           }
 

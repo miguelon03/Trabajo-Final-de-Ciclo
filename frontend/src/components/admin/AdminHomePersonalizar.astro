@@ -1,0 +1,1229 @@
+---
+import {
+  fetchAdminHomeHero,
+  type AdminHomeHeroConfig,
+} from "../../lib/admin-home-hero-api";
+
+const fallbackHero: AdminHomeHeroConfig = {
+  eyebrow: "SS26 COLLECTION",
+  title: "DRIP\nMODE\nHOOD",
+  description:
+    "Prendas premium de edición limitada. Diseñadas para durar. Fabricadas en Europa.",
+  primary_label: "VER COLECCIÓN",
+  primary_href: "/catalogo",
+  secondary_label: "Novedades",
+  secondary_href: "/novedades",
+  product_image: "",
+  product_image_scale: 100,
+  product_image_pos_x: 0,
+  product_image_pos_y: 0,
+  background_image: "",
+  background_image_scale: 100,
+  background_image_pos_x: 0,
+  background_image_pos_y: 0,
+  updated_at: null,
+};
+
+let hero: AdminHomeHeroConfig = fallbackHero;
+let error = "";
+
+try {
+  const cookieHeader = Astro.request.headers.get("cookie") ?? "";
+  hero = await fetchAdminHomeHero(cookieHeader);
+} catch (e) {
+  error = e instanceof Error ? e.message : "Error al cargar personalización del home";
+}
+
+const hasProductImage = hero.product_image.trim() !== "";
+---
+
+<section class="home-customize-admin">
+  <header class="home-customize-admin__header">
+    <h1>PERSONALIZAR HOME</h1>
+    <p>
+      Modifica el Hero principal de la home y visualiza en tiempo real cómo lo verán los clientes.
+    </p>
+  </header>
+
+  {
+    error ? (
+      <p class="home-customize-admin__error">{error}</p>
+    ) : (
+      <div class="home-customize-admin__grid">
+        <form id="homeHeroForm" class="hero-form" novalidate>
+          <div class="hero-form__tabs" role="tablist" aria-label="Secciones de personalización">
+            <button
+              id="heroTextTab"
+              class="hero-form__tab is-active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="heroTextPanel"
+            >
+              <span class="hero-form__tab-icon" aria-hidden="true">T</span>
+              <span>Textos</span>
+            </button>
+
+            <button
+              id="heroImageTab"
+              class="hero-form__tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="heroImagePanel"
+            >
+              <svg class="hero-form__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z" fill="none" stroke="currentColor" stroke-width="1.8" />
+                <path d="M7 15l2.6-2.6a1.2 1.2 0 0 1 1.7 0L13 14l2-2a1.2 1.2 0 0 1 1.7 0L19 14.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+              </svg>
+              <span>Imágenes</span>
+            </button>
+          </div>
+
+          <div id="heroPanelStack" class="hero-form__panel-stack">
+            <div id="heroTextPanel" class="hero-form__panel" role="tabpanel" aria-labelledby="heroTextTab">
+              <div class="field">
+                <label for="heroEyebrowInput">Etiqueta superior</label>
+                <input id="heroEyebrowInput" type="text" value={hero.eyebrow} maxlength="80" />
+              </div>
+
+              <div class="field">
+                <label for="heroTitleInput">Título (usa saltos de línea)</label>
+                <textarea id="heroTitleInput" rows="4" maxlength="120">{hero.title}</textarea>
+              </div>
+
+              <div class="field">
+                <label for="heroDescriptionInput">Descripción</label>
+                <textarea id="heroDescriptionInput" rows="4" maxlength="320">{hero.description}</textarea>
+              </div>
+            </div>
+
+            <div id="heroImagePanel" class="hero-form__panel" role="tabpanel" aria-labelledby="heroImageTab" hidden>
+              <div class="field-note-static">
+                Los botones del hero son fijos y no se pueden editar.
+              </div>
+
+              <div class="field-row field-row--media">
+                <div class="field">
+                  <label for="heroProductImageInput">Imagen de producto</label>
+                  <input id="heroProductImageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <small>Formato JPG/PNG/WEBP. Máximo 6MB.</small>
+                </div>
+
+                <div class="field">
+                  <label for="heroBackgroundImageInput">Imagen de fondo (difuminada)</label>
+                  <input id="heroBackgroundImageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <small>Se mostrará con blur detrás del Hero.</small>
+                </div>
+              </div>
+
+              <div class="field-row field-row--mold">
+                <div class="field-group">
+                  <p class="field-group__title">Ajuste imagen de producto</p>
+
+                  <div class="field">
+                    <label for="heroProductScaleInput">Zoom</label>
+                    <input
+                      id="heroProductScaleInput"
+                      type="range"
+                      min="80"
+                      max="200"
+                      step="1"
+                      value={hero.product_image_scale}
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="heroProductPosXInput">Desplazamiento horizontal</label>
+                    <input
+                      id="heroProductPosXInput"
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="1"
+                      value={hero.product_image_pos_x}
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="heroProductPosYInput">Desplazamiento vertical</label>
+                    <input
+                      id="heroProductPosYInput"
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="1"
+                      value={hero.product_image_pos_y}
+                    />
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <p class="field-group__title">Ajuste imagen de fondo</p>
+
+                  <div class="field">
+                    <label for="heroBackgroundScaleInput">Zoom</label>
+                    <input
+                      id="heroBackgroundScaleInput"
+                      type="range"
+                      min="80"
+                      max="220"
+                      step="1"
+                      value={hero.background_image_scale}
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="heroBackgroundPosXInput">Desplazamiento horizontal</label>
+                    <input
+                      id="heroBackgroundPosXInput"
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="1"
+                      value={hero.background_image_pos_x}
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="heroBackgroundPosYInput">Desplazamiento vertical</label>
+                    <input
+                      id="heroBackgroundPosYInput"
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="1"
+                      value={hero.background_image_pos_y}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p id="heroFormMessage" class="hero-form__message"></p>
+
+          <div class="hero-form__actions">
+            <button class="btn-reset" id="heroResetBtn" type="button">Restablecer vista previa</button>
+            <button class="btn-save" id="heroSaveBtn" type="submit">Guardar cambios</button>
+          </div>
+        </form>
+
+        <section class="hero-preview-wrap">
+          <p class="hero-preview-wrap__kicker">Vista previa Home</p>
+
+          <article
+            class="hero-preview"
+            id="heroPreviewRoot"
+            data-initial-background={hero.background_image}
+          >
+            <div class="hero-preview__bg" id="heroPreviewBg" aria-hidden="true"></div>
+
+            <div class="hero-preview__grid">
+              <div class="hero-preview__copy">
+                <span id="heroPreviewEyebrow" class="hero-preview__eyebrow">{hero.eyebrow}</span>
+                <h2 id="heroPreviewTitle">{hero.title}</h2>
+                <p id="heroPreviewDescription">{hero.description}</p>
+
+                <div class="hero-preview__actions">
+                  <a id="heroPreviewPrimaryBtn" href={hero.primary_href}>
+                    {hero.primary_label}
+                  </a>
+                  <a id="heroPreviewSecondaryBtn" href={hero.secondary_href}>
+                    {hero.secondary_label}
+                  </a>
+                </div>
+              </div>
+
+              <div class="hero-preview__visual">
+                <div
+                  id="heroPreviewPlaceholder"
+                  class="hero-preview__placeholder"
+                  hidden={hasProductImage}
+                >
+                  Imagen de producto
+                </div>
+                <img
+                  id="heroPreviewProductImage"
+                  class="hero-preview__product-image"
+                  src={hasProductImage ? hero.product_image : undefined}
+                  alt=""
+                  hidden={!hasProductImage}
+                />
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .home-customize-admin h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 950;
+    letter-spacing: 0.06em;
+  }
+
+  .home-customize-admin__header p {
+    color: #9a9a9a;
+    margin-top: 8px;
+    max-width: 680px;
+    line-height: 1.5;
+  }
+
+  .home-customize-admin__error {
+    margin-top: 20px;
+    color: #ff6b6b;
+  }
+
+  .home-customize-admin__grid {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: minmax(360px, 1.02fr) minmax(380px, 1.18fr);
+    gap: 26px;
+    align-items: start;
+  }
+
+  .hero-form,
+  .hero-preview-wrap {
+    background: #121212;
+    border: 1px solid #242424;
+    border-radius: 18px;
+    padding: 22px;
+  }
+
+  .hero-form {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .hero-form__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    background: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 8px;
+  }
+
+  .hero-form__tab {
+    min-height: 46px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #9a9a9a;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.02em;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .hero-form__tab:hover {
+    transform: translateY(-1px);
+    color: #f1f1f1;
+  }
+
+  .hero-form__tab.is-active {
+    background: #d7ff00;
+    color: #111;
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .hero-form__tab-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .hero-form__tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hero-form__panel {
+    display: grid;
+    gap: 14px;
+  }
+
+  .hero-form__panel-stack {
+    min-height: 0;
+  }
+
+  .hero-form__panel[hidden] {
+    display: none !important;
+  }
+
+  .field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .field label {
+    color: #b3b3b3;
+    font-size: 0.86rem;
+    font-weight: 850;
+  }
+
+  .field input,
+  .field textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: #171717;
+    border: 1px solid #2b2b2b;
+    border-radius: 12px;
+    color: #f5f5f5;
+    padding: 12px;
+    outline: none;
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 92px;
+    line-height: 1.35;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    border-color: rgba(215, 255, 0, 0.55);
+  }
+
+  .field small {
+    color: #7e7e7e;
+    font-size: 0.76rem;
+  }
+
+  .field-note-static {
+    color: #818181;
+    font-size: 0.84rem;
+    font-weight: 700;
+    background: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .field-row--media .field input[type="file"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid #2f2f2f;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #151515, #121212);
+    color: #d8d8d8;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .field-row--media .field {
+    padding: 12px;
+    border: 1px solid #2b2b2b;
+    border-radius: 14px;
+    background: #141414;
+  }
+
+  .field-row--media .field input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    border: 1px solid rgba(215, 255, 0, 0.4);
+    border-radius: 10px;
+    min-height: 36px;
+    padding: 0 14px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: rgba(215, 255, 0, 0.14);
+    color: #ecffc0;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .field-row--media .field input[type="file"]::-webkit-file-upload-button {
+    margin-right: 12px;
+    border: 1px solid rgba(215, 255, 0, 0.4);
+    border-radius: 10px;
+    min-height: 36px;
+    padding: 0 14px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: rgba(215, 255, 0, 0.14);
+    color: #ecffc0;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .field-row--media .field input[type="file"]:hover {
+    border-color: rgba(215, 255, 0, 0.45);
+    background: linear-gradient(180deg, #171717, #131313);
+  }
+
+  .field-row--media .field input[type="file"]:focus,
+  .field-row--media .field input[type="file"]:focus-visible {
+    border-color: rgba(215, 255, 0, 0.7);
+    box-shadow: 0 0 0 3px rgba(215, 255, 0, 0.15);
+    outline: none;
+  }
+
+  .field-row--media .field input[type="file"]:hover::file-selector-button,
+  .field-row--media .field input[type="file"]:focus-visible::file-selector-button {
+    background: rgba(215, 255, 0, 0.24);
+    border-color: rgba(215, 255, 0, 0.7);
+    color: #0d0d0d;
+  }
+
+  .field-row--media .field input[type="file"]:hover::-webkit-file-upload-button,
+  .field-row--media .field input[type="file"]:focus-visible::-webkit-file-upload-button {
+    background: rgba(215, 255, 0, 0.24);
+    border-color: rgba(215, 255, 0, 0.7);
+    color: #0d0d0d;
+  }
+
+  .field-row--media .field small {
+    display: block;
+    margin-top: 2px;
+  }
+
+  .field-row--media {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .field-row--mold {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .field-group {
+    border: 1px solid #2b2b2b;
+    border-radius: 12px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .field-group__title {
+    color: #a9a9a9;
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-form__message {
+    min-height: 20px;
+    color: #ff6b6b;
+    font-size: 0.88rem;
+  }
+
+  .hero-form__actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn-save,
+  .btn-reset {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 0 16px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .btn-save {
+    border: none;
+    background: #d7ff00;
+    color: #111;
+  }
+
+  .btn-reset {
+    border: 1px solid #343434;
+    background: transparent;
+    color: #ddd;
+  }
+
+  .hero-preview-wrap__kicker {
+    color: #8a8a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.72rem;
+    margin-bottom: 12px;
+    font-weight: 900;
+  }
+
+  .hero-preview {
+    position: relative;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #1a1a1a;
+    min-height: 400px;
+    padding: 18px;
+  }
+
+  .hero-preview__bg {
+    position: absolute;
+    inset: -24px;
+    background-position: center;
+    background-size: cover;
+    filter: blur(20px);
+    transform: scale(1.06);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+
+  .hero-preview.has-bg .hero-preview__bg {
+    opacity: 0.9;
+  }
+
+  .hero-preview__bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(12, 12, 12, 0.9), rgba(15, 15, 15, 0.68));
+  }
+
+  .hero-preview__grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 18px;
+    align-items: center;
+    min-height: 360px;
+  }
+
+  .hero-preview__eyebrow {
+    color: #d7ff00;
+    letter-spacing: 0.35em;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+
+  .hero-preview h2 {
+    margin-top: 12px;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    line-height: 0.95;
+    white-space: pre-line;
+    text-transform: uppercase;
+  }
+
+  .hero-preview p {
+    color: #d0d0d0;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+
+  .hero-preview__actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hero-preview__actions a {
+    text-decoration: none;
+    min-height: 40px;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 0.84rem;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  #heroPreviewPrimaryBtn {
+    background: #d7ff00;
+    color: #111;
+  }
+
+  #heroPreviewSecondaryBtn {
+    background: rgba(255, 255, 255, 0.04);
+    color: #f5f5f5;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .hero-preview__visual {
+    position: relative;
+    width: min(100%, 360px);
+    margin-left: auto;
+    aspect-ratio: 4 / 5;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .hero-preview__placeholder,
+  .hero-preview__product-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+  }
+
+  .hero-preview__placeholder {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: grid;
+    place-items: center;
+    color: #797979;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.4));
+  }
+
+  .hero-preview__product-image {
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: block;
+    transform-origin: center;
+  }
+
+  @media (max-width: 1180px) {
+    .home-customize-admin__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .hero-form__tabs {
+      grid-template-columns: 1fr;
+    }
+
+    .field-row {
+      grid-template-columns: 1fr;
+    }
+
+    .field-row--mold {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-preview__grid {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .hero-preview__visual {
+      justify-content: center;
+    }
+
+    .hero-preview__placeholder,
+    .hero-preview__product-image {
+      min-height: 200px;
+    }
+  }
+</style>
+
+<script>
+  import { saveAdminHomeHero } from "../../lib/admin-home-hero-api";
+
+  type HeroFormState = {
+    eyebrow: string;
+    title: string;
+    description: string;
+    primary_label: string;
+    primary_href: string;
+    secondary_label: string;
+    secondary_href: string;
+    product_image_scale: number;
+    product_image_pos_x: number;
+    product_image_pos_y: number;
+    background_image_scale: number;
+    background_image_pos_x: number;
+    background_image_pos_y: number;
+  };
+
+  type HeroPreviewState = HeroFormState & {
+    product_image: string;
+    background_image: string;
+  };
+
+  const form = document.getElementById("homeHeroForm");
+  const formMessage = document.getElementById("heroFormMessage");
+
+  const eyebrowInput = document.getElementById("heroEyebrowInput");
+  const titleInput = document.getElementById("heroTitleInput");
+  const descriptionInput = document.getElementById("heroDescriptionInput");
+
+  const productImageInput = document.getElementById("heroProductImageInput");
+  const backgroundImageInput = document.getElementById("heroBackgroundImageInput");
+  const productScaleInput = document.getElementById("heroProductScaleInput");
+  const productPosXInput = document.getElementById("heroProductPosXInput");
+  const productPosYInput = document.getElementById("heroProductPosYInput");
+  const backgroundScaleInput = document.getElementById("heroBackgroundScaleInput");
+  const backgroundPosXInput = document.getElementById("heroBackgroundPosXInput");
+  const backgroundPosYInput = document.getElementById("heroBackgroundPosYInput");
+
+  const previewRoot = document.getElementById("heroPreviewRoot");
+  const previewBg = document.getElementById("heroPreviewBg");
+  const previewEyebrow = document.getElementById("heroPreviewEyebrow");
+  const previewTitle = document.getElementById("heroPreviewTitle");
+  const previewDescription = document.getElementById("heroPreviewDescription");
+  const previewPrimaryBtn = document.getElementById("heroPreviewPrimaryBtn");
+  const previewSecondaryBtn = document.getElementById("heroPreviewSecondaryBtn");
+  const previewPlaceholder = document.getElementById("heroPreviewPlaceholder");
+  const previewProductImage = document.getElementById("heroPreviewProductImage");
+
+  const textTab = document.getElementById("heroTextTab");
+  const imageTab = document.getElementById("heroImageTab");
+  const textPanel = document.getElementById("heroTextPanel");
+  const imagePanel = document.getElementById("heroImagePanel");
+  const panelStack = document.getElementById("heroPanelStack");
+
+  const resetBtn = document.getElementById("heroResetBtn");
+
+  let productImageDataUrl = "";
+  let backgroundImageDataUrl = "";
+  let initialState: HeroPreviewState | null = null;
+  let activeTab: "text" | "images" = "text";
+
+  function asInput(el: Element | null): HTMLInputElement | null {
+    return el instanceof HTMLInputElement ? el : null;
+  }
+
+  function asTextArea(el: Element | null): HTMLTextAreaElement | null {
+    return el instanceof HTMLTextAreaElement ? el : null;
+  }
+
+  function setMessage(text: string, type: "error" | "success" = "error"): void {
+    if (!(formMessage instanceof HTMLElement)) return;
+
+    formMessage.textContent = text;
+    formMessage.style.color = type === "success" ? "#7dff98" : "#ff6b6b";
+  }
+
+  function showToastMessage(message: string, type: "error" | "success" | "info" = "info"): void {
+    const api = (window as Window & {
+      showToast?: (msg: string, kind?: string) => void;
+    }).showToast;
+
+    if (typeof api === "function") {
+      api(message, type);
+      return;
+    }
+
+    setMessage(message, type === "success" ? "success" : "error");
+  }
+
+  function readRawTextState(): { eyebrow: string; title: string; description: string } {
+    return {
+      eyebrow: asInput(eyebrowInput)?.value.trim() || "",
+      title: asTextArea(titleInput)?.value.trim() || "",
+      description: asTextArea(descriptionInput)?.value.trim() || "",
+    };
+  }
+
+  function validateRequiredTextFields(): string | null {
+    const raw = readRawTextState();
+
+    if (!raw.eyebrow) {
+      return "La etiqueta superior no puede quedar vacía";
+    }
+
+    if (!raw.title) {
+      return "El título del Hero no puede quedar vacío";
+    }
+
+    if (!raw.description) {
+      return "La descripción del Hero no puede quedar vacía";
+    }
+
+    return null;
+  }
+
+  function setActiveTab(tab: "text" | "images"): void {
+    activeTab = tab;
+    const isText = tab === "text";
+
+    if (textTab instanceof HTMLButtonElement) {
+      textTab.classList.toggle("is-active", isText);
+      textTab.setAttribute("aria-selected", String(isText));
+    }
+
+    if (imageTab instanceof HTMLButtonElement) {
+      imageTab.classList.toggle("is-active", !isText);
+      imageTab.setAttribute("aria-selected", String(!isText));
+    }
+
+    if (textPanel instanceof HTMLElement) {
+      textPanel.hidden = !isText;
+    }
+
+    if (imagePanel instanceof HTMLElement) {
+      imagePanel.hidden = isText;
+    }
+  }
+
+  function syncPanelStackHeight(): void {
+    if (!(panelStack instanceof HTMLElement)) return;
+    if (!(textPanel instanceof HTMLElement)) return;
+    if (!(imagePanel instanceof HTMLElement)) return;
+
+    const textWasHidden = textPanel.hidden;
+    const imageWasHidden = imagePanel.hidden;
+
+    textPanel.hidden = false;
+    imagePanel.hidden = false;
+
+    const textHeight = textPanel.scrollHeight;
+    const imageHeight = imagePanel.scrollHeight;
+    const maxHeight = Math.max(textHeight, imageHeight);
+
+    panelStack.style.minHeight = maxHeight > 0 ? `${maxHeight}px` : "";
+
+    setActiveTab(activeTab);
+
+    if (textWasHidden && activeTab !== "text") {
+      textPanel.hidden = true;
+    }
+    if (imageWasHidden && activeTab !== "images") {
+      imagePanel.hidden = true;
+    }
+  }
+
+  function readFormState(): HeroFormState {
+    const eyebrow = asInput(eyebrowInput)?.value.trim() || "";
+    const title = asTextArea(titleInput)?.value.trim() || "";
+    const description = asTextArea(descriptionInput)?.value.trim() || "";
+    const productScale = Number(asInput(productScaleInput)?.value || 100);
+    const productPosX = Number(asInput(productPosXInput)?.value || 0);
+    const productPosY = Number(asInput(productPosYInput)?.value || 0);
+    const backgroundScale = Number(asInput(backgroundScaleInput)?.value || 100);
+    const backgroundPosX = Number(asInput(backgroundPosXInput)?.value || 0);
+    const backgroundPosY = Number(asInput(backgroundPosYInput)?.value || 0);
+
+    return {
+      eyebrow: eyebrow || "SS26 COLLECTION",
+      title: title || "DRIP\nMODE\nHOOD",
+      description:
+        description ||
+        "Prendas premium de edición limitada. Diseñadas para durar. Fabricadas en Europa.",
+      primary_label: "VER COLECCIÓN",
+      primary_href: "/catalogo",
+      secondary_label: "Novedades",
+      secondary_href: "/novedades",
+      product_image_scale: Number.isFinite(productScale) ? productScale : 100,
+      product_image_pos_x: Number.isFinite(productPosX) ? productPosX : 0,
+      product_image_pos_y: Number.isFinite(productPosY) ? productPosY : 0,
+      background_image_scale: Number.isFinite(backgroundScale)
+        ? backgroundScale
+        : 100,
+      background_image_pos_x: Number.isFinite(backgroundPosX) ? backgroundPosX : 0,
+      background_image_pos_y: Number.isFinite(backgroundPosY) ? backgroundPosY : 0,
+    };
+  }
+
+  function applyPreview(state: HeroFormState): void {
+    if (previewEyebrow instanceof HTMLElement) {
+      previewEyebrow.textContent = state.eyebrow;
+    }
+
+    if (previewTitle instanceof HTMLElement) {
+      previewTitle.textContent = state.title;
+    }
+
+    if (previewDescription instanceof HTMLElement) {
+      previewDescription.textContent = state.description;
+    }
+
+    if (previewPrimaryBtn instanceof HTMLAnchorElement) {
+      previewPrimaryBtn.textContent = state.primary_label;
+      previewPrimaryBtn.href = state.primary_href;
+    }
+
+    if (previewSecondaryBtn instanceof HTMLAnchorElement) {
+      previewSecondaryBtn.textContent = state.secondary_label;
+      previewSecondaryBtn.href = state.secondary_href;
+    }
+
+    if (previewProductImage instanceof HTMLImageElement) {
+      const ox = 50 + state.product_image_pos_x;
+      const oy = 50 + state.product_image_pos_y;
+      previewProductImage.style.objectPosition = `${ox}% ${oy}%`;
+      previewProductImage.style.transform = `scale(${state.product_image_scale / 100})`;
+    }
+
+    if (previewBg instanceof HTMLElement) {
+      const bx = 50 + state.background_image_pos_x;
+      const by = 50 + state.background_image_pos_y;
+      previewBg.style.backgroundPosition = `${bx}% ${by}%`;
+      previewBg.style.backgroundSize = `${state.background_image_scale}%`;
+    }
+  }
+
+  function setPreviewProductImage(src: string): void {
+    if (!(previewProductImage instanceof HTMLImageElement)) return;
+    if (!(previewPlaceholder instanceof HTMLElement)) return;
+
+    if (!src) {
+      previewProductImage.hidden = true;
+      previewProductImage.removeAttribute("src");
+      previewProductImage.onerror = null;
+      previewPlaceholder.hidden = false;
+      return;
+    }
+
+    previewProductImage.src = src;
+    previewProductImage.onerror = () => {
+      previewProductImage.hidden = true;
+      previewPlaceholder.hidden = false;
+    };
+    previewProductImage.hidden = false;
+    previewPlaceholder.hidden = true;
+  }
+
+  function setPreviewBackgroundImage(src: string): void {
+    if (!(previewBg instanceof HTMLElement)) return;
+    if (!(previewRoot instanceof HTMLElement)) return;
+
+    if (!src) {
+      previewBg.style.backgroundImage = "";
+      previewRoot.classList.remove("has-bg");
+      return;
+    }
+
+    previewBg.style.backgroundImage = `url(${src})`;
+    previewRoot.classList.add("has-bg");
+  }
+
+  async function readFileAsDataUrl(file: File): Promise<string> {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("No se pudo leer el archivo"));
+        }
+      };
+      reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function bindLivePreview() {
+    [
+      eyebrowInput,
+      titleInput,
+      descriptionInput,
+      productScaleInput,
+      productPosXInput,
+      productPosYInput,
+      backgroundScaleInput,
+      backgroundPosXInput,
+      backgroundPosYInput,
+    ].forEach((field) => {
+      field?.addEventListener("input", () => {
+        applyPreview(readFormState());
+        syncPanelStackHeight();
+      });
+    });
+
+    productImageInput?.addEventListener("change", async () => {
+      const input = asInput(productImageInput);
+      const file = input?.files?.[0];
+
+      if (!file) {
+        productImageDataUrl = "";
+        return;
+      }
+
+      if (file.size > 6 * 1024 * 1024) {
+        setMessage("La imagen de producto no puede superar 6MB");
+        input.value = "";
+        return;
+      }
+
+      productImageDataUrl = await readFileAsDataUrl(file);
+      setPreviewProductImage(productImageDataUrl);
+
+      setMessage("");
+    });
+
+    backgroundImageInput?.addEventListener("change", async () => {
+      const input = asInput(backgroundImageInput);
+      const file = input?.files?.[0];
+
+      if (!file) {
+        backgroundImageDataUrl = "";
+        return;
+      }
+
+      if (file.size > 6 * 1024 * 1024) {
+        setMessage("La imagen de fondo no puede superar 6MB");
+        input.value = "";
+        return;
+      }
+
+      backgroundImageDataUrl = await readFileAsDataUrl(file);
+      setPreviewBackgroundImage(backgroundImageDataUrl);
+
+      setMessage("");
+    });
+  }
+
+  function snapshotInitialState() {
+    initialState = {
+      ...readFormState(),
+      product_image: previewProductImage instanceof HTMLImageElement
+        ? previewProductImage.getAttribute("src") || ""
+        : "",
+      background_image: previewBg instanceof HTMLElement
+        ? previewBg.style.backgroundImage.replace(/^url\(["']?/, "").replace(/["']?\)$/, "")
+        : "",
+    };
+  }
+
+  resetBtn?.addEventListener("click", () => {
+    if (!initialState) return;
+
+    const setInputValue = (input: Element | null, value: string) => {
+      if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+        input.value = value;
+      }
+    };
+
+    setInputValue(eyebrowInput, initialState.eyebrow);
+    setInputValue(titleInput, initialState.title);
+    setInputValue(descriptionInput, initialState.description);
+    setInputValue(productScaleInput, String(initialState.product_image_scale));
+    setInputValue(productPosXInput, String(initialState.product_image_pos_x));
+    setInputValue(productPosYInput, String(initialState.product_image_pos_y));
+    setInputValue(backgroundScaleInput, String(initialState.background_image_scale));
+    setInputValue(backgroundPosXInput, String(initialState.background_image_pos_x));
+    setInputValue(backgroundPosYInput, String(initialState.background_image_pos_y));
+
+    const productFileInput = asInput(productImageInput);
+    if (productFileInput) productFileInput.value = "";
+
+    const backgroundFileInput = asInput(backgroundImageInput);
+    if (backgroundFileInput) backgroundFileInput.value = "";
+
+    productImageDataUrl = "";
+    backgroundImageDataUrl = "";
+
+    applyPreview(readFormState());
+    setPreviewProductImage(initialState.product_image);
+    setPreviewBackgroundImage(initialState.background_image);
+    setMessage("");
+  });
+
+  textTab?.addEventListener("click", () => {
+    setActiveTab("text");
+    syncPanelStackHeight();
+  });
+  imageTab?.addEventListener("click", () => {
+    setActiveTab("images");
+    syncPanelStackHeight();
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const validationError = validateRequiredTextFields();
+    if (validationError) {
+      setActiveTab("text");
+      syncPanelStackHeight();
+      showToastMessage(validationError, "error");
+      setMessage(validationError, "error");
+      return;
+    }
+
+    const saveButton = document.getElementById("heroSaveBtn");
+    if (saveButton instanceof HTMLButtonElement) {
+      saveButton.disabled = true;
+      saveButton.textContent = "Guardando...";
+    }
+
+    try {
+      const payload = {
+        ...readFormState(),
+        product_image_data_url: productImageDataUrl,
+        background_image_data_url: backgroundImageDataUrl,
+      };
+
+      const updated = await saveAdminHomeHero(payload);
+
+      productImageDataUrl = "";
+      backgroundImageDataUrl = "";
+
+      const productFileInput = asInput(productImageInput);
+      if (productFileInput) productFileInput.value = "";
+
+      const backgroundFileInput = asInput(backgroundImageInput);
+      if (backgroundFileInput) backgroundFileInput.value = "";
+
+      applyPreview(updated);
+      setPreviewProductImage(updated.product_image);
+      setPreviewBackgroundImage(updated.background_image);
+
+      showToastMessage("Cambios guardados correctamente", "success");
+      setMessage("Cambios guardados correctamente", "success");
+      snapshotInitialState();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudieron guardar los cambios";
+      showToastMessage(message, "error");
+      setMessage(message, "error");
+    } finally {
+      if (saveButton instanceof HTMLButtonElement) {
+        saveButton.disabled = false;
+        saveButton.textContent = "Guardar cambios";
+      }
+    }
+  });
+
+  bindLivePreview();
+  setActiveTab("text");
+  syncPanelStackHeight();
+  applyPreview(readFormState());
+
+  const initialProductSrc = previewProductImage instanceof HTMLImageElement
+    ? previewProductImage.getAttribute("src") || ""
+    : "";
+  setPreviewProductImage(initialProductSrc);
+
+  const initialBackground =
+    previewRoot instanceof HTMLElement
+      ? (previewRoot.dataset.initialBackground || "").trim()
+      : "";
+  setPreviewBackgroundImage(initialBackground);
+
+  snapshotInitialState();
+
+  window.addEventListener("resize", syncPanelStackHeight);
+</script>

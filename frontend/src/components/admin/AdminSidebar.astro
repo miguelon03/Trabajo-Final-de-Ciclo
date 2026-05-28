@@ -3,7 +3,9 @@ const currentPath = Astro.url.pathname;
 ---
 
 <aside class="sidebar">
-  <div class="brand">DMH — ADMIN</div>
+  <a class="brand" href="/admin" aria-label="Ir al panel de administración">
+    <img src="/logo-dmh.png" alt="DMH" />
+  </a>
 
   <div class="section-label">PANEL</div>
   <nav class="nav">
@@ -14,6 +16,18 @@ const currentPath = Astro.url.pathname;
         </svg>
       </span>
       <span>Dashboard</span>
+    </a>
+
+    <a
+      href="/admin/personalizar-home"
+      class={currentPath === "/admin/personalizar-home" ? "active" : ""}
+    >
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3 3 8v13h18V8l-9-5Zm0 2.2 6.8 3.8v10H5.2V9l6.8-3.8Zm-3 6.3h6v1.8H9zm0 3.4h6v1.8H9z" />
+        </svg>
+      </span>
+      <span>Personalizar home</span>
     </a>
   </nav>
 
@@ -64,6 +78,18 @@ const currentPath = Astro.url.pathname;
       <span>Usuarios</span>
     </a>
   </nav>
+
+  <div class="section-label">CUENTA</div>
+  <nav class="nav">
+    <a href="/" id="logoutLink" class="nav-link-logout">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10 4h7v16h-7v-2h5V6h-5zm-1.2 3.2L3 12l5.8 4.8 1.2-1.5-3.4-2.8H14v-2H6.6L10 8.7z" />
+        </svg>
+      </span>
+      <span>Cerrar sesión</span>
+    </a>
+  </nav>
 </aside>
 
 <style>
@@ -83,12 +109,15 @@ const currentPath = Astro.url.pathname;
     display: flex;
     align-items: center;
     padding: 0 10px 18px;
-    color: #d7ff00;
-    font-size: 0.92rem;
-    font-weight: 950;
-    letter-spacing: 0.14em;
     border-bottom: 1px solid #272727;
-    white-space: nowrap;
+  }
+
+  .brand img {
+    width: 148px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    filter: brightness(1.08);
   }
 
   .section-label {
@@ -136,6 +165,15 @@ const currentPath = Astro.url.pathname;
     box-shadow: 0 10px 24px rgba(215, 255, 0, 0.1);
   }
 
+  .nav a.nav-link-logout {
+    color: #f1b0b0;
+  }
+
+  .nav a.nav-link-logout:hover {
+    background: rgba(255, 77, 77, 0.12);
+    color: #ffd2d2;
+  }
+
   .nav-icon {
     width: 18px;
     height: 18px;
@@ -156,10 +194,12 @@ const currentPath = Astro.url.pathname;
     }
 
     .brand {
-      font-size: 0.84rem;
-      letter-spacing: 0.12em;
       padding-left: 8px;
       padding-right: 8px;
+    }
+
+    .brand img {
+      width: 134px;
     }
 
     .nav a {
@@ -189,11 +229,13 @@ const currentPath = Astro.url.pathname;
 
     .brand {
       min-height: auto;
-      font-size: 1rem;
-      letter-spacing: 0.13em;
       margin-bottom: 12px;
       padding: 0;
       border-bottom: 0;
+    }
+
+    .brand img {
+      width: 146px;
     }
 
     .section-label {
@@ -237,9 +279,11 @@ const currentPath = Astro.url.pathname;
     }
 
     .brand {
-      font-size: 0.92rem;
-      letter-spacing: 0.11em;
       margin-bottom: 10px;
+    }
+
+    .brand img {
+      width: 132px;
     }
 
     .nav {

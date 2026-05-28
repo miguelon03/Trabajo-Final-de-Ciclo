@@ -5,6 +5,7 @@ export type CatalogProduct = {
   category: string;
   price: number;
   originalPrice?: number | null;
+  tallaje?: string;
   type: string;
   color: string;
   badge?: string | null;

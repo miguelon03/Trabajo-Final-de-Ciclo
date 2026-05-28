@@ -37,6 +37,22 @@ const { title = "DripMode Hood", description = "" } = Astro.props;
     </head>
 
     <body>
+                <script is:inline>
+                    (async () => {
+                        try {
+                            const response = await fetch("/backend/session.php", {
+                                credentials: "include",
+                            });
+                            const data = await response.json();
+
+                            if (data?.logueado && data?.usuario?.rol === "admin") {
+                                window.location.replace("/admin");
+                            }
+                        } catch (_) {
+                            // Si falla la comprobación, no bloqueamos la carga.
+                        }
+                    })();
+                </script>
         <!-- Cabecera fija de la web -->
         <Header />
         <!-- Modal de autenticación: login/registro/invitado -->

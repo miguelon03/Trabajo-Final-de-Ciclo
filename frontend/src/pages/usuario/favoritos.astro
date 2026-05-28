@@ -197,7 +197,7 @@ const allProducts = products as Array<{
             pagination.style.display = "none";
           }
           empty.innerHTML =
-            '<p>Necesitas iniciar sesión para ver tu wishlist.</p><a href="/login">Ir a login</a>';
+            '<p>Necesitas iniciar sesión para ver tu wishlist.</p><a href="/?auth=login">Ir a login</a>';
           if (error && error !== "Debes iniciar sesión" && error !== "Inicia sesión para continuar") {
             window.showToast?.(error, "error");
           }
@@ -288,7 +288,11 @@ const allProducts = products as Array<{
                   if (!result.ok) {
                     if (result.status === 401) {
                       setTimeout(() => {
-                        window.location.href = "/login";
+                        if (typeof window.dmhOpenAuth === "function") {
+                          window.dmhOpenAuth("login", false);
+                        } else {
+                          window.location.href = "/?auth=login";
+                        }
                       }, 500);
                       return;
                     }

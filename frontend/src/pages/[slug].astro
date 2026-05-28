@@ -11,6 +11,7 @@ type Product = {
   category: string;
   price: number;
   originalPrice?: number;
+  tallaje?: string;
   type: string;
   color: string;
   badge?: string;
@@ -79,6 +80,7 @@ if (slug === "novedades") {
                     class="product-card"
                     data-product-id={product.id}
                     data-type={product.type}
+                    data-sizing={product.tallaje || "clasico"}
                     data-color={product.color}
                     data-price={product.price}
                     data-product-slug={product.slug}
@@ -318,10 +320,13 @@ if (slug === "novedades") {
   }
 
   .product-card__footer {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.2rem;
+    min-height: 34px;
+    padding-right: 42px;
   }
 
   .product-price {
@@ -338,6 +343,10 @@ if (slug === "novedades") {
   }
 
   .quick-add-btn {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
     border: none;
     background: rgba(200, 255, 0, 0.16);
     color: #d8ff48;

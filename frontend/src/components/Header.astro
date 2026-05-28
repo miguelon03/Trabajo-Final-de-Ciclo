@@ -3,11 +3,21 @@
 import { searchIcon, userIcon, cartIcon } from "./icons.ts";
 import { fetchCatalogData } from "../lib/catalog-api";
 
-/* Cargamos productos desde la API para alimentar el buscador */
-const { products: productsRaw } = await fetchCatalogData();
+/*
+  Cargamos productos para el buscador, pero sin romper SSR si backend/BD
+  todavía no está disponible (p. ej. primer acceso antes del auto-instalador).
+*/
+let productsRaw: Array<{ slug: string; title: string }> = [];
+
+try {
+  const catalog = await fetchCatalogData();
+  productsRaw = (catalog.products ?? []) as Array<{ slug: string; title: string }>;
+} catch (_error) {
+  productsRaw = [];
+}
 
 /* Transformamos los productos para quedarnos solo con slug y título */
-const searchData = (productsRaw as Array<{ slug: string; title: string }>).map(
+const searchData = productsRaw.map(
   (p) => ({
     slug: p.slug,
     title: p.title,
@@ -84,9 +94,9 @@ function isActivePath(path: string) {
       </button>
 
       <div class="account-dropdown" id="accountDropdown">
-        <a id="profileLink" href="/login">Mi perfil</a>
-        <a id="ordersLink" href="/login">Mis pedidos</a>
-        <a id="favoritesLink" href="/login">Favoritos</a>
+        <a id="profileLink" href="/?auth=login">Mi perfil</a>
+        <a id="ordersLink" href="/?auth=login">Mis pedidos</a>
+        <a id="favoritesLink" href="/?auth=login">Favoritos</a>
         <button id="logoutBtn" type="button">Cerrar sesión</button>
       </div>
     </div>
@@ -113,9 +123,9 @@ function isActivePath(path: string) {
   <style>
     .site-header {
       width: 100%;
-      max-width: 1240px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 1.15rem clamp(1rem, 2.8vw, 2.5rem);
+      padding: 1.15rem 3rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -591,6 +601,11 @@ function isActivePath(path: string) {
 
         if (data.logueado && data.usuario) {
           const isAdmin = data.usuario.rol === "admin";
+
+          if (isAdmin) {
+            window.location.replace("/admin");
+            return;
+          }
 
           profileLink.setAttribute("href", isAdmin ? "/admin" : "/usuario");
           ordersLink.setAttribute(

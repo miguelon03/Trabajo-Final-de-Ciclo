@@ -38,6 +38,20 @@ function getInitials(name: string): string {
       <p class="error-message">{error}</p>
     ) : (
       <>
+        <div class="search-row">
+          <div class="bulk-search" role="search" aria-label="Buscar productos">
+            <input
+              id="productSearchInput"
+              type="search"
+              placeholder="Buscar por nombre, slug o tipo"
+              autocomplete="off"
+            />
+            <button id="clearProductSearchBtn" type="button" aria-label="Limpiar búsqueda">
+              ×
+            </button>
+          </div>
+        </div>
+
         <div class="management-row">
           <div class="bulk-panel" aria-label="Acciones en bloque de productos">
             <label class="bulk-select-all">
@@ -101,6 +115,8 @@ function getInitials(name: string): string {
                 <tr
                   class="product-row"
                   data-product-id={p.id}
+                  data-search={`${p.nombre} ${p.slug} ${p.tipo ?? ""} ${p.badge ?? ""}`
+                    .toLowerCase()}
                   aria-selected="false"
                   title="Pulsa la fila para seleccionarla y cambiar su badge"
                 >
@@ -198,6 +214,7 @@ function getInitials(name: string): string {
                         data-descripcion={p.descripcion ?? ""}
                         data-precio-base={p.precio_base}
                         data-precio-original={p.precio_original ?? ""}
+                        data-tallaje={p.tallaje ?? "clasico"}
                         data-tipo={p.tipo ?? ""}
                         data-badge={p.badge ?? ""}
                         data-estado={p.estado}
@@ -229,6 +246,9 @@ function getInitials(name: string): string {
         </div>
 
         <div class="footer-row">Mostrando {productos.length} productos</div>
+        <p id="productsSearchEmpty" class="search-empty" hidden>
+          No hay productos que coincidan con tu búsqueda.
+        </p>
       </>
     )
   }
@@ -257,7 +277,7 @@ function getInitials(name: string): string {
       </button>
     </div>
 
-    <form id="productForm" class="modal-form">
+    <form id="productForm" class="modal-form" novalidate>
       <input type="hidden" id="productId" />
 
       <div class="form-grid">
@@ -268,7 +288,8 @@ function getInitials(name: string): string {
 
         <div class="field">
           <label for="productSlug">Slug</label>
-          <input id="productSlug" type="text" />
+          <input id="productSlug" type="text" readonly />
+          <small class="field-help">Se genera automáticamente a partir del nombre.</small>
         </div>
 
         <div class="field">
@@ -281,31 +302,55 @@ function getInitials(name: string): string {
         </div>
 
         <div class="field">
-          <label for="productPrecioBase">Precio base</label>
+          <label for="productPrecioOriginal">Precio original</label>
+          <input
+            id="productPrecioOriginal"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="Ej: 50,00"
+          />
+        </div>
+
+        <div class="field">
+          <label for="productPrecioBase">Precio oferta</label>
           <input
             id="productPrecioBase"
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="Ej: 9,99"
             required
           />
         </div>
 
         <div class="field">
-          <label for="productPrecioOriginal">Precio original</label>
-          <input id="productPrecioOriginal" type="number" min="0" step="0.01" />
+          <label for="productTallaje">Tallaje</label>
+          <select id="productTallaje">
+            <option value="clasico">Clásico (XS, S, M, L, XL)</option>
+            <option value="pantalon">Pantalón (28, 36, 40, 42, 44)</option>
+            <option value="unica">Talla única</option>
+          </select>
         </div>
 
         <div class="field">
           <label for="productTipo">Tipo</label>
-          <input id="productTipo" type="text" />
+          <input id="productTipo" type="text" placeholder="Ej: camiseta" />
+        </div>
+
+        <div class="field field--accent field--toggle">
+          <label class="checkbox-toggle" for="productIsAccesorio">
+            <input id="productIsAccesorio" type="checkbox" />
+            <span>Marcar como accesorio</span>
+          </label>
+          <small class="field-hint">Si está activo, el producto aparecerá en Accesorios.</small>
         </div>
 
         <div class="field field--accent">
           <label for="productBadge">Badge</label>
           <select id="productBadge">
             <option value="">Sin badge</option>
-            <option value="NEW">NEW</option>
+            <option value="NEW" selected>NEW</option>
             <option value="Oferta">oferta</option>
           </select>
         </div>
@@ -317,24 +362,68 @@ function getInitials(name: string): string {
             type="number"
             min="0"
             step="1"
-            value="0"
+            placeholder="Introduce stock (puede ser 0)"
+            required
           />
         </div>
 
         <div class="field field-full" id="productImageField">
-          <label for="productImagen">Imágenes del producto</label>
-          <label class="image-upload-box" for="productImagen">
-            <input
-              id="productImagen"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-            />
-            <span id="productImageUploadText">
-              Seleccionar hasta 3 imágenes JPG, PNG o WEBP
-            </span>
-            <div id="productImagePreviewGrid" class="image-preview-grid"></div>
-          </label>
+          <label for="productImageSlot1">Imágenes del producto</label>
+          <div class="image-slots" id="productImageSlots">
+            <div class="image-slot" data-slot="0">
+              <input
+                id="productImageSlot1"
+                class="image-slot-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+              <img class="image-slot-preview" alt="" hidden />
+              <div class="image-slot-placeholder">
+                <strong>Imagen 1</strong>
+                <span>Arrastra o elige archivo</span>
+              </div>
+              <button class="image-slot-clear" type="button" hidden aria-label="Quitar imagen 1">
+                ×
+              </button>
+            </div>
+
+            <div class="image-slot" data-slot="1">
+              <input
+                id="productImageSlot2"
+                class="image-slot-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+              <img class="image-slot-preview" alt="" hidden />
+              <div class="image-slot-placeholder">
+                <strong>Imagen 2</strong>
+                <span>Arrastra o elige archivo</span>
+              </div>
+              <button class="image-slot-clear" type="button" hidden aria-label="Quitar imagen 2">
+                ×
+              </button>
+            </div>
+
+            <div class="image-slot" data-slot="2">
+              <input
+                id="productImageSlot3"
+                class="image-slot-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+              <img class="image-slot-preview" alt="" hidden />
+              <div class="image-slot-placeholder">
+                <strong>Imagen 3</strong>
+                <span>Arrastra o elige archivo</span>
+              </div>
+              <button class="image-slot-clear" type="button" hidden aria-label="Quitar imagen 3">
+                ×
+              </button>
+            </div>
+          </div>
+          <span id="productImageUploadText" class="image-slots-help">
+            Vista previa en formato catálogo. Máximo 3 imágenes (JPG, PNG o WEBP, 4MB cada una).
+          </span>
         </div>
 
         <div class="field field-full">
@@ -352,6 +441,8 @@ function getInitials(name: string): string {
           Guardar
         </button>
       </div>
+
+      <p id="productFormFeedback" class="modal-feedback" aria-live="polite"></p>
     </form>
   </div>
 </div>
@@ -401,6 +492,7 @@ function getInitials(name: string): string {
       </div>
 
       <div id="stockSplitGrid" class="stock-split__grid"></div>
+      <p id="stockSplitWarning" class="stock-split__warning" hidden></p>
 
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="backToProductModalBtn">
@@ -409,6 +501,43 @@ function getInitials(name: string): string {
         <button type="submit" class="btn-primary">Guardar producto</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="deleteConfirmBackdrop">
+  <div
+    class="modal modal--confirm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleteConfirmTitle"
+    aria-describedby="deleteConfirmText"
+  >
+    <div class="modal-header">
+      <h2 id="deleteConfirmTitle">Eliminar producto</h2>
+      <button
+        class="modal-close"
+        id="closeDeleteConfirmModal"
+        type="button"
+        aria-label="Cerrar confirmación"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="modal-form modal-form--confirm">
+      <p id="deleteConfirmText" class="confirm-text">
+        ¿Seguro que quieres eliminar este producto?
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelDeleteConfirmBtn">
+          Cancelar
+        </button>
+        <button type="button" class="btn-danger" id="confirmDeleteBtn">
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -451,7 +580,14 @@ function getInitials(name: string): string {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
+  }
+
+  .search-row {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 10px;
   }
 
   .bulk-panel {
@@ -562,6 +698,49 @@ function getInitials(name: string): string {
     background: transparent;
     color: #aaa;
     border: 1px solid #303030;
+  }
+
+  .bulk-search {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    width: min(100%, 340px);
+    border: 1px solid #2b2b2b;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #171717;
+  }
+
+  .bulk-search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 38px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #f4f4f4;
+    padding: 0 12px;
+    font-weight: 800;
+  }
+
+  .bulk-search input::placeholder {
+    color: #707070;
+  }
+
+  .bulk-search button {
+    width: 38px;
+    min-height: 38px;
+    border: none;
+    border-left: 1px solid #2b2b2b;
+    background: #1b1b1b;
+    color: #9a9a9a;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .bulk-search button:hover {
+    color: #fff;
+    background: #212121;
   }
 
   .btn-clear-selection:hover {
@@ -867,6 +1046,12 @@ function getInitials(name: string): string {
     font-size: 0.9rem;
   }
 
+  .search-empty {
+    margin: 12px 2px 0;
+    color: #8b8b8b;
+    font-size: 0.9rem;
+  }
+
   .error-message {
     color: #ff4d4d;
     font-size: 1rem;
@@ -942,6 +1127,22 @@ function getInitials(name: string): string {
   .modal-form {
     padding: clamp(16px, 2.4vw, 28px);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 255, 0, 0.45) rgba(255, 255, 255, 0.06);
+  }
+
+  .modal-form::-webkit-scrollbar {
+    width: 9px;
+  }
+
+  .modal-form::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+  }
+
+  .modal-form::-webkit-scrollbar-thumb {
+    background: rgba(200, 255, 0, 0.38);
+    border-radius: 999px;
   }
 
   .form-grid {
@@ -968,6 +1169,102 @@ function getInitials(name: string): string {
     color: #a3a3a3;
     font-size: clamp(0.82rem, 1.4vw, 0.92rem);
     font-weight: 850;
+  }
+
+  .field-help {
+    display: block;
+    margin-top: 6px;
+    color: #7f7f7f;
+    font-size: 0.76rem;
+    line-height: 1.3;
+  }
+
+  :global(.admin-toast-stack) {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1400;
+    display: grid;
+    gap: 10px;
+    max-width: min(360px, calc(100vw - 24px));
+  }
+
+  :global(.admin-toast) {
+    border: 1px solid #2b2b2b;
+    border-radius: 12px;
+    background: #141414;
+    color: #ededed;
+    padding: 12px 14px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    font-size: 0.84rem;
+    line-height: 1.4;
+    transform: translateY(8px);
+    opacity: 0;
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  :global(.admin-toast.is-visible) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  :global(.admin-toast.is-leaving) {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  :global(.admin-toast--success) {
+    border-color: rgba(215, 255, 0, 0.35);
+  }
+
+  :global(.admin-toast--error) {
+    border-color: rgba(255, 96, 96, 0.4);
+  }
+
+  :global(.admin-toast--confirm) {
+    display: grid;
+    gap: 10px;
+  }
+
+  :global(.admin-toast__text) {
+    color: #f1f1f1;
+    font-weight: 700;
+  }
+
+  :global(.admin-toast__actions) {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  :global(.admin-toast__btn) {
+    border: none;
+    border-radius: 9px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  :global(.admin-toast__btn--confirm) {
+    background: #ff6464;
+    color: #1a1a1a;
+  }
+
+  :global(.admin-toast__btn--cancel) {
+    background: #232323;
+    color: #f2f2f2;
+    border: 1px solid #3a3a3a;
+  }
+
+  .stock-split__warning {
+    margin: 2px 0 0;
+    color: #ff8e8e;
+    font-size: 0.82rem;
+    font-weight: 700;
   }
 
   .field input,
@@ -1012,8 +1309,17 @@ function getInitials(name: string): string {
     flex-wrap: wrap;
   }
 
+  .modal-feedback {
+    min-height: 1.1rem;
+    margin-top: 8px;
+    color: #ff8f8f;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
   .btn-primary,
-  .btn-secondary {
+  .btn-secondary,
+  .btn-danger {
     min-height: 44px;
     border-radius: 12px;
     padding: 0 18px;
@@ -1033,39 +1339,69 @@ function getInitials(name: string): string {
     border: 1px solid #303030;
   }
 
+  .btn-danger {
+    background: #ff6464;
+    color: #1a1a1a;
+    border: none;
+  }
+
   .btn-secondary:hover {
     border-color: #444;
   }
 
-  .image-upload-box {
+  .btn-danger:hover {
+    filter: brightness(1.03);
+  }
+
+  .modal--confirm {
+    width: min(100%, 520px);
+  }
+
+  .modal-form--confirm {
+    display: grid;
+    gap: 18px;
+  }
+
+  .confirm-text {
+    margin: 0;
+    color: #e7e7e7;
+    font-size: 1rem;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .image-slots {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .image-slot {
     position: relative;
-    min-height: 180px;
+    height: 260px;
     border: 1px dashed #3a3a3a;
     border-radius: 16px;
     background: #171717;
-    color: #8d8d8d;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    text-align: center;
-    padding: 16px;
-    cursor: pointer;
     overflow: hidden;
+    cursor: pointer;
     transition:
       border-color 0.16s ease,
       background 0.16s ease,
-      color 0.16s ease;
+      transform 0.16s ease;
   }
 
-  .image-upload-box:hover {
+  .image-slot:hover {
     border-color: rgba(215, 255, 0, 0.55);
     background: #1b1b1b;
-    color: #d7ff00;
+    transform: translateY(-1px);
   }
 
-  .image-upload-box input[type="file"] {
+  .image-slot.is-drag-over {
+    border-color: #d7ff00;
+    background: #1c210f;
+  }
+
+  .image-slot-input {
     position: absolute;
     inset: 0;
     opacity: 0;
@@ -1073,59 +1409,85 @@ function getInitials(name: string): string {
     z-index: 4;
   }
 
-  .image-upload-box span {
-    position: relative;
-    z-index: 1;
-    font-weight: 850;
-    font-size: 0.92rem;
-  }
-
-  .image-upload-box.has-preview {
-    border-style: solid;
-    border-color: #2f2f2f;
-    justify-content: flex-start;
-  }
-
-  .image-preview-grid {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    pointer-events: none;
-  }
-
-  .image-preview-item {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #101010;
-    border: 1px solid #2c2c2c;
-  }
-
-  .image-preview-item img {
+  .image-slot-preview {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    z-index: 1;
   }
 
-  .image-preview-index {
+  .image-slot-preview[hidden] {
+    display: none !important;
+  }
+
+  .image-slot-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 6px;
+    text-align: center;
+    color: #a0a0a0;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.18));
+  }
+
+  .image-slot-placeholder strong {
+    color: #d7ff00;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .image-slot-placeholder span {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .image-slot.has-image .image-slot-placeholder {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .image-slot-clear {
     position: absolute;
     top: 8px;
-    left: 8px;
-    width: 24px;
-    height: 24px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    z-index: 5;
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 999px;
-    background: rgba(0, 0, 0, 0.72);
-    color: #d7ff00;
+    background: rgba(0, 0, 0, 0.62);
+    color: #f4f4f4;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.78rem;
-    font-weight: 950;
+  }
+
+  .image-slot-clear[hidden] {
+    display: none !important;
+  }
+
+  .image-slot-clear:hover {
+    border-color: rgba(255, 100, 100, 0.5);
+    color: #ff8b8b;
+  }
+
+  .image-slots-help {
+    display: block;
+    margin-top: 10px;
+    color: #8d8d8d;
+    font-size: 0.8rem;
+    line-height: 1.35;
   }
 
   @media (max-width: 1180px) {
@@ -1176,6 +1538,10 @@ function getInitials(name: string): string {
     .management-row {
       align-items: stretch;
       flex-direction: column;
+    }
+
+    .search-row {
+      justify-content: stretch;
     }
 
     .bulk-panel {
@@ -1344,11 +1710,16 @@ function getInitials(name: string): string {
 
     .bulk-select-all,
     .bulk-counter,
+    .bulk-search,
     .bulk-panel select,
     .btn-bulk,
     .btn-clear-selection {
       width: 100%;
       justify-content: center;
+    }
+
+    .bulk-search {
+      justify-self: stretch;
     }
 
     .bulk-counter {
@@ -1442,30 +1813,21 @@ function getInitials(name: string): string {
       font-size: 1.05rem;
     }
 
-    .image-upload-box {
-      min-height: 145px;
-      border-radius: 12px;
-      padding: 12px;
+    .image-slots {
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
 
-    .image-upload-box span {
-      font-size: 0.82rem;
+    .image-slot {
+      height: 220px;
     }
 
-    .image-preview-grid {
-      gap: 7px;
+    .image-slot-placeholder strong {
+      font-size: 0.76rem;
     }
 
-    .image-preview-item {
-      border-radius: 10px;
-    }
-
-    .image-preview-index {
-      width: 20px;
-      height: 20px;
-      font-size: 0.68rem;
-      top: 6px;
-      left: 6px;
+    .image-slot-placeholder span {
+      font-size: 0.72rem;
     }
   }
 
@@ -1666,6 +2028,24 @@ function getInitials(name: string): string {
     color: #8c8c8c;
   }
 
+  .field--toggle .checkbox-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #f2f2f2;
+    font-weight: 800;
+  }
+
+  .field--toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-height: 18px;
+    padding: 0;
+    border-radius: 4px;
+    accent-color: #d7ff00;
+  }
+
   #productBadge,
   #productEstado {
     cursor: pointer;
@@ -1688,9 +2068,19 @@ function getInitials(name: string): string {
     deleteAdminProducto,
   } from "../../lib/admin-productos-api";
 
+  const appWindow = window as Window & {
+    showToast?: (message: string, type?: "success" | "error" | "info") => void;
+    showConfirmToast?: (
+      message: string,
+      onConfirm: () => void,
+      options?: { confirmText?: string; cancelText?: string },
+    ) => void;
+  };
+
   const modalBackdrop = document.getElementById("productModalBackdrop");
   const modalTitle = document.getElementById("productModalTitle");
   const productForm = document.getElementById("productForm");
+  const productFormFeedback = document.getElementById("productFormFeedback");
 
   const productId = document.getElementById("productId");
   const productNombre = document.getElementById("productNombre");
@@ -1700,15 +2090,25 @@ function getInitials(name: string): string {
   const productPrecioOriginal = document.getElementById(
     "productPrecioOriginal",
   );
+  const productTallaje = document.getElementById("productTallaje");
   const productTipo = document.getElementById("productTipo");
+  const productIsAccesorio = document.getElementById("productIsAccesorio");
   const productBadge = document.getElementById("productBadge");
   const productEstado = document.getElementById("productEstado");
   const productStockInicial = document.getElementById("productStockInicial");
   const productStockLabel = document.getElementById("productStockLabel");
-  const productImagen = document.getElementById("productImagen");
   const productImageField = document.getElementById("productImageField");
-  const productImagePreviewGrid = document.getElementById(
-    "productImagePreviewGrid",
+  const productImageSlots = Array.from(
+    document.querySelectorAll<HTMLElement>(".image-slot"),
+  );
+  const productImageSlotInputs = Array.from(
+    document.querySelectorAll<HTMLInputElement>(".image-slot-input"),
+  );
+  const productImageSlotPreviews = Array.from(
+    document.querySelectorAll<HTMLImageElement>(".image-slot-preview"),
+  );
+  const productImageSlotClearButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(".image-slot-clear"),
   );
   const productImageUploadText = document.getElementById(
     "productImageUploadText",
@@ -1722,6 +2122,9 @@ function getInitials(name: string): string {
   const clearProductSelectionBtn = document.getElementById(
     "clearProductSelectionBtn",
   );
+  const productSearchInput = document.getElementById("productSearchInput");
+  const clearProductSearchBtn = document.getElementById("clearProductSearchBtn");
+  const productsSearchEmpty = document.getElementById("productsSearchEmpty");
   const selectAllProducts = document.getElementById("selectAllProducts");
   const productRows = Array.from(
     document.querySelectorAll<HTMLTableRowElement>(".product-row"),
@@ -1732,6 +2135,8 @@ function getInitials(name: string): string {
   const stockSplitModalBackdrop = document.getElementById(
     "stockSplitModalBackdrop",
   );
+  const deleteConfirmBackdrop = document.getElementById("deleteConfirmBackdrop");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
   const stockSplitForm = document.getElementById("stockSplitForm");
   const stockSplitGrid = document.getElementById("stockSplitGrid");
   const stockSplitProductName = document.getElementById(
@@ -1740,6 +2145,7 @@ function getInitials(name: string): string {
   const stockSplitTotal = document.getElementById("stockSplitTotal");
   const stockSplitAssigned = document.getElementById("stockSplitAssigned");
   const stockSplitExpected = document.getElementById("stockSplitExpected");
+  const stockSplitWarning = document.getElementById("stockSplitWarning");
 
   type StockVariantDraft = {
     talla: string;
@@ -1753,6 +2159,7 @@ function getInitials(name: string): string {
     descripcion: string;
     precio_base: number;
     precio_original: string;
+    tallaje: string;
     tipo: string;
     badge: string;
     estado: string;
@@ -1765,8 +2172,11 @@ function getInitials(name: string): string {
   };
 
   let pendingCreatePayload: PendingCreatePayload | null = null;
+  let pendingDeleteProductId: number | null = null;
   let stockSplitSizes: string[] = [];
-  let slugWasManuallyEdited = false;
+  let lastManualTipo = "";
+  let selectedImageFiles: (File | null)[] = [null, null, null];
+  let selectedImagePreviewUrls: string[] = ["", "", ""];
 
   function asField(
     el: Element | null,
@@ -1802,51 +2212,334 @@ function getInitials(name: string): string {
     return "";
   }
 
+  function normalizeTallajeValue(value: string): "clasico" | "pantalon" | "unica" {
+    const normalized = value.trim().toLowerCase();
+
+    if (normalized === "pantalon") return "pantalon";
+    if (normalized === "unica") return "unica";
+    return "clasico";
+  }
+
+  function resolveTallajeFromForm(tipo: string, currentTallaje: string): "clasico" | "pantalon" | "unica" {
+    const explicit = normalizeTallajeValue(currentTallaje);
+    if (explicit) return explicit;
+
+    const normalizedType = normalizeType(tipo);
+    if (normalizedType.includes("accesorio")) return "unica";
+    if (normalizedType.includes("pantalon")) return "pantalon";
+    return "clasico";
+  }
+
+  function validateAndNormalizePricing(
+    precioActualRaw: string,
+    precioOriginalRaw: string,
+    currentBadge: string,
+  ): {
+    precioOferta: number;
+    precioOriginal: string;
+    badge: string;
+    warning: string | null;
+  } {
+    const ofertaTrimmed = precioActualRaw.trim();
+    const originalTrimmed = precioOriginalRaw.trim();
+    const hasOriginal = originalTrimmed !== "";
+    const hasOferta = ofertaTrimmed !== "";
+    const hasValidMoney = (value: string) => /^\d+(?:[\.,]\d{1,2})?$/.test(value);
+    const parseMoney = (value: string) => Number(value.replace(",", "."));
+    const originalNumber = hasOriginal ? parseMoney(originalTrimmed) : null;
+    const normalizedBadge = normalizeBadgeValue(currentBadge);
+    const precioActual = hasOferta ? parseMoney(ofertaTrimmed) : null;
+
+    if (hasOriginal && !hasValidMoney(originalTrimmed)) {
+      throw new Error("El precio original no es válido");
+    }
+
+    if (hasOriginal && (!Number.isFinite(originalNumber) || Number(originalNumber) <= 0)) {
+      throw new Error("El precio original debe ser mayor que 0");
+    }
+
+    if (normalizedBadge === "Oferta") {
+      if (!hasOferta) {
+        throw new Error("Debes indicar el precio oferta");
+      }
+
+      if (!hasValidMoney(ofertaTrimmed)) {
+        throw new Error("El precio oferta no es válido");
+      }
+
+      if (!Number.isFinite(precioActual) || Number(precioActual) <= 0) {
+        throw new Error("El precio oferta debe ser mayor que 0");
+      }
+
+      if (!hasOriginal) {
+        throw new Error("Para usar badge Oferta debes indicar también el precio original");
+      }
+
+      if (Number(precioActual) >= Number(originalNumber)) {
+        throw new Error("El precio oferta debe ser inferior al precio original");
+      }
+
+      return {
+        precioOferta: Number(precioActual),
+        precioOriginal: Number(originalNumber).toFixed(2),
+        badge: normalizedBadge,
+        warning: null,
+      };
+    }
+
+    if (hasOferta) {
+      throw new Error("El precio oferta solo se permite cuando la badge es Oferta");
+    }
+
+    if (!hasOriginal) {
+      throw new Error("Debes indicar el precio del producto");
+    }
+
+    return {
+      // Sin badge Oferta, usamos el precio original como precio base y no enviamos precio original.
+      precioOferta: Number(originalNumber),
+      precioOriginal: "",
+      badge: normalizedBadge,
+      warning: null,
+    };
+  }
+
+  function formatMoneyInput(input: HTMLInputElement, optional = false) {
+    const raw = input.value.trim();
+    if (!raw) {
+      if (!optional) {
+        input.value = "";
+      }
+      return;
+    }
+
+    const parsed = Number(raw.replace(",", "."));
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+
+    input.value = parsed.toFixed(2);
+  }
+
+  type ToastKind = "success" | "error" | "info";
+
+  let adminToastStackEl: HTMLElement | null = null;
+
+  function ensureAdminToastStack(): HTMLElement {
+    if (adminToastStackEl) return adminToastStackEl;
+
+    const existing = document.getElementById("adminToastStack");
+    if (existing instanceof HTMLElement) {
+      adminToastStackEl = existing;
+      return existing;
+    }
+
+    const stack = document.createElement("div");
+    stack.id = "adminToastStack";
+    stack.className = "admin-toast-stack";
+    document.body.appendChild(stack);
+    adminToastStackEl = stack;
+    return stack;
+  }
+
+  function showToastMessage(message: string, kind: ToastKind = "info") {
+    if (typeof appWindow.showToast === "function") {
+      appWindow.showToast(message, kind);
+      return;
+    }
+
+    const stack = ensureAdminToastStack();
+    const toast = document.createElement("div");
+    toast.className = `admin-toast admin-toast--${kind}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add("is-visible");
+    });
+
+    setTimeout(() => {
+      toast.classList.remove("is-visible");
+      toast.classList.add("is-leaving");
+      setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
+  function setProductFormFeedback(message: string, kind: "error" | "success" = "error") {
+    if (!(productFormFeedback instanceof HTMLElement)) return;
+    productFormFeedback.textContent = message;
+    productFormFeedback.style.color = kind === "success" ? "#8effad" : "#ff8f8f";
+  }
+
+  function openDeleteConfirmModal(productId: number) {
+    pendingDeleteProductId = productId;
+    deleteConfirmBackdrop?.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDeleteConfirmModal() {
+    pendingDeleteProductId = null;
+    deleteConfirmBackdrop?.classList.remove("is-open");
+    document.body.style.overflow = "";
+  }
+
+  async function confirmDeleteProduct() {
+    if (!pendingDeleteProductId) return;
+
+    const id = pendingDeleteProductId;
+    closeDeleteConfirmModal();
+
+    try {
+      await deleteAdminProducto(id);
+      showToastMessage("Producto eliminado", "success");
+      window.location.reload();
+    } catch (error) {
+      showToastMessage(
+        error instanceof Error ? error.message : "Error al eliminar producto",
+        "error",
+      );
+    }
+  }
+
+  function validateRequiredProductFields(options: {
+    isEditing: boolean;
+    nombre: string;
+    slug: string;
+    descripcion: string;
+    precioOfertaRaw: string;
+    precioOriginalRaw: string;
+    tallaje: string;
+    tipo: string;
+    badge: string;
+    estado: string;
+    stockRaw: string;
+    hasImageSelected: boolean;
+  }) {
+    const isOfertaBadge = normalizeBadgeValue(options.badge) === "Oferta";
+
+    if (!options.nombre) {
+      throw new Error("Debes indicar el nombre del producto");
+    }
+
+    if (!options.slug) {
+      throw new Error("No se ha podido generar el slug automáticamente");
+    }
+
+    if (!options.descripcion) {
+      throw new Error("Debes indicar la descripción del producto");
+    }
+
+    if (isOfertaBadge) {
+      if (!options.precioOfertaRaw) {
+        throw new Error("Debes indicar un precio oferta válido");
+      }
+
+      if (!/^\d+(?:[\.,]\d{1,2})?$/.test(options.precioOfertaRaw.trim())) {
+        throw new Error("Debes indicar un precio oferta válido");
+      }
+    } else if (!options.precioOriginalRaw || !/^\d+(?:[\.,]\d{1,2})?$/.test(options.precioOriginalRaw.trim())) {
+      throw new Error("Debes indicar el precio del producto");
+    }
+
+    if (!options.tallaje) {
+      throw new Error("Debes seleccionar el tallaje");
+    }
+
+    if (!options.tipo) {
+      throw new Error("Debes indicar el tipo de producto");
+    }
+
+    if (!options.estado) {
+      throw new Error("Debes seleccionar el estado del producto");
+    }
+
+    const stockValue = Number(options.stockRaw.trim() === "" ? "0" : options.stockRaw);
+    if (!Number.isFinite(stockValue) || stockValue < 0) {
+      throw new Error("Debes indicar un stock válido");
+    }
+
+    if (!options.isEditing && !options.hasImageSelected) {
+      throw new Error("Debes subir al menos 1 imagen en una de las 3 cajas");
+    }
+
+    if (isOfertaBadge && options.precioOriginalRaw.trim() === "") {
+      throw new Error("Con badge Oferta debes completar el precio original");
+    }
+  }
+
   function setProductImageVisible(visible: boolean) {
     if (productImageField instanceof HTMLElement) {
       productImageField.hidden = !visible;
     }
 
-    if (productImagen instanceof HTMLInputElement) {
-      productImagen.disabled = !visible;
+    productImageSlotInputs.forEach((input) => {
+      input.disabled = !visible;
+    });
+
+    productImageSlotClearButtons.forEach((button) => {
+      button.disabled = !visible;
+    });
+  }
+
+  function syncTipoFromAccesorioToggle() {
+    if (!(productTipo instanceof HTMLInputElement)) return;
+    if (!(productIsAccesorio instanceof HTMLInputElement)) return;
+
+    const isAccesorio = productIsAccesorio.checked;
+
+    if (isAccesorio) {
+      const currentTipo = productTipo.value.trim();
+      if (currentTipo && normalizeType(currentTipo) !== "accesorio") {
+        lastManualTipo = currentTipo;
+      }
+
+      productTipo.value = "accesorio";
+      productTipo.readOnly = true;
+      productTipo.placeholder = "accesorio";
+      return;
+    }
+
+    productTipo.readOnly = false;
+    productTipo.placeholder = "Ej: camiseta";
+
+    if (normalizeType(productTipo.value) === "accesorio") {
+      productTipo.value = lastManualTipo;
     }
   }
 
-  function resetImageInput() {
-    if (productImagen instanceof HTMLInputElement) {
-      productImagen.value = "";
+  function syncPricingModeFromBadge() {
+    if (!(productBadge instanceof HTMLSelectElement)) return;
+    if (!(productPrecioBase instanceof HTMLInputElement)) return;
+    if (!(productPrecioOriginal instanceof HTMLInputElement)) return;
+
+    const isOferta = normalizeBadgeValue(productBadge.value) === "Oferta";
+
+    productPrecioBase.disabled = !isOferta;
+
+    if (isOferta) {
+      productPrecioBase.required = true;
+      productPrecioBase.placeholder = "Ej: 9,99";
+      productPrecioOriginal.placeholder = "Ej: 50,00";
+      return;
     }
 
-    if (productImagePreviewGrid instanceof HTMLElement) {
-      productImagePreviewGrid.innerHTML = "";
-    }
-
-    const uploadBox = document.querySelector<HTMLElement>(".image-upload-box");
-    uploadBox?.classList.remove("has-preview");
-
-    if (productImageUploadText instanceof HTMLElement) {
-      productImageUploadText.textContent =
-        "Seleccionar hasta 3 imágenes JPG, PNG o WEBP";
-    }
+    productPrecioBase.required = false;
+    productPrecioBase.value = "";
+    productPrecioBase.placeholder = "Solo disponible con badge Oferta";
+    productPrecioOriginal.placeholder = "Ej: 39,99";
   }
 
-  function validateProductImages(files: File[]): void {
+  function validateProductImage(file: File): void {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     const maxBytes = 4 * 1024 * 1024;
 
-    if (files.length > 3) {
-      throw new Error("Solo puedes seleccionar hasta 3 imágenes");
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error("Las imágenes deben ser JPG, PNG o WEBP");
     }
 
-    files.forEach((file) => {
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error("Las imágenes deben ser JPG, PNG o WEBP");
-      }
-
-      if (file.size > maxBytes) {
-        throw new Error("Cada imagen no puede superar los 4MB");
-      }
-    });
+    if (file.size > maxBytes) {
+      throw new Error("Cada imagen no puede superar los 4MB");
+    }
   }
 
   function readFileAsDataUrl(file: File): Promise<string> {
@@ -1869,43 +2562,107 @@ function getInitials(name: string): string {
     });
   }
 
-  function renderImagePreviews(files: File[]) {
-    if (!(productImagePreviewGrid instanceof HTMLElement)) return;
+  function updateImageSlotsSummary() {
+    if (!(productImageUploadText instanceof HTMLElement)) return;
 
-    productImagePreviewGrid.innerHTML = "";
+    const selectedCount = selectedImageFiles.filter((file) => file instanceof File)
+      .length;
 
-    files.forEach((file, index) => {
-      const item = document.createElement("div");
-      item.className = "image-preview-item";
+    productImageUploadText.textContent =
+      selectedCount > 0
+        ? `${selectedCount}/3 imágenes cargadas. Vista previa con tamaño de catálogo.`
+        : "Vista previa en formato catálogo. Máximo 3 imágenes (JPG, PNG o WEBP, 4MB cada una).";
+  }
 
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
-      img.alt = `Imagen ${index + 1}`;
+  function resetImageInput() {
+    selectedImageFiles = [null, null, null];
 
-      const badge = document.createElement("span");
-      badge.className = "image-preview-index";
-      badge.textContent = String(index + 1);
-
-      item.appendChild(img);
-      item.appendChild(badge);
-      productImagePreviewGrid.appendChild(item);
+    selectedImagePreviewUrls.forEach((url) => {
+      if (url) URL.revokeObjectURL(url);
     });
 
-    const uploadBox = document.querySelector<HTMLElement>(".image-upload-box");
-    uploadBox?.classList.toggle("has-preview", files.length > 0);
+    selectedImagePreviewUrls = ["", "", ""];
 
-    if (productImageUploadText instanceof HTMLElement) {
-      productImageUploadText.textContent =
-        files.length > 0
-          ? `${files.length}/3 imágenes seleccionadas. Pulsa para cambiar`
-          : "Seleccionar hasta 3 imágenes JPG, PNG o WEBP";
+    productImageSlotInputs.forEach((input) => {
+      input.value = "";
+    });
+
+    productImageSlots.forEach((slot) => {
+      slot.classList.remove("has-image");
+      slot.classList.remove("is-drag-over");
+    });
+
+    productImageSlotPreviews.forEach((preview) => {
+      preview.src = "";
+      preview.hidden = true;
+    });
+
+    productImageSlotClearButtons.forEach((button) => {
+      button.hidden = true;
+    });
+
+    updateImageSlotsSummary();
+  }
+
+  function setImageForSlot(slotIndex: number, file: File | null): void {
+    const slot = productImageSlots[slotIndex];
+    const preview = productImageSlotPreviews[slotIndex];
+    const clearButton = productImageSlotClearButtons[slotIndex];
+    const input = productImageSlotInputs[slotIndex];
+
+    if (!slot || !preview || !clearButton || !input) return;
+
+    const previousUrl = selectedImagePreviewUrls[slotIndex];
+    if (previousUrl) {
+      URL.revokeObjectURL(previousUrl);
+      selectedImagePreviewUrls[slotIndex] = "";
+    }
+
+    selectedImageFiles[slotIndex] = file;
+
+    if (!file) {
+      input.value = "";
+      preview.removeAttribute("src");
+      preview.hidden = true;
+      clearButton.hidden = true;
+      slot.classList.remove("has-image");
+      updateImageSlotsSummary();
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    selectedImagePreviewUrls[slotIndex] = objectUrl;
+    preview.hidden = true;
+    preview.src = objectUrl;
+    clearButton.hidden = true;
+    slot.classList.remove("has-image");
+    updateImageSlotsSummary();
+  }
+
+  function handleSlotFileSelection(slotIndex: number, file: File | null): void {
+    if (!file) {
+      setImageForSlot(slotIndex, null);
+      return;
+    }
+
+    try {
+      validateProductImage(file);
+      setImageForSlot(slotIndex, file);
+    } catch (error) {
+      setImageForSlot(slotIndex, null);
+      showToastMessage(
+        error instanceof Error ? error.message : "Imagen no válida",
+        "error",
+      );
     }
   }
 
-  async function buildProductImagesPayload(files: File[]) {
+  async function buildProductImagesPayload(files: (File | null)[]) {
     const imagenes = [];
 
     for (const file of files) {
+      if (!(file instanceof File)) continue;
+
       imagenes.push({
         data_url: await readFileAsDataUrl(file),
         nombre: file.name,
@@ -1939,10 +2696,60 @@ function getInitials(name: string): string {
       .filter((id) => Number.isInteger(id) && id > 0);
   }
 
+  function normalizeSearchText(value: string): string {
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function getVisibleProductRows(): HTMLTableRowElement[] {
+    return productRows.filter((row) => !row.hidden);
+  }
+
+  function applyProductSearchFilter(): void {
+    const rawQuery =
+      productSearchInput instanceof HTMLInputElement
+        ? productSearchInput.value
+        : "";
+    const query = normalizeSearchText(rawQuery);
+
+    let visibleCount = 0;
+
+    productRows.forEach((row) => {
+      const source = row.dataset.search || row.textContent || "";
+      const haystack = normalizeSearchText(source);
+      const matches = query === "" || haystack.includes(query);
+
+      row.hidden = !matches;
+
+      if (!matches) {
+        setRowSelected(row, false);
+      } else {
+        visibleCount += 1;
+      }
+    });
+
+    const footer = document.querySelector<HTMLElement>(".footer-row");
+    if (footer instanceof HTMLElement) {
+      footer.textContent = `Mostrando ${visibleCount} de ${productRows.length} productos`;
+    }
+
+    if (productsSearchEmpty instanceof HTMLElement) {
+      productsSearchEmpty.hidden = visibleCount > 0;
+    }
+
+    updateBulkToolbar();
+  }
+
   function updateBulkToolbar() {
-    const selectedIds = getSelectedProductIds();
-    const total = productCheckboxes.length;
-    const selected = selectedIds.length;
+    const visibleRows = getVisibleProductRows();
+    const visibleCheckboxes = visibleRows
+      .map((row) => row.querySelector<HTMLInputElement>(".product-select"))
+      .filter((checkbox): checkbox is HTMLInputElement => checkbox instanceof HTMLInputElement);
+    const selected = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+    const total = visibleCheckboxes.length;
 
     productRows.forEach((row) => {
       const checkbox = row.querySelector<HTMLInputElement>(".product-select");
@@ -1973,6 +2780,7 @@ function getInitials(name: string): string {
   function openModal() {
     modalBackdrop?.classList.add("is-open");
     document.body.style.overflow = "hidden";
+    setProductFormFeedback("");
   }
 
   function closeModal() {
@@ -1999,6 +2807,7 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
+    const tallajeInput = asField(productTallaje);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
@@ -2009,6 +2818,7 @@ function getInitials(name: string): string {
       !descripcionInput ||
       !precioBaseInput ||
       !precioOriginalInput ||
+      !tallajeInput ||
       !tipoInput ||
       !badgeInput ||
       !stockInicialInput ||
@@ -2024,15 +2834,22 @@ function getInitials(name: string): string {
     precioBaseInput.value = "";
     precioOriginalInput.value = "";
     tipoInput.value = "";
-    badgeInput.value = "";
-    stockInicialInput.value = "0";
+    if (productIsAccesorio instanceof HTMLInputElement) {
+      productIsAccesorio.checked = false;
+    }
+    lastManualTipo = "";
+    tallajeInput.value = "clasico";
+    badgeInput.value = "NEW";
+    stockInicialInput.value = "";
     stockInicialInput.disabled = false;
     estadoInput.value = "borrador";
-    slugWasManuallyEdited = false;
     pendingCreatePayload = null;
     stockSplitSizes = [];
+    setProductFormFeedback("");
     resetImageInput();
     setProductImageVisible(true);
+    syncTipoFromAccesorioToggle();
+    syncPricingModeFromBadge();
 
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Stock";
@@ -2049,6 +2866,7 @@ function getInitials(name: string): string {
     const precioBaseInput = asField(productPrecioBase);
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
+    const tallajeInput = asField(productTallaje);
     const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
@@ -2059,6 +2877,7 @@ function getInitials(name: string): string {
       !descripcionInput ||
       !precioBaseInput ||
       !precioOriginalInput ||
+      !tallajeInput ||
       !tipoInput ||
       !badgeInput ||
       !stockInicialInput ||
@@ -2071,16 +2890,33 @@ function getInitials(name: string): string {
     nombreInput.value = button.dataset.nombre || "";
     slugInput.value = button.dataset.slug || "";
     descripcionInput.value = button.dataset.descripcion || "";
-    precioBaseInput.value = button.dataset.precioBase || "";
-    precioOriginalInput.value = button.dataset.precioOriginal || "";
+    const badgeNormalized = normalizeBadgeValue(button.dataset.badge || "");
+    const precioBaseData = button.dataset.precioBase || "";
+    const precioOriginalData = button.dataset.precioOriginal || "";
+
+    if (badgeNormalized === "Oferta") {
+      precioBaseInput.value = precioBaseData;
+      precioOriginalInput.value = precioOriginalData;
+    } else {
+      precioBaseInput.value = "";
+      precioOriginalInput.value = precioBaseData;
+    }
+    tallajeInput.value = normalizeTallajeValue(button.dataset.tallaje || "clasico");
     tipoInput.value = button.dataset.tipo || "";
-    badgeInput.value = normalizeBadgeValue(button.dataset.badge || "");
+    const isAccesorio = normalizeType(tipoInput.value) === "accesorio";
+    if (productIsAccesorio instanceof HTMLInputElement) {
+      productIsAccesorio.checked = isAccesorio;
+    }
+    lastManualTipo = isAccesorio ? "" : tipoInput.value.trim();
+    badgeInput.value = badgeNormalized;
     stockInicialInput.value = "0";
     stockInicialInput.disabled = false;
     estadoInput.value = button.dataset.estado || "borrador";
-    slugWasManuallyEdited = true;
+    setProductFormFeedback("");
     resetImageInput();
     setProductImageVisible(false);
+    syncTipoFromAccesorioToggle();
+    syncPricingModeFromBadge();
 
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Añadir stock";
@@ -2115,7 +2951,7 @@ function getInitials(name: string): string {
   selectAllProducts?.addEventListener("change", () => {
     if (!(selectAllProducts instanceof HTMLInputElement)) return;
 
-    productRows.forEach((row) => {
+    getVisibleProductRows().forEach((row) => {
       setRowSelected(row, selectAllProducts.checked);
     });
 
@@ -2132,6 +2968,16 @@ function getInitials(name: string): string {
     }
 
     updateBulkToolbar();
+  });
+
+  productSearchInput?.addEventListener("input", applyProductSearchFilter);
+
+  clearProductSearchBtn?.addEventListener("click", () => {
+    if (!(productSearchInput instanceof HTMLInputElement)) return;
+
+    productSearchInput.value = "";
+    applyProductSearchFilter();
+    productSearchInput.focus();
   });
 
   bulkBadgeBtn?.addEventListener("click", async () => {
@@ -2158,50 +3004,105 @@ function getInitials(name: string): string {
     }
   });
 
-  productNombre?.addEventListener("blur", () => {
+  function syncSlugFromName() {
     if (!(productNombre instanceof HTMLInputElement)) return;
     if (!(productSlug instanceof HTMLInputElement)) return;
 
     const nombre = productNombre.value.trim();
-    if (!nombre) return;
+    productSlug.value = nombre ? slugify(nombre) : "";
+  }
 
-    if (!slugWasManuallyEdited || productSlug.value.trim() === "") {
-      productSlug.value = slugify(nombre);
-    }
+  productNombre?.addEventListener("input", syncSlugFromName);
+  productNombre?.addEventListener("blur", syncSlugFromName);
+
+  if (productIsAccesorio instanceof HTMLInputElement) {
+    productIsAccesorio.addEventListener("change", () => {
+      syncTipoFromAccesorioToggle();
+    });
+  }
+
+  if (productTipo instanceof HTMLInputElement) {
+    productTipo.addEventListener("input", () => {
+      if (!(productIsAccesorio instanceof HTMLInputElement)) return;
+      if (!productIsAccesorio.checked) {
+        lastManualTipo = productTipo.value.trim();
+      }
+    });
+  }
+
+  if (productPrecioBase instanceof HTMLInputElement) {
+    productPrecioBase.addEventListener("blur", () => {
+      formatMoneyInput(productPrecioBase, false);
+    });
+  }
+
+  if (productPrecioOriginal instanceof HTMLInputElement) {
+    productPrecioOriginal.addEventListener("blur", () => {
+      formatMoneyInput(productPrecioOriginal, true);
+    });
+  }
+
+  if (productBadge instanceof HTMLSelectElement) {
+    productBadge.addEventListener("change", () => {
+      syncPricingModeFromBadge();
+    });
+  }
+
+  syncTipoFromAccesorioToggle();
+  syncPricingModeFromBadge();
+
+  productImageSlotInputs.forEach((input, slotIndex) => {
+    input.addEventListener("change", () => {
+      const file = input.files?.[0] ?? null;
+      handleSlotFileSelection(slotIndex, file);
+    });
   });
 
-  productSlug?.addEventListener("input", () => {
-    slugWasManuallyEdited = true;
+  productImageSlots.forEach((slot, slotIndex) => {
+    slot.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      slot.classList.add("is-drag-over");
+    });
+
+    slot.addEventListener("dragleave", () => {
+      slot.classList.remove("is-drag-over");
+    });
+
+    slot.addEventListener("drop", (event) => {
+      event.preventDefault();
+      slot.classList.remove("is-drag-over");
+
+      const file = event.dataTransfer?.files?.[0] ?? null;
+      handleSlotFileSelection(slotIndex, file);
+    });
   });
 
-  productSlug?.addEventListener("blur", () => {
-    if (!(productSlug instanceof HTMLInputElement)) return;
-
-    const value = productSlug.value.trim();
-    productSlug.value = value ? slugify(value) : "";
+  productImageSlotClearButtons.forEach((button, slotIndex) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setImageForSlot(slotIndex, null);
+    });
   });
 
-  productImagen?.addEventListener("change", () => {
-    if (!(productImagen instanceof HTMLInputElement)) return;
+  productImageSlotPreviews.forEach((preview, slotIndex) => {
+    preview.addEventListener("load", () => {
+      const slot = productImageSlots[slotIndex];
+      const clearButton = productImageSlotClearButtons[slotIndex];
+      if (!slot) return;
+      if (!(selectedImageFiles[slotIndex] instanceof File)) return;
+      if (!preview.getAttribute("src")) return;
 
-    const files = Array.from(productImagen.files ?? []);
+      preview.hidden = false;
+      slot.classList.add("has-image");
+      if (clearButton) {
+        clearButton.hidden = false;
+      }
+    });
 
-    if (files.length === 0) {
-      resetImageInput();
-      return;
-    }
-
-    try {
-      validateProductImages(files);
-    } catch (error) {
-      productImagen.value = "";
-      resetImageInput();
-      alert(error instanceof Error ? error.message : "Imágenes no válidas");
-
-      return;
-    }
-
-    renderImagePreviews(files);
+    preview.addEventListener("error", () => {
+      setImageForSlot(slotIndex, null);
+    });
   });
 
   function normalizeType(value: string): string {
@@ -2212,14 +3113,14 @@ function getInitials(name: string): string {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  function getSizesForType(tipo: string): string[] {
-    const normalized = normalizeType(tipo);
+  function getSizesForTallaje(tallaje: string): string[] {
+    const normalized = normalizeTallajeValue(tallaje);
 
-    if (normalized.includes("accesorio")) {
+    if (normalized === "unica") {
       return ["Única"];
     }
 
-    if (normalized.includes("pantalon")) {
+    if (normalized === "pantalon") {
       return ["28", "36", "40", "42", "44"];
     }
 
@@ -2260,6 +3161,12 @@ function getInitials(name: string): string {
   }
 
   function updateStockSplitSummary() {
+    const expectedTotal = Number(
+      stockSplitExpected instanceof HTMLElement
+        ? stockSplitExpected.textContent || "0"
+        : "0",
+    );
+
     const assigned = Array.from(document.querySelectorAll(".stock-size-input"))
       .filter((input) => input instanceof HTMLInputElement)
       .reduce((sum, input) => sum + Math.max(0, Number(input.value || 0)), 0);
@@ -2267,11 +3174,24 @@ function getInitials(name: string): string {
     if (stockSplitAssigned instanceof HTMLElement) {
       stockSplitAssigned.textContent = String(assigned);
     }
+
+    if (stockSplitWarning instanceof HTMLElement) {
+      if (assigned === expectedTotal) {
+        stockSplitWarning.hidden = true;
+        stockSplitWarning.textContent = "";
+      } else if (assigned < expectedTotal) {
+        stockSplitWarning.hidden = false;
+        stockSplitWarning.textContent = `Faltan ${expectedTotal - assigned} unidades por repartir.`;
+      } else {
+        stockSplitWarning.hidden = false;
+        stockSplitWarning.textContent = `Te sobran ${assigned - expectedTotal} unidades. Reduce el reparto.`;
+      }
+    }
   }
 
   function prepareStockSplitModal(payload: PendingCreatePayload) {
     const totalStock = Math.max(0, Number(payload.stock_inicial || 0));
-    const sizes = getSizesForType(payload.tipo || "");
+    const sizes = getSizesForTallaje(payload.tallaje || "clasico");
 
     pendingCreatePayload = payload;
     stockSplitSizes = sizes;
@@ -2333,21 +3253,11 @@ function getInitials(name: string): string {
   });
 
   document.querySelectorAll<HTMLButtonElement>(".btn-delete").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
       if (!id) return;
 
-      const ok = confirm("¿Seguro que quieres eliminar este producto?");
-      if (!ok) return;
-
-      try {
-        await deleteAdminProducto(id);
-        window.location.reload();
-      } catch (error) {
-        alert(
-          error instanceof Error ? error.message : "Error al eliminar producto",
-        );
-      }
+      openDeleteConfirmModal(id);
     });
   });
 
@@ -2373,6 +3283,18 @@ function getInitials(name: string): string {
       openModal();
     });
 
+  document
+    .getElementById("closeDeleteConfirmModal")
+    ?.addEventListener("click", closeDeleteConfirmModal);
+
+  document
+    .getElementById("cancelDeleteConfirmBtn")
+    ?.addEventListener("click", closeDeleteConfirmModal);
+
+  confirmDeleteBtn?.addEventListener("click", () => {
+    void confirmDeleteProduct();
+  });
+
   modalBackdrop?.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) {
       closeModal();
@@ -2383,6 +3305,12 @@ function getInitials(name: string): string {
     if (e.target === stockSplitModalBackdrop) {
       closeStockSplitModal();
       openModal();
+    }
+  });
+
+  deleteConfirmBackdrop?.addEventListener("click", (e) => {
+    if (e.target === deleteConfirmBackdrop) {
+      closeDeleteConfirmModal();
     }
   });
 
@@ -2398,6 +3326,13 @@ function getInitials(name: string): string {
       closeStockSplitModal();
       openModal();
     }
+
+    if (
+      e.key === "Escape" &&
+      deleteConfirmBackdrop?.classList.contains("is-open")
+    ) {
+      closeDeleteConfirmModal();
+    }
   });
 
   productForm?.addEventListener("submit", async (e) => {
@@ -2410,6 +3345,7 @@ function getInitials(name: string): string {
       !(productDescripcion instanceof HTMLTextAreaElement) ||
       !(productPrecioBase instanceof HTMLInputElement) ||
       !(productPrecioOriginal instanceof HTMLInputElement) ||
+      !(productTallaje instanceof HTMLSelectElement) ||
       !(productTipo instanceof HTMLInputElement) ||
       !(productBadge instanceof HTMLSelectElement) ||
       !(productEstado instanceof HTMLSelectElement) ||
@@ -2418,31 +3354,84 @@ function getInitials(name: string): string {
       return;
     }
 
-    const stockValue = Math.max(0, Number(productStockInicial.value || 0));
-
-    const basePayload: PendingCreatePayload = {
-      nombre: productNombre.value.trim(),
-      slug: productSlug.value.trim(),
-      descripcion: productDescripcion.value.trim(),
-      precio_base: Number(productPrecioBase.value),
-      precio_original: productPrecioOriginal.value.trim(),
-      tipo: productTipo.value.trim(),
-      badge: productBadge.value,
-      estado: productEstado.value,
-      stock_inicial: stockValue,
-    };
-
-    if (productImagen instanceof HTMLInputElement) {
-      const files = Array.from(productImagen.files ?? []);
-
-      if (files.length > 0) {
-        validateProductImages(files);
-        basePayload.imagenes = await buildProductImagesPayload(files);
-      }
-    }
-
     try {
+      const isEditing = Boolean(productId.value);
+      const hasSelectedImages = selectedImageFiles.some(
+        (file) => file instanceof File,
+      );
+
+      // Los input[type=number] pueden entregar "22" aunque el usuario escriba 22.00.
+      // Normalizamos antes de validar para evitar falsos errores de formato.
+      formatMoneyInput(productPrecioBase, false);
+      formatMoneyInput(productPrecioOriginal, true);
+
+      validateRequiredProductFields({
+        isEditing,
+        nombre: productNombre.value.trim(),
+        slug: productSlug.value.trim(),
+        descripcion: productDescripcion.value.trim(),
+        precioOfertaRaw: productPrecioBase.value,
+        precioOriginalRaw: productPrecioOriginal.value,
+        tallaje: productTallaje.value,
+        tipo: productTipo.value.trim(),
+        badge: productBadge.value,
+        estado: productEstado.value,
+        stockRaw: productStockInicial.value,
+        hasImageSelected: hasSelectedImages,
+      });
+
+      const stockValue = Math.max(0, Number(productStockInicial.value || 0));
+      const resolvedTallaje = resolveTallajeFromForm(
+        productTipo.value,
+        productTallaje.value,
+      );
+      const unicaAutoVariants =
+        resolvedTallaje === "unica" && stockValue > 0
+          ? [{ talla: "Única", stock: stockValue }]
+          : [];
+      const pricing = validateAndNormalizePricing(
+        productPrecioBase.value,
+        productPrecioOriginal.value,
+        productBadge.value,
+      );
+
+      productPrecioBase.value = pricing.precioOferta.toFixed(2);
+      if (pricing.precioOriginal) {
+        productPrecioOriginal.value = Number(
+          pricing.precioOriginal.replace(",", "."),
+        ).toFixed(2);
+      }
+
+      const basePayload: PendingCreatePayload = {
+        nombre: productNombre.value.trim(),
+        slug: productSlug.value.trim(),
+        descripcion: productDescripcion.value.trim(),
+        precio_base: pricing.precioOferta,
+        precio_original: pricing.precioOriginal,
+        tallaje: resolvedTallaje,
+        tipo: productTipo.value.trim(),
+        badge: pricing.badge,
+        estado: productEstado.value,
+        stock_inicial: stockValue,
+      };
+
+      if (hasSelectedImages) {
+        basePayload.imagenes = await buildProductImagesPayload(selectedImageFiles);
+      }
+
       if (productId.value) {
+        if (unicaAutoVariants.length > 0) {
+          await updateAdminProducto({
+            id: Number(productId.value),
+            ...basePayload,
+            variantes: unicaAutoVariants,
+          });
+
+          closeModal();
+          window.location.reload();
+          return;
+        }
+
         if (stockValue > 0) {
           prepareStockSplitModal({
             id: Number(productId.value),
@@ -2464,6 +3453,16 @@ function getInitials(name: string): string {
         return;
       }
 
+      if (unicaAutoVariants.length > 0) {
+        await createAdminProducto({
+          ...basePayload,
+          variantes: unicaAutoVariants,
+        });
+        closeModal();
+        window.location.reload();
+        return;
+      }
+
       if (stockValue <= 0) {
         await createAdminProducto({
           ...basePayload,
@@ -2478,9 +3477,10 @@ function getInitials(name: string): string {
       closeModal();
       openStockSplitModal();
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "Error al preparar producto",
-      );
+      const message =
+        error instanceof Error ? error.message : "Error al preparar producto";
+      showToastMessage(message, "error");
+      setProductFormFeedback(message, "error");
     }
   });
 
@@ -2513,11 +3513,12 @@ function getInitials(name: string): string {
       closeStockSplitModal();
       window.location.reload();
     } catch (error) {
-      alert(
+      showToastMessage(
         error instanceof Error ? error.message : "Error al guardar producto",
+        "error",
       );
     }
   });
 
-  updateBulkToolbar();
+  applyProductSearchFilter();
 </script>

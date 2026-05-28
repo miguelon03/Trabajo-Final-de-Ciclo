@@ -14,7 +14,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       <div id="profileGuest" class="profile-card" hidden>
         <h2>Sesión no iniciada</h2>
         <p>Para acceder a tu perfil necesitas iniciar sesión.</p>
-        <a class="btn-primary" href="/login">Ir a login</a>
+        <a class="btn-primary" href="/?auth=login">Ir a login</a>
       </div>
 
       <div id="profileContent" class="profile-grid" hidden>
@@ -287,7 +287,11 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
           if (result.status === 401) {
             setTimeout(() => {
-              window.location.href = "/login";
+              if (typeof window.dmhOpenAuth === "function") {
+                window.dmhOpenAuth("login", false);
+              } else {
+                window.location.href = "/?auth=login";
+              }
             }, 500);
           }
 

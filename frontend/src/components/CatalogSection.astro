@@ -134,6 +134,7 @@ const stockBySlug = new Map((stock || []).map((entry) => [entry.productSlug, ent
                 data-product-title={product.title}
                 data-product-image={product.image}
                 data-type={product.type}
+                data-sizing={product.tallaje || "clasico"}
                 data-color={product.color}
                 data-price={product.price}
                 data-created-at={product.createdAt}
@@ -509,10 +510,13 @@ const stockBySlug = new Map((stock || []).map((entry) => [entry.productSlug, ent
   }
 
   .product-card__footer {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.2rem;
+    min-height: 34px;
+    padding-right: 42px;
   }
 
   .product-price {
@@ -529,6 +533,10 @@ const stockBySlug = new Map((stock || []).map((entry) => [entry.productSlug, ent
   }
 
   .quick-add-btn {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
     border: none;
     background: rgba(200, 255, 0, 0.16);
     color: #d8ff48;

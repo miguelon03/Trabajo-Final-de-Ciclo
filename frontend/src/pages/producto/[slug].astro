@@ -517,7 +517,7 @@ const sizeOptions = sizesArray.map((size: string) => {
         const reviewLoginBtn = document.getElementById("reviewLoginBtn");
         if (reviewLoginBtn instanceof HTMLButtonElement) {
           reviewLoginBtn.addEventListener("click", () => {
-            window.location.href = "/login";
+            window.dmhOpenAuth?.("login", false);
           });
         }
         return;
@@ -1091,7 +1091,7 @@ const sizeOptions = sizesArray.map((size: string) => {
 
       toggleWishlistBtn.addEventListener("click", async () => {
         if (!authorized) {
-          window.location.href = "/login";
+          window.dmhOpenAuth?.("login", false);
           return;
         }
 
@@ -1102,7 +1102,7 @@ const sizeOptions = sizesArray.map((size: string) => {
 
         if (!result.ok) {
           if (result.status === 401) {
-            window.location.href = "/login";
+            window.dmhOpenAuth?.("login", false);
             return;
           }
           (window as any).showToast?.(

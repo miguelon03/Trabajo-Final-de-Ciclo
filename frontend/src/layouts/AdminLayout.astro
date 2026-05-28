@@ -1,5 +1,5 @@
 ---
-const { title = "DMH Admin", adminName = "Administrador" } = Astro.props;
+const { title = "DMH Admin" } = Astro.props;
 import AdminSidebar from "../components/admin/AdminSidebar.astro";
 ---
 
@@ -8,16 +8,12 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+    <script src="/dmh-utils.js" is:inline></script>
+
     <style>
       :root {
         --bg: #0a0a0a;
-        --panel: #121212;
-        --panel-2: #171717;
-        --border: #232323;
         --text: #f5f5f5;
-        --muted: #777;
-        --accent: #d7ff00;
-        --danger: #ff4d4d;
       }
 
       * {
@@ -41,56 +37,6 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
       .main {
         min-width: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .topbar {
-        min-height: 78px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding: 0 clamp(20px, 3vw, 38px);
-        gap: 18px;
-        flex-wrap: wrap;
-        background: rgba(10, 10, 10, 0.86);
-        backdrop-filter: blur(14px);
-        position: sticky;
-        top: 0;
-        z-index: 20;
-      }
-
-      .admin-user {
-        color: #b1b1b1;
-        font-size: 1rem;
-        font-weight: 700;
-      }
-
-      .logout {
-        appearance: none;
-        -webkit-appearance: none;
-        min-height: 42px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 16px;
-        border-radius: 12px;
-        border: 1px solid #343434;
-        background: #171717;
-        color: #f0f0f0;
-        text-decoration: none;
-        font-size: 0.88rem;
-        font-weight: 800;
-        transition:
-          background 0.15s ease,
-          border-color 0.15s ease,
-          color 0.15s ease;
-      }
-
-      .logout:hover {
-        background: #202020;
-        border-color: #444;
       }
 
       .content {
@@ -109,63 +55,24 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
           grid-template-columns: 1fr;
         }
 
-        .topbar {
-          min-height: auto;
-          justify-content: space-between;
-          padding: 16px 18px;
-          position: static;
-        }
-
         .content {
           padding: 18px;
         }
       }
 
       @media (max-width: 640px) {
-        .topbar {
-          min-height: 58px;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 42px;
-          align-items: center;
-          justify-content: stretch;
-          gap: 10px;
-          padding: 10px 12px;
-          position: sticky;
-          top: 0;
-        }
-
-        .admin-user {
-          min-width: 0;
-          font-size: 0.9rem;
-          line-height: 1.2;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .logout {
-          width: 42px;
-          height: 42px;
-          min-height: 42px;
-          padding: 0;
-          border-radius: 12px;
-          font-size: 0;
-          justify-self: end;
-        }
-
-        .logout::before {
-          content: "×";
-          font-size: 1.55rem;
-          font-weight: 950;
-          line-height: 1;
-        }
-
         .content {
           padding: 14px;
         }
       }
     </style>
+
     <style is:global>
+      .topbar,
+      .admin-user {
+        display: none !important;
+      }
+
       .admin-section,
       .returns-admin,
       .reviews-admin,
@@ -173,115 +80,14 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
         width: 100%;
         min-width: 0;
       }
-
-      .table-wrap,
-      .returns-admin__table-wrap,
-      .reviews-admin__table-wrap,
-      .users-admin__table-wrap {
-        width: 100%;
-        max-width: 100%;
-        overflow: hidden;
-        border: 1px solid #1f1f1f !important;
-        border-radius: 16px !important;
-        background: #0f0f0f !important;
-        box-shadow: none !important;
-      }
-
-      .table-wrap table,
-      .returns-table,
-      .reviews-table,
-      .users-table {
-        width: 100%;
-        min-width: 0 !important;
-        table-layout: fixed;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
-      }
-
-      .table-wrap thead,
-      .returns-table thead,
-      .reviews-table thead,
-      .users-table thead {
-        background: #101010 !important;
-      }
-
-      .table-wrap th,
-      .returns-table thead th,
-      .reviews-table thead th,
-      .users-table thead th {
-        padding: 14px 16px !important;
-        color: #777 !important;
-        border-bottom: 1px solid #202020 !important;
-        font-size: 0.72rem !important;
-        font-weight: 950 !important;
-        letter-spacing: 0.08em !important;
-        text-transform: uppercase !important;
-      }
-
-      .table-wrap td,
-      .returns-table td,
-      .reviews-table td,
-      .users-table td {
-        padding: 16px !important;
-        border-bottom: 1px solid #191919 !important;
-        font-size: 0.86rem !important;
-        vertical-align: middle !important;
-      }
-
-      .table-wrap tbody tr,
-      .returns-table tbody tr,
-      .reviews-table tbody tr,
-      .users-table tbody tr {
-        background: #111 !important;
-      }
-
-      .table-wrap tbody tr:nth-child(even),
-      .returns-table tbody tr:nth-child(even),
-      .reviews-table tbody tr:nth-child(even),
-      .users-table tbody tr:nth-child(even) {
-        background: #0f0f0f !important;
-      }
-
-      .table-wrap tbody tr:hover,
-      .returns-table tbody tr:hover,
-      .reviews-table tbody tr:hover,
-      .users-table tbody tr:hover {
-        background: #151515 !important;
-      }
-
-      .table-wrap tbody tr:last-child td,
-      .returns-table tbody tr:last-child td,
-      .reviews-table tbody tr:last-child td,
-      .users-table tbody tr:last-child td {
-        border-bottom: 0 !important;
-      }
-
-      @media (max-width: 900px) {
-        .table-wrap,
-        .returns-admin__table-wrap,
-        .reviews-admin__table-wrap,
-        .users-admin__table-wrap {
-          overflow-x: auto;
-        }
-
-        .table-wrap table,
-        .returns-table,
-        .reviews-table,
-        .users-table {
-          min-width: 760px !important;
-        }
-      }
     </style>
   </head>
+
   <body>
     <div class="admin-layout" id="adminLayoutRoot">
       <AdminSidebar />
-      <main class="main">
-        <div class="topbar">
-          <div class="admin-user">{adminName} — Admin</div>
-          <a class="logout" href="/" id="logoutLink">Cerrar sesión</a>
-        </div>
 
+      <main class="main">
         <section class="content">
           <slot />
         </section>
@@ -290,6 +96,10 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
 
     <script>
       const adminLayoutRoot = document.getElementById("adminLayoutRoot");
+
+      document.querySelectorAll(".topbar, .admin-user").forEach((el) => {
+        if (el instanceof HTMLElement) el.remove();
+      });
 
       if (adminLayoutRoot instanceof HTMLElement) {
         adminLayoutRoot.style.visibility = "hidden";
@@ -300,14 +110,11 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
           const response = await fetch("/backend/session.php", {
             credentials: "include",
           });
-
           const data = await response.json();
-          const isAdmin = Boolean(
-            data?.logueado && data?.usuario?.rol === "admin",
-          );
+          const isAdmin = Boolean(data?.logueado && data?.usuario?.rol === "admin");
 
           if (!isAdmin) {
-            window.location.href = "/login";
+            window.location.href = "/?auth=login";
             return;
           }
 
@@ -315,32 +122,28 @@ import AdminSidebar from "../components/admin/AdminSidebar.astro";
             adminLayoutRoot.style.visibility = "visible";
           }
         } catch (_error) {
-          window.location.href = "/login";
+          window.location.href = "/?auth=login";
         }
       }
 
       void ensureAdminSession();
 
-      document
-        .getElementById("logoutLink")
-        ?.addEventListener("click", async (e) => {
-          e.preventDefault();
+      document.getElementById("logoutLink")?.addEventListener("click", async (e) => {
+        e.preventDefault();
 
-          try {
-            const response = await fetch("/backend/logout.php", {
-              method: "POST",
-              credentials: "include",
-            });
-
-            const data = await response.json();
-
-            if (data.ok) {
-              window.location.href = "/";
-            }
-          } catch (error) {
-            console.error("Error cerrando sesión:", error);
+        try {
+          const response = await fetch("/backend/logout.php", {
+            method: "POST",
+            credentials: "include",
+          });
+          const data = await response.json();
+          if (data.ok) {
+            window.location.href = "/";
           }
-        });
+        } catch (error) {
+          console.error("Error cerrando sesión:", error);
+        }
+      });
     </script>
   </body>
 </html>

@@ -2,33 +2,49 @@
 /* No se reciben props ni imports en este componente */
 ---
 
-<section class="hero">
+<section class="hero" id="homeHero">
+  <div class="hero-bg" id="homeHeroBg" aria-hidden="true"></div>
+
   <div class="hero-grid">
     <!-- Parte izquierda del hero: textos y botones -->
     <div class="hero-copy">
-      <span class="eyebrow">SS26 COLLECTION</span>
-      <h1>DRIP<br />MODE<br />HOOD</h1>
-      <p>
+      <span class="eyebrow" id="heroEyebrow">SS26 COLLECTION</span>
+      <h1 id="heroTitle">DRIP<br />MODE<br />HOOD</h1>
+      <p id="heroDescription">
         Prendas premium de edición limitada. Diseñadas para durar. Fabricadas en Europa.
       </p>
 
       <div class="hero-actions">
-        <a class="button primary" href="/catalogo">VER COLECCIÓN</a>
-        <a class="button secondary" href="/novedades">Novedades</a>
+        <a class="button primary" id="heroPrimaryButton" href="/catalogo">
+          VER COLECCIÓN
+        </a>
+        <a class="button secondary" id="heroSecondaryButton" href="/novedades">
+          Novedades
+        </a>
       </div>
     </div>
 
     <!-- Parte derecha del hero: espacio visual para imagen destacada -->
     <div class="hero-visual" aria-hidden="true">
-      <div class="hero-visual__placeholder">
+      <div class="hero-visual__placeholder" id="heroVisualPlaceholder">
         Imagen de producto
       </div>
+      <img
+        class="hero-visual__image"
+        id="heroProductImage"
+        alt="Imagen destacada de la colección"
+        loading="eager"
+        decoding="async"
+        hidden
+      />
     </div>
   </div>
 </section>
 
 <style>
   .hero {
+    position: relative;
+    overflow: hidden;
     min-height: calc(100dvh - 84px);
     width: 100%;
     padding: 3.5rem 3rem;
@@ -37,7 +53,39 @@
     background: #1a1a1a;
   }
 
+  .hero-bg {
+    position: absolute;
+    inset: -30px;
+    z-index: 0;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0;
+    filter: blur(22px);
+    transform: scale(1.06);
+    transition: opacity 0.26s ease;
+    pointer-events: none;
+  }
+
+  .hero-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      rgba(12, 12, 12, 0.92) 8%,
+      rgba(16, 16, 16, 0.74) 52%,
+      rgba(10, 10, 10, 0.9) 96%
+    );
+  }
+
+  .hero.has-bg .hero-bg {
+    opacity: 0.9;
+  }
+
   .hero-grid {
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -67,6 +115,10 @@
     letter-spacing: -0.02em;
     font-weight: 900;
     text-transform: uppercase;
+  }
+
+  #heroTitle {
+    white-space: pre-line;
   }
 
   p {
@@ -112,13 +164,20 @@
   .hero-visual {
     display: flex;
     justify-content: flex-end;
+    position: relative;
+  }
+
+  .hero-visual__placeholder,
+  .hero-visual__image {
+    width: min(100%, 560px);
+    aspect-ratio: 4 / 5;
+    min-height: 0;
+    border-radius: var(--border-radius-modal);
+    margin-left: auto;
   }
 
   .hero-visual__placeholder {
-    width: 100%;
-    min-height: 420px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius-modal);
     display: grid;
     place-items: center;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.35));
@@ -126,6 +185,14 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-size: 0.95rem;
+  }
+
+  .hero-visual__image {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 26px 54px rgba(0, 0, 0, 0.42);
+    transform-origin: center;
   }
 
   @media (max-width: 900px) {
@@ -154,23 +221,185 @@
 </style>
 
 <script>
-  // Ejecutamos el instalador al cargar la home para que, si la base de datos
-  // fue eliminada, la aplicación pueda reconstruirse sola.
-  // El instalador debe ser idempotente: crear lo que falte sin pisar datos existentes.
-  fetch("/backend/instalador.php", {
-    credentials: "include"
-  })
-    .then(async (response) => {
-      const text = await response.text();
+  // @ts-nocheck
+  const heroRoot = document.getElementById("homeHero");
+  const heroBg = document.getElementById("homeHeroBg");
+  const heroEyebrow = document.getElementById("heroEyebrow");
+  const heroTitle = document.getElementById("heroTitle");
+  const heroDescription = document.getElementById("heroDescription");
+  const heroPrimaryButton = document.getElementById("heroPrimaryButton");
+  const heroSecondaryButton = document.getElementById("heroSecondaryButton");
+  const heroProductImage = document.getElementById("heroProductImage");
+  const heroVisualPlaceholder = document.getElementById("heroVisualPlaceholder");
 
-      try {
-        const data = JSON.parse(text);
-        console.log("Instalador:", data);
-      } catch (_error) {
-        console.error("Respuesta no válida del instalador:", text);
+  function sanitizeHeroLink(value, fallback) {
+    if (typeof value !== "string") return fallback;
+
+    const trimmed = value.trim();
+    if (trimmed === "") return fallback;
+
+    if (trimmed.startsWith("/")) return trimmed;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+
+    return fallback;
+  }
+
+  function applyHeroConfig(config) {
+    if (!config || typeof config !== "object") return;
+
+    const eyebrow = String(config.eyebrow ?? "").trim();
+    const title = String(config.title ?? "").trim();
+    const description = String(config.description ?? "").trim();
+    const primaryLabel = String(config.primary_label ?? "").trim();
+    const primaryHref = sanitizeHeroLink(config.primary_href, "/catalogo");
+    const secondaryLabel = String(config.secondary_label ?? "").trim();
+    const secondaryHref = sanitizeHeroLink(config.secondary_href, "/novedades");
+    const productImage = String(config.product_image ?? "").trim();
+    const backgroundImage = String(config.background_image ?? "").trim();
+
+    if (heroEyebrow && eyebrow) heroEyebrow.textContent = eyebrow;
+    if (heroTitle && title) {
+      heroTitle.textContent = title;
+    }
+    if (heroDescription && description) heroDescription.textContent = description;
+
+    if (heroPrimaryButton) {
+      if (primaryLabel) heroPrimaryButton.textContent = primaryLabel;
+      heroPrimaryButton.setAttribute("href", primaryHref);
+    }
+
+    if (heroSecondaryButton) {
+      if (secondaryLabel) heroSecondaryButton.textContent = secondaryLabel;
+      heroSecondaryButton.setAttribute("href", secondaryHref);
+    }
+
+    const productImageScale = Number(config.product_image_scale ?? 100);
+    const productImagePosX = Number(config.product_image_pos_x ?? 0);
+    const productImagePosY = Number(config.product_image_pos_y ?? 0);
+    const backgroundImageScale = Number(config.background_image_scale ?? 100);
+    const backgroundImagePosX = Number(config.background_image_pos_x ?? 0);
+    const backgroundImagePosY = Number(config.background_image_pos_y ?? 0);
+
+    if (
+      heroProductImage instanceof HTMLImageElement &&
+      heroVisualPlaceholder instanceof HTMLElement
+    ) {
+      heroProductImage.style.objectPosition = `${50 + productImagePosX}% ${50 + productImagePosY}%`;
+      heroProductImage.style.transform = `scale(${productImageScale / 100})`;
+
+      if (productImage) {
+        heroProductImage.src = productImage;
+        heroProductImage.onerror = () => {
+          heroProductImage.hidden = true;
+          heroProductImage.removeAttribute("src");
+          heroVisualPlaceholder.hidden = false;
+        };
+        heroProductImage.hidden = false;
+        heroVisualPlaceholder.hidden = true;
+      } else {
+        heroProductImage.hidden = true;
+        heroProductImage.removeAttribute("src");
+        heroProductImage.onerror = null;
+        heroVisualPlaceholder.hidden = false;
       }
-    })
-    .catch((error) => {
-      console.error("Error preparando la base de datos:", error);
-    });
+    }
+
+    if (heroBg instanceof HTMLElement && heroRoot instanceof HTMLElement) {
+      heroBg.style.backgroundPosition = `${50 + backgroundImagePosX}% ${50 + backgroundImagePosY}%`;
+      heroBg.style.backgroundSize = `${backgroundImageScale}%`;
+
+      if (backgroundImage) {
+        heroBg.style.backgroundImage = `url(${backgroundImage})`;
+        heroRoot.classList.add("has-bg");
+      } else {
+        heroBg.style.backgroundImage = "";
+        heroRoot.classList.remove("has-bg");
+      }
+    }
+  }
+
+  const INSTALLER_ATTEMPT_KEY = "dmh-installer-attempted-this-session";
+
+  function getInstallerCandidates() {
+    const originWithoutPort = `${window.location.protocol}//${window.location.hostname}`;
+
+    return [
+      "/backend/instalador.php",
+      "/tfc/backend/instalador.php",
+      `${originWithoutPort}/backend/instalador.php`,
+      `${originWithoutPort}/tfc/backend/instalador.php`,
+    ];
+  }
+
+  async function tryAutoInstallIfNeeded() {
+    if (sessionStorage.getItem(INSTALLER_ATTEMPT_KEY) === "1") {
+      return false;
+    }
+
+    sessionStorage.setItem(INSTALLER_ATTEMPT_KEY, "1");
+
+    const candidates = getInstallerCandidates();
+    for (const installerUrl of candidates) {
+      try {
+        const response = await fetch(installerUrl, {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        const text = await response.text();
+        let data = null;
+
+        try {
+          data = JSON.parse(text);
+        } catch (_error) {
+          data = null;
+        }
+
+        if (response.ok && data?.ok) {
+          console.info("Instalador ejecutado automáticamente:", installerUrl);
+          return true;
+        }
+      } catch (_error) {
+        // Probamos siguiente URL candidata
+      }
+    }
+
+    return false;
+  }
+
+  async function loadHeroConfig(allowBootstrapRetry = true) {
+    try {
+      const response = await fetch("/backend/api/home-hero.php", {
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+      if (response.ok && data?.ok && data?.hero) {
+        applyHeroConfig(data.hero);
+        return;
+      }
+
+      if (allowBootstrapRetry) {
+        const installed = await tryAutoInstallIfNeeded();
+        if (installed) {
+          await loadHeroConfig(false);
+        }
+      }
+    } catch (error) {
+      if (allowBootstrapRetry) {
+        const installed = await tryAutoInstallIfNeeded();
+        if (installed) {
+          await loadHeroConfig(false);
+          return;
+        }
+      }
+
+      console.error("No se pudo cargar la configuración del hero:", error);
+    }
+  }
+
+  void loadHeroConfig();
 </script>

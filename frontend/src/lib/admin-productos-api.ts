@@ -5,6 +5,7 @@ export type AdminProducto = {
   descripcion: string | null;
   precio_base: number;
   precio_original: number | null;
+  tallaje: string | null;
   tipo: string | null;
   color: string | null;
   badge: string | null;

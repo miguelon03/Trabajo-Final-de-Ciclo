@@ -19,6 +19,26 @@ const sidebar = document.getElementById("sidebar");
 const quickAddIcon = productsGrid?.getAttribute("data-quick-add-icon") || "";
 const hasPaginationControls = Boolean(paginationContainer);
 let currentFavorites = window.dmhFavorites?.get?.() || [];
+let cachedSessionAuth = null;
+
+async function isAuthenticatedSession() {
+  if (cachedSessionAuth !== null) {
+    return cachedSessionAuth;
+  }
+
+  try {
+    const response = await fetch("/backend/session.php", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const data = await response.json();
+    cachedSessionAuth = Boolean(data?.logueado);
+  } catch (_) {
+    cachedSessionAuth = false;
+  }
+
+  return cachedSessionAuth;
+}
 
 function getCart() {
   return JSON.parse(localStorage.getItem("cart") || "[]");
@@ -29,11 +49,17 @@ function saveCart(cart) {
   window.dispatchEvent(new Event("cart-updated"));
 
   if (typeof window.dmhFetchJson === "function") {
-    window.dmhFetchJson("carrito.php", {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: cart }),
+    isAuthenticatedSession().then((isLoggedIn) => {
+      if (!isLoggedIn) {
+        return;
+      }
+
+      window.dmhFetchJson("carrito.php", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart }),
+      });
     });
   }
 }
@@ -62,6 +88,14 @@ function getSizeOptions(card) {
   } catch (_) {
     return [];
   }
+}
+
+function getSizingProfile(card) {
+  const value = (card.getAttribute("data-sizing") || "clasico").toLowerCase();
+  if (value === "pantalon" || value === "unica") {
+    return value;
+  }
+  return "clasico";
 }
 
 function setSizeOptions(card, options) {
@@ -145,22 +179,29 @@ function getProductPayloadBase(card) {
   };
 }
 
-function addAccessoryToCart(card) {
+function addSingleSizeToCart(card) {
   const base = getProductPayloadBase(card);
   const totalStock = getTotalStock(card);
   if (!base.id || !base.slug || !base.price) {
     return;
   }
 
+  const sizeOptions = getSizeOptions(card);
+  const uniqueOption = sizeOptions.find((option) => option.size.toLowerCase() === "única" || option.size.toLowerCase() === "unica");
+  const sizeLabel = uniqueOption?.size || "Única";
+  const sku = uniqueOption?.sku || `DMH-${base.id}-UNICA`;
+  const productType = card.getAttribute("data-type") || "";
+  const itemName = productType === "accesorio" ? "accesorio" : "producto";
+
   if (totalStock <= 0) {
-    window.showToast?.("Este accesorio está agotado.", "error");
+    window.showToast?.(`Este ${itemName} está agotado.`, "error");
     return;
   }
 
   const ok = pushItemToCart(card, {
     ...base,
-    size: "Única",
-    sku: `DMH-${base.id}-UNICA`,
+    size: sizeLabel,
+    sku,
     quantity: 1,
   }, totalStock);
 
@@ -171,7 +212,7 @@ function addAccessoryToCart(card) {
   setTotalStock(card, totalStock - 1);
   addStockChip(card, getTotalStock(card));
   renderCardActions(card);
-  window.showToast?.("Accesorio añadido al carrito", "success");
+  window.showToast?.(`${itemName.charAt(0).toUpperCase() + itemName.slice(1)} añadido al carrito`, "success");
 }
 
 let sizeModal = null;
@@ -477,6 +518,7 @@ function openSizeModal(card) {
 
 function renderCardActions(card) {
   const type = card.getAttribute("data-type");
+  const sizing = getSizingProfile(card);
   const footer = card.querySelector(".product-card__footer");
   if (!(footer instanceof HTMLElement)) {
     return;
@@ -485,18 +527,18 @@ function renderCardActions(card) {
   const totalStock = getTotalStock(card);
   addStockChip(card, totalStock);
 
-  if (type === "accesorio") {
+  if (type === "accesorio" || sizing === "unica") {
     let button = footer.querySelector(".quick-add-btn");
     if (!(button instanceof HTMLButtonElement)) {
       button = document.createElement("button");
       button.type = "button";
       button.className = "quick-add-btn";
       button.innerHTML = quickAddIcon || "+";
-      button.setAttribute("aria-label", "Añadir accesorio al carrito");
+      button.setAttribute("aria-label", "Añadir producto al carrito");
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        addAccessoryToCart(card);
+        addSingleSizeToCart(card);
       });
       footer.appendChild(button);
     }
@@ -504,11 +546,11 @@ function renderCardActions(card) {
     if (totalStock <= 0) {
       button.disabled = true;
       button.classList.add("is-disabled");
-      button.setAttribute("aria-label", "Accesorio agotado");
+      button.setAttribute("aria-label", "Producto agotado");
     } else {
       button.disabled = false;
       button.classList.remove("is-disabled");
-      button.setAttribute("aria-label", "Añadir accesorio al carrito");
+      button.setAttribute("aria-label", "Añadir producto al carrito");
     }
     return;
   }
@@ -600,6 +642,19 @@ function updateWishlistButtonState(card, isFavorite) {
 }
 
 async function setupWishlist() {
+  const isLoggedIn = await isAuthenticatedSession();
+
+  // Invitado: no consultamos favoritos.php para evitar 401 en consola.
+  if (!isLoggedIn) {
+    productCards.forEach((card) => {
+      const favButton = card.querySelector(".icon-fav");
+      if (favButton instanceof HTMLElement) {
+        favButton.remove();
+      }
+    });
+    return;
+  }
+
   const { authorized, slugs } = await fetchWishlist();
 
   // Para invitado ocultamos los corazones: no hay wishlist sin sesión.
@@ -632,9 +687,12 @@ async function setupWishlist() {
 
       if (!result.ok) {
         if (result.status === 401) {
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 500);
+          cachedSessionAuth = false;
+          if (typeof window.dmhOpenAuth === "function") {
+            window.dmhOpenAuth("login");
+          } else {
+            window.location.href = "/?auth=login";
+          }
           return;
         }
 
