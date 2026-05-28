@@ -123,8 +123,8 @@ export async function updateAdminProductosBadge(
   await parseApiResponse<ApiResponse>(res, "Error al actualizar badges");
 }
 
-export async function deleteAdminProducto(id: number): Promise<void> {
-  const res = await fetch(`${getAdminProductosBase()}/producto-delete.php`, {
+export async function archiveAdminProducto(id: number): Promise<void> {
+  const res = await fetch(`${getAdminProductosBase()}/producto-archive.php`, {
     method: "POST",
     credentials: "include",
     headers: {
@@ -133,5 +133,18 @@ export async function deleteAdminProducto(id: number): Promise<void> {
     body: JSON.stringify({ id }),
   });
 
-  await parseApiResponse<ApiResponse>(res, "Error al eliminar producto");
+  await parseApiResponse<ApiResponse>(res, "Error al archivar producto");
+}
+
+export async function publishAdminProducto(id: number): Promise<void> {
+  const res = await fetch(`${getAdminProductosBase()}/producto-publish.php`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  await parseApiResponse<ApiResponse>(res, "Error al publicar producto");
 }

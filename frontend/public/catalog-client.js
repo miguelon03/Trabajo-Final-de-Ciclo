@@ -241,6 +241,9 @@ function ensureEnhancementStyles() {
     .size-add-btn:hover { background: rgba(255,255,255,.12); }
     .size-add-btn.is-disabled { opacity: .5; cursor: not-allowed; }
     .stock-chip {
+      margin-left: auto;
+      flex: 0 0 auto;
+      white-space: nowrap;
       border-radius: 999px;
       padding: .28rem .7rem;
       font-size: .72rem;
@@ -524,6 +527,8 @@ function renderCardActions(card) {
     return;
   }
 
+  footer.classList.remove("has-quick-add");
+
   const totalStock = getTotalStock(card);
   addStockChip(card, totalStock);
 
@@ -542,6 +547,8 @@ function renderCardActions(card) {
       });
       footer.appendChild(button);
     }
+
+    footer.classList.add("has-quick-add");
 
     if (totalStock <= 0) {
       button.disabled = true;

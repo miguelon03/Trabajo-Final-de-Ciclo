@@ -42,7 +42,7 @@ function getInitials(name: string): string {
           <div class="bulk-search" role="search" aria-label="Buscar productos">
             <input
               id="productSearchInput"
-              type="search"
+              type="text"
               placeholder="Buscar por nombre, slug o tipo"
               autocomplete="off"
             />
@@ -50,52 +50,10 @@ function getInitials(name: string): string {
               ×
             </button>
           </div>
-        </div>
-
-        <div class="management-row">
-          <div class="bulk-panel" aria-label="Acciones en bloque de productos">
-            <label class="bulk-select-all">
-              <input
-                id="selectAllProducts"
-                type="checkbox"
-                aria-label="Seleccionar todos los productos"
-              />
-              <span>Seleccionar todo</span>
-            </label>
-
-            <span class="bulk-counter">
-              <strong id="selectedProductsCount">0</strong>
-              seleccionados
-            </span>
-
-            <select
-              id="bulkBadgeSelect"
-              aria-label="Badge para productos seleccionados"
-            >
-              <option value="">Sin badge</option>
-              <option value="NEW">NEW</option>
-              <option value="Oferta">oferta</option>
-            </select>
-
-            <button class="btn-bulk" id="bulkBadgeBtn" type="button" disabled>
-              Aplicar badge
-            </button>
-
-            <button
-              class="btn-clear-selection"
-              id="clearProductSelectionBtn"
-              type="button"
-            >
-              Limpiar
-            </button>
-          </div>
-
           <button class="new-btn" id="newProductBtn" type="button">
             + Nuevo producto
           </button>
         </div>
-
-        <p class="bulk-message" id="bulkBadgeMessage"></p>
 
         <div class="table-wrap">
           <table>
@@ -117,8 +75,6 @@ function getInitials(name: string): string {
                   data-product-id={p.id}
                   data-search={`${p.nombre} ${p.slug} ${p.tipo ?? ""} ${p.badge ?? ""}`
                     .toLowerCase()}
-                  aria-selected="false"
-                  title="Pulsa la fila para seleccionarla y cambiar su badge"
                 >
                   <td class="product-cell" data-label="Producto">
                     <div class="product-inline">
@@ -195,15 +151,6 @@ function getInitials(name: string): string {
                   </td>
 
                   <td class="actions" data-label="Acciones">
-                    <input
-                      class="product-select"
-                      type="checkbox"
-                      value={p.id}
-                      hidden
-                      aria-hidden="true"
-                      tabindex="-1"
-                    />
-
                     <div class="actions-inner">
                       <button
                         class="btn-edit action-icon"
@@ -227,14 +174,29 @@ function getInitials(name: string): string {
                       </button>
 
                       <button
-                        class="btn-delete action-icon"
+                        class:list={[
+                          "btn-toggle-status",
+                          "action-icon",
+                          p.estado === "archivado" ? "btn-publish" : "btn-archive",
+                        ]}
                         type="button"
                         data-id={p.id}
-                        aria-label={`Eliminar ${p.nombre}`}
-                        title="Eliminar"
+                        data-current-estado={p.estado}
+                        aria-label={
+                          p.estado === "archivado"
+                            ? `Publicar ${p.nombre}`
+                            : `Archivar ${p.nombre}`
+                        }
+                        title={p.estado === "archivado" ? "Publicar" : "Archivar"}
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v8H9v-8Zm4 0h2v8h-2v-8Zm4 0h2v8h-2v-8ZM6 9h12l-1 11H7L6 9Z" />
+                          {
+                            p.estado === "archivado" ? (
+                              <path d="M12 3 7 8h3v5h4V8h3l-5-5Zm-7 12h14v5H5v-5Z" />
+                            ) : (
+                              <path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v8H9v-8Zm4 0h2v8h-2v-8Zm4 0h2v8h-2v-8ZM6 9h12l-1 11H7L6 9Z" />
+                            )
+                          }
                         </svg>
                       </button>
                     </div>
@@ -346,13 +308,14 @@ function getInitials(name: string): string {
           <small class="field-hint">Si está activo, el producto aparecerá en Accesorios.</small>
         </div>
 
-        <div class="field field--accent">
-          <label for="productBadge">Badge</label>
-          <select id="productBadge">
-            <option value="">Sin badge</option>
-            <option value="NEW" selected>NEW</option>
-            <option value="Oferta">oferta</option>
-          </select>
+        <div class="field field--accent field--toggle">
+          <label class="checkbox-toggle" for="productIsNewBadge">
+            <input id="productIsNewBadge" type="checkbox" checked />
+            <span>Mostrar badge NEW</span>
+          </label>
+          <small class="field-hint">
+            Puedes quitar NEW manualmente al editar. Si hay precio oferta, se usará badge Oferta.
+          </small>
         </div>
 
         <div class="field field--accent">
@@ -513,7 +476,7 @@ function getInitials(name: string): string {
     aria-describedby="deleteConfirmText"
   >
     <div class="modal-header">
-      <h2 id="deleteConfirmTitle">Eliminar producto</h2>
+      <h2 id="deleteConfirmTitle">Archivar producto</h2>
       <button
         class="modal-close"
         id="closeDeleteConfirmModal"
@@ -526,7 +489,7 @@ function getInitials(name: string): string {
 
     <div class="modal-form modal-form--confirm">
       <p id="deleteConfirmText" class="confirm-text">
-        ¿Seguro que quieres eliminar este producto?
+        ¿Seguro que quieres archivar este producto?
       </p>
 
       <div class="modal-actions">
@@ -534,7 +497,7 @@ function getInitials(name: string): string {
           Cancelar
         </button>
         <button type="button" class="btn-danger" id="confirmDeleteBtn">
-          Eliminar
+          Archivar
         </button>
       </div>
     </div>
@@ -548,7 +511,7 @@ function getInitials(name: string): string {
   }
 
   .modal-kicker {
-    color: #d7ff00;
+    color: #C8FF00;
     font-size: 0.78rem;
     font-weight: 900;
     letter-spacing: 0.22em;
@@ -574,130 +537,34 @@ function getInitials(name: string): string {
     margin-bottom: 28px;
   }
 
-  .management-row {
+  .search-row {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 10px;
-  }
-
-  .search-row {
-    width: 100%;
-    display: flex;
-    justify-content: flex-start;
-    margin-bottom: 10px;
-  }
-
-  .bulk-panel {
-    flex: 1 1 auto;
-    max-width: 900px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    background: #101010;
-    border: 1px solid #272727;
-    border-radius: 18px;
-    padding: 10px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+    margin-bottom: 10px;
   }
 
   .new-btn {
     flex: 0 0 auto;
     min-height: 48px;
-    background: #d7ff00;
+    background: #C8FF00;
     color: #111;
     border: none;
     border-radius: 14px;
     padding: 0 24px;
     font-weight: 950;
     cursor: pointer;
-    box-shadow: 0 14px 28px rgba(215, 255, 0, 0.12);
+    box-shadow: 0 14px 28px rgba(200, 255, 0, 0.12);
     white-space: nowrap;
   }
 
   .new-btn:hover,
-  .btn-bulk:hover,
   .btn-edit:hover,
   .btn-primary:hover {
     filter: brightness(1.04);
-  }
-
-  .bulk-select-all,
-  .bulk-counter {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #dcdcdc;
-    font-size: 0.86rem;
-    font-weight: 850;
-    white-space: nowrap;
-  }
-
-  .bulk-select-all {
-    min-height: 38px;
-    background: #171717;
-    border: 1px solid #2b2b2b;
-    border-radius: 12px;
-    padding: 0 12px;
-    cursor: pointer;
-  }
-
-  .bulk-select-all input {
-    width: 18px;
-    height: 18px;
-    accent-color: #d7ff00;
-    cursor: pointer;
-  }
-
-  .bulk-counter {
-    color: #8a8a8a;
-    padding: 0 4px;
-  }
-
-  .bulk-counter strong {
-    color: #d7ff00;
-  }
-
-  .bulk-panel select {
-    min-height: 38px;
-    background: #171717;
-    border: 1px solid #2b2b2b;
-    border-radius: 12px;
-    color: #f4f4f4;
-    padding: 0 34px 0 12px;
-    font-weight: 850;
-    outline: none;
-  }
-
-  .btn-bulk,
-  .btn-clear-selection {
-    min-height: 38px;
-    border-radius: 12px;
-    padding: 0 14px;
-    font-weight: 950;
-    cursor: pointer;
-  }
-
-  .btn-bulk {
-    background: #d7ff00;
-    color: #111;
-    border: none;
-  }
-
-  .btn-bulk:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
-    filter: grayscale(0.35);
-  }
-
-  .btn-clear-selection {
-    background: transparent;
-    color: #aaa;
-    border: 1px solid #303030;
   }
 
   .bulk-search {
@@ -743,17 +610,6 @@ function getInitials(name: string): string {
     background: #212121;
   }
 
-  .btn-clear-selection:hover {
-    color: #f0f0f0;
-    border-color: #444;
-  }
-
-  .bulk-message {
-    min-height: 20px;
-    margin: 0 0 12px;
-    color: #ff6b6b;
-    font-size: 0.9rem;
-  }
 
   .table-wrap {
     width: 100%;
@@ -816,15 +672,6 @@ function getInitials(name: string): string {
     background: #151515;
   }
 
-  tbody tr.product-row.is-selected {
-    background: rgba(215, 255, 0, 0.055);
-    box-shadow: inset 4px 0 0 #d7ff00;
-  }
-
-  tbody tr.product-row.is-selected .product-thumb {
-    border-color: rgba(215, 255, 0, 0.65);
-  }
-
   tbody tr:last-child td {
     border-bottom: none;
   }
@@ -878,7 +725,7 @@ function getInitials(name: string): string {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #d7ff00;
+    color: #C8FF00;
     font-size: 0.86rem;
     font-weight: 950;
     letter-spacing: 0.08em;
@@ -932,9 +779,9 @@ function getInitials(name: string): string {
   }
 
   .product-badge {
-    background: rgba(215, 255, 0, 0.12);
-    color: #d7ff00;
-    border: 1px solid rgba(215, 255, 0, 0.26);
+    background: rgba(200, 255, 0, 0.12);
+    color: #C8FF00;
+    border: 1px solid rgba(200, 255, 0, 0.26);
   }
 
   .product-badge.is-offer {
@@ -1024,21 +871,33 @@ function getInitials(name: string): string {
   }
 
   .btn-edit {
-    background: #d7ff00;
+    background: #C8FF00;
     color: #111;
-    border: 1px solid #d7ff00;
+    border: 1px solid #C8FF00;
   }
 
-  .btn-delete {
+  .btn-archive {
     background: rgba(255, 77, 77, 0.05);
     color: #ff4d4d;
     border: 1px solid rgba(255, 77, 77, 0.25);
   }
 
-  .btn-delete:hover {
+  .btn-archive:hover {
     border-color: rgba(255, 77, 77, 0.48);
     background: rgba(255, 77, 77, 0.1);
   }
+
+  .btn-publish {
+    background: rgba(200, 255, 0, 0.1);
+    color: #c8ff00;
+    border: 1px solid rgba(200, 255, 0, 0.35);
+  }
+
+  .btn-publish:hover {
+    border-color: rgba(200, 255, 0, 0.55);
+    background: rgba(200, 255, 0, 0.18);
+  }
+
 
   .footer-row {
     padding: 16px 4px 0;
@@ -1216,7 +1075,7 @@ function getInitials(name: string): string {
   }
 
   :global(.admin-toast--success) {
-    border-color: rgba(215, 255, 0, 0.35);
+    border-color: rgba(200, 255, 0, 0.35);
   }
 
   :global(.admin-toast--error) {
@@ -1298,7 +1157,7 @@ function getInitials(name: string): string {
   .field input:focus,
   .field select:focus,
   .field textarea:focus {
-    border-color: rgba(215, 255, 0, 0.5);
+    border-color: rgba(200, 255, 0, 0.5);
   }
 
   .modal-actions {
@@ -1328,7 +1187,7 @@ function getInitials(name: string): string {
   }
 
   .btn-primary {
-    background: #d7ff00;
+    background: #C8FF00;
     color: #111;
     border: none;
   }
@@ -1391,13 +1250,13 @@ function getInitials(name: string): string {
   }
 
   .image-slot:hover {
-    border-color: rgba(215, 255, 0, 0.55);
+    border-color: rgba(200, 255, 0, 0.55);
     background: #1b1b1b;
     transform: translateY(-1px);
   }
 
   .image-slot.is-drag-over {
-    border-color: #d7ff00;
+    border-color: #C8FF00;
     background: #1c210f;
   }
 
@@ -1438,7 +1297,7 @@ function getInitials(name: string): string {
   }
 
   .image-slot-placeholder strong {
-    color: #d7ff00;
+    color: #C8FF00;
     font-size: 0.82rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1535,19 +1394,8 @@ function getInitials(name: string): string {
   }
 
   @media (max-width: 980px) {
-    .management-row {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
     .search-row {
       justify-content: stretch;
-    }
-
-    .bulk-panel {
-      width: 100%;
-      max-width: none;
-      justify-content: flex-start;
     }
 
     .new-btn {
@@ -1617,11 +1465,6 @@ function getInitials(name: string): string {
 
     tbody tr.product-row:hover {
       background: #111;
-    }
-
-    tbody tr.product-row.is-selected {
-      background: rgba(215, 255, 0, 0.06);
-      box-shadow: inset 4px 0 0 #d7ff00;
     }
 
     tbody tr td {
@@ -1699,32 +1542,6 @@ function getInitials(name: string): string {
   @media (max-width: 560px) {
     .new-btn {
       min-height: 44px;
-    }
-
-    .bulk-panel {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      padding: 10px;
-    }
-
-    .bulk-select-all,
-    .bulk-counter,
-    .bulk-search,
-    .bulk-panel select,
-    .btn-bulk,
-    .btn-clear-selection {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .bulk-search {
-      justify-self: stretch;
-    }
-
-    .bulk-counter {
-      justify-content: flex-start;
-      padding: 4px 2px;
     }
 
     .product-inline {
@@ -1885,7 +1702,7 @@ function getInitials(name: string): string {
   }
 
   .stock-split__eyebrow {
-    color: #d7ff00;
+    color: #C8FF00;
     font-size: 0.75rem;
     font-weight: 900;
     letter-spacing: 0.16em;
@@ -1962,7 +1779,7 @@ function getInitials(name: string): string {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #d7ff00;
+    color: #C8FF00;
     font-size: 0.9rem;
     font-weight: 900;
     letter-spacing: 0.06em;
@@ -2005,8 +1822,8 @@ function getInitials(name: string): string {
   .field textarea:focus,
   .bulk-toolbar__input:focus,
   .stock-split__input:focus {
-    border-color: rgba(215, 255, 0, 0.5);
-    box-shadow: 0 0 0 3px rgba(215, 255, 0, 0.1);
+    border-color: rgba(200, 255, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.1);
   }
 
   .field--accent {
@@ -2021,7 +1838,7 @@ function getInitials(name: string): string {
   }
 
   .field--accent label {
-    color: #d7ff00;
+    color: #C8FF00;
   }
 
   .field--accent .field-hint {
@@ -2043,10 +1860,9 @@ function getInitials(name: string): string {
     min-height: 18px;
     padding: 0;
     border-radius: 4px;
-    accent-color: #d7ff00;
+    accent-color: #C8FF00;
   }
 
-  #productBadge,
   #productEstado {
     cursor: pointer;
   }
@@ -2064,8 +1880,8 @@ function getInitials(name: string): string {
   import {
     createAdminProducto,
     updateAdminProducto,
-    updateAdminProductosBadge,
-    deleteAdminProducto,
+    archiveAdminProducto,
+    publishAdminProducto,
   } from "../../lib/admin-productos-api";
 
   const appWindow = window as Window & {
@@ -2093,7 +1909,7 @@ function getInitials(name: string): string {
   const productTallaje = document.getElementById("productTallaje");
   const productTipo = document.getElementById("productTipo");
   const productIsAccesorio = document.getElementById("productIsAccesorio");
-  const productBadge = document.getElementById("productBadge");
+  const productIsNewBadge = document.getElementById("productIsNewBadge");
   const productEstado = document.getElementById("productEstado");
   const productStockInicial = document.getElementById("productStockInicial");
   const productStockLabel = document.getElementById("productStockLabel");
@@ -2113,29 +1929,18 @@ function getInitials(name: string): string {
   const productImageUploadText = document.getElementById(
     "productImageUploadText",
   );
-  const selectedProductsCount = document.getElementById(
-    "selectedProductsCount",
-  );
-  const bulkBadgeSelect = document.getElementById("bulkBadgeSelect");
-  const bulkBadgeBtn = document.getElementById("bulkBadgeBtn");
-  const bulkBadgeMessage = document.getElementById("bulkBadgeMessage");
-  const clearProductSelectionBtn = document.getElementById(
-    "clearProductSelectionBtn",
-  );
   const productSearchInput = document.getElementById("productSearchInput");
   const clearProductSearchBtn = document.getElementById("clearProductSearchBtn");
   const productsSearchEmpty = document.getElementById("productsSearchEmpty");
-  const selectAllProducts = document.getElementById("selectAllProducts");
   const productRows = Array.from(
     document.querySelectorAll<HTMLTableRowElement>(".product-row"),
-  );
-  const productCheckboxes = Array.from(
-    document.querySelectorAll<HTMLInputElement>(".product-select"),
   );
   const stockSplitModalBackdrop = document.getElementById(
     "stockSplitModalBackdrop",
   );
   const deleteConfirmBackdrop = document.getElementById("deleteConfirmBackdrop");
+  const deleteConfirmTitle = document.getElementById("deleteConfirmTitle");
+  const deleteConfirmText = document.getElementById("deleteConfirmText");
   const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
   const stockSplitForm = document.getElementById("stockSplitForm");
   const stockSplitGrid = document.getElementById("stockSplitGrid");
@@ -2173,6 +1978,7 @@ function getInitials(name: string): string {
 
   let pendingCreatePayload: PendingCreatePayload | null = null;
   let pendingDeleteProductId: number | null = null;
+  let pendingDeleteAction: "archivar" | "publicar" = "archivar";
   let stockSplitSizes: string[] = [];
   let lastManualTipo = "";
   let selectedImageFiles: (File | null)[] = [null, null, null];
@@ -2203,15 +2009,6 @@ function getInitials(name: string): string {
     return normalized || "producto";
   }
 
-  function normalizeBadgeValue(value: string): string {
-    const normalized = value.trim().toLowerCase();
-
-    if (normalized === "new") return "NEW";
-    if (normalized === "oferta") return "Oferta";
-
-    return "";
-  }
-
   function normalizeTallajeValue(value: string): "clasico" | "pantalon" | "unica" {
     const normalized = value.trim().toLowerCase();
 
@@ -2233,7 +2030,6 @@ function getInitials(name: string): string {
   function validateAndNormalizePricing(
     precioActualRaw: string,
     precioOriginalRaw: string,
-    currentBadge: string,
   ): {
     precioOferta: number;
     precioOriginal: string;
@@ -2247,7 +2043,6 @@ function getInitials(name: string): string {
     const hasValidMoney = (value: string) => /^\d+(?:[\.,]\d{1,2})?$/.test(value);
     const parseMoney = (value: string) => Number(value.replace(",", "."));
     const originalNumber = hasOriginal ? parseMoney(originalTrimmed) : null;
-    const normalizedBadge = normalizeBadgeValue(currentBadge);
     const precioActual = hasOferta ? parseMoney(ofertaTrimmed) : null;
 
     if (hasOriginal && !hasValidMoney(originalTrimmed)) {
@@ -2258,7 +2053,7 @@ function getInitials(name: string): string {
       throw new Error("El precio original debe ser mayor que 0");
     }
 
-    if (normalizedBadge === "Oferta") {
+    if (hasOferta) {
       if (!hasOferta) {
         throw new Error("Debes indicar el precio oferta");
       }
@@ -2282,13 +2077,9 @@ function getInitials(name: string): string {
       return {
         precioOferta: Number(precioActual),
         precioOriginal: Number(originalNumber).toFixed(2),
-        badge: normalizedBadge,
+        badge: "Oferta",
         warning: null,
       };
-    }
-
-    if (hasOferta) {
-      throw new Error("El precio oferta solo se permite cuando la badge es Oferta");
     }
 
     if (!hasOriginal) {
@@ -2296,10 +2087,10 @@ function getInitials(name: string): string {
     }
 
     return {
-      // Sin badge Oferta, usamos el precio original como precio base y no enviamos precio original.
+      // Sin precio oferta, usamos el precio original como precio base.
       precioOferta: Number(originalNumber),
       precioOriginal: "",
-      badge: normalizedBadge,
+      badge: "NEW",
       warning: null,
     };
   }
@@ -2371,14 +2162,37 @@ function getInitials(name: string): string {
     productFormFeedback.style.color = kind === "success" ? "#8effad" : "#ff8f8f";
   }
 
-  function openDeleteConfirmModal(productId: number) {
+  function openDeleteConfirmModal(
+    productId: number,
+    action: "archivar" | "publicar",
+  ) {
     pendingDeleteProductId = productId;
+    pendingDeleteAction = action;
+
+    if (deleteConfirmTitle instanceof HTMLElement) {
+      deleteConfirmTitle.textContent =
+        action === "publicar" ? "Publicar producto" : "Archivar producto";
+    }
+
+    if (deleteConfirmText instanceof HTMLElement) {
+      deleteConfirmText.textContent =
+        action === "publicar"
+          ? "¿Seguro que quieres publicar este producto?"
+          : "¿Seguro que quieres archivar este producto?";
+    }
+
+    if (confirmDeleteBtn instanceof HTMLButtonElement) {
+      confirmDeleteBtn.textContent =
+        action === "publicar" ? "Publicar" : "Archivar";
+    }
+
     deleteConfirmBackdrop?.classList.add("is-open");
     document.body.style.overflow = "hidden";
   }
 
   function closeDeleteConfirmModal() {
     pendingDeleteProductId = null;
+    pendingDeleteAction = "archivar";
     deleteConfirmBackdrop?.classList.remove("is-open");
     document.body.style.overflow = "";
   }
@@ -2387,15 +2201,28 @@ function getInitials(name: string): string {
     if (!pendingDeleteProductId) return;
 
     const id = pendingDeleteProductId;
+    const action = pendingDeleteAction;
     closeDeleteConfirmModal();
 
     try {
-      await deleteAdminProducto(id);
-      showToastMessage("Producto eliminado", "success");
+      if (action === "publicar") {
+        await publishAdminProducto(id);
+      } else {
+        await archiveAdminProducto(id);
+      }
+
+      showToastMessage(
+        action === "publicar" ? "Producto publicado" : "Producto archivado",
+        "success",
+      );
       window.location.reload();
     } catch (error) {
       showToastMessage(
-        error instanceof Error ? error.message : "Error al eliminar producto",
+        error instanceof Error
+          ? error.message
+          : action === "publicar"
+            ? "Error al publicar producto"
+            : "Error al archivar producto",
         "error",
       );
     }
@@ -2410,12 +2237,11 @@ function getInitials(name: string): string {
     precioOriginalRaw: string;
     tallaje: string;
     tipo: string;
-    badge: string;
     estado: string;
     stockRaw: string;
     hasImageSelected: boolean;
   }) {
-    const isOfertaBadge = normalizeBadgeValue(options.badge) === "Oferta";
+    const isOfertaPricing = options.precioOfertaRaw.trim() !== "";
 
     if (!options.nombre) {
       throw new Error("Debes indicar el nombre del producto");
@@ -2429,7 +2255,7 @@ function getInitials(name: string): string {
       throw new Error("Debes indicar la descripción del producto");
     }
 
-    if (isOfertaBadge) {
+    if (isOfertaPricing) {
       if (!options.precioOfertaRaw) {
         throw new Error("Debes indicar un precio oferta válido");
       }
@@ -2462,8 +2288,8 @@ function getInitials(name: string): string {
       throw new Error("Debes subir al menos 1 imagen en una de las 3 cajas");
     }
 
-    if (isOfertaBadge && options.precioOriginalRaw.trim() === "") {
-      throw new Error("Con badge Oferta debes completar el precio original");
+    if (isOfertaPricing && options.precioOriginalRaw.trim() === "") {
+      throw new Error("Si indicas precio oferta debes completar el precio original");
     }
   }
 
@@ -2507,14 +2333,11 @@ function getInitials(name: string): string {
     }
   }
 
-  function syncPricingModeFromBadge() {
-    if (!(productBadge instanceof HTMLSelectElement)) return;
+  function syncPricingModeFromPricingInputs() {
     if (!(productPrecioBase instanceof HTMLInputElement)) return;
     if (!(productPrecioOriginal instanceof HTMLInputElement)) return;
 
-    const isOferta = normalizeBadgeValue(productBadge.value) === "Oferta";
-
-    productPrecioBase.disabled = !isOferta;
+    const isOferta = productPrecioBase.value.trim() !== "";
 
     if (isOferta) {
       productPrecioBase.required = true;
@@ -2524,9 +2347,23 @@ function getInitials(name: string): string {
     }
 
     productPrecioBase.required = false;
-    productPrecioBase.value = "";
-    productPrecioBase.placeholder = "Solo disponible con badge Oferta";
+    productPrecioBase.placeholder = "Opcional: rellena para marcarlo como oferta";
     productPrecioOriginal.placeholder = "Ej: 39,99";
+  }
+
+  function syncNewBadgeToggleState() {
+    if (!(productIsNewBadge instanceof HTMLInputElement)) return;
+    if (!(productPrecioBase instanceof HTMLInputElement)) return;
+
+    const isOferta = productPrecioBase.value.trim() !== "";
+
+    if (isOferta) {
+      productIsNewBadge.checked = false;
+      productIsNewBadge.disabled = true;
+      return;
+    }
+
+    productIsNewBadge.disabled = false;
   }
 
   function validateProductImage(file: File): void {
@@ -2672,40 +2509,12 @@ function getInitials(name: string): string {
     return imagenes;
   }
 
-  function isInteractiveTarget(target: EventTarget | null): boolean {
-    if (!(target instanceof Element)) return false;
-
-    return Boolean(target.closest("button, a, input, label, select, textarea"));
-  }
-
-  function setRowSelected(row: HTMLTableRowElement, selected: boolean) {
-    const checkbox = row.querySelector<HTMLInputElement>(".product-select");
-
-    if (checkbox) {
-      checkbox.checked = selected;
-    }
-
-    row.classList.toggle("is-selected", selected);
-    row.setAttribute("aria-selected", selected ? "true" : "false");
-  }
-
-  function getSelectedProductIds(): number[] {
-    return productCheckboxes
-      .filter((checkbox) => checkbox.checked)
-      .map((checkbox) => Number(checkbox.value))
-      .filter((id) => Number.isInteger(id) && id > 0);
-  }
-
   function normalizeSearchText(value: string): string {
     return value
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
-  }
-
-  function getVisibleProductRows(): HTMLTableRowElement[] {
-    return productRows.filter((row) => !row.hidden);
   }
 
   function applyProductSearchFilter(): void {
@@ -2724,9 +2533,7 @@ function getInitials(name: string): string {
 
       row.hidden = !matches;
 
-      if (!matches) {
-        setRowSelected(row, false);
-      } else {
+      if (matches) {
         visibleCount += 1;
       }
     });
@@ -2738,42 +2545,6 @@ function getInitials(name: string): string {
 
     if (productsSearchEmpty instanceof HTMLElement) {
       productsSearchEmpty.hidden = visibleCount > 0;
-    }
-
-    updateBulkToolbar();
-  }
-
-  function updateBulkToolbar() {
-    const visibleRows = getVisibleProductRows();
-    const visibleCheckboxes = visibleRows
-      .map((row) => row.querySelector<HTMLInputElement>(".product-select"))
-      .filter((checkbox): checkbox is HTMLInputElement => checkbox instanceof HTMLInputElement);
-    const selected = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
-    const total = visibleCheckboxes.length;
-
-    productRows.forEach((row) => {
-      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
-      const checked = Boolean(checkbox?.checked);
-
-      row.classList.toggle("is-selected", checked);
-      row.setAttribute("aria-selected", checked ? "true" : "false");
-    });
-
-    if (selectedProductsCount instanceof HTMLElement) {
-      selectedProductsCount.textContent = String(selected);
-    }
-
-    if (selectAllProducts instanceof HTMLInputElement) {
-      selectAllProducts.checked = total > 0 && selected === total;
-      selectAllProducts.indeterminate = selected > 0 && selected < total;
-    }
-
-    if (bulkBadgeBtn instanceof HTMLButtonElement) {
-      bulkBadgeBtn.disabled = selected === 0;
-    }
-
-    if (bulkBadgeMessage instanceof HTMLElement) {
-      bulkBadgeMessage.textContent = "";
     }
   }
 
@@ -2808,7 +2579,6 @@ function getInitials(name: string): string {
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
     const tallajeInput = asField(productTallaje);
-    const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -2820,7 +2590,6 @@ function getInitials(name: string): string {
       !precioOriginalInput ||
       !tallajeInput ||
       !tipoInput ||
-      !badgeInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -2837,9 +2606,12 @@ function getInitials(name: string): string {
     if (productIsAccesorio instanceof HTMLInputElement) {
       productIsAccesorio.checked = false;
     }
+    if (productIsNewBadge instanceof HTMLInputElement) {
+      productIsNewBadge.checked = true;
+      productIsNewBadge.disabled = false;
+    }
     lastManualTipo = "";
     tallajeInput.value = "clasico";
-    badgeInput.value = "NEW";
     stockInicialInput.value = "";
     stockInicialInput.disabled = false;
     estadoInput.value = "borrador";
@@ -2849,7 +2621,8 @@ function getInitials(name: string): string {
     resetImageInput();
     setProductImageVisible(true);
     syncTipoFromAccesorioToggle();
-    syncPricingModeFromBadge();
+    syncPricingModeFromPricingInputs();
+    syncNewBadgeToggleState();
 
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Stock";
@@ -2867,7 +2640,6 @@ function getInitials(name: string): string {
     const precioOriginalInput = asField(productPrecioOriginal);
     const tipoInput = asField(productTipo);
     const tallajeInput = asField(productTallaje);
-    const badgeInput = asField(productBadge);
     const stockInicialInput = asField(productStockInicial);
     const estadoInput = asField(productEstado);
 
@@ -2879,7 +2651,6 @@ function getInitials(name: string): string {
       !precioOriginalInput ||
       !tallajeInput ||
       !tipoInput ||
-      !badgeInput ||
       !stockInicialInput ||
       !estadoInput
     ) {
@@ -2890,11 +2661,10 @@ function getInitials(name: string): string {
     nombreInput.value = button.dataset.nombre || "";
     slugInput.value = button.dataset.slug || "";
     descripcionInput.value = button.dataset.descripcion || "";
-    const badgeNormalized = normalizeBadgeValue(button.dataset.badge || "");
     const precioBaseData = button.dataset.precioBase || "";
     const precioOriginalData = button.dataset.precioOriginal || "";
 
-    if (badgeNormalized === "Oferta") {
+    if (precioOriginalData.trim() !== "") {
       precioBaseInput.value = precioBaseData;
       precioOriginalInput.value = precioOriginalData;
     } else {
@@ -2907,8 +2677,11 @@ function getInitials(name: string): string {
     if (productIsAccesorio instanceof HTMLInputElement) {
       productIsAccesorio.checked = isAccesorio;
     }
+    if (productIsNewBadge instanceof HTMLInputElement) {
+      const currentBadge = String(button.dataset.badge || "").trim().toLowerCase();
+      productIsNewBadge.checked = currentBadge === "new";
+    }
     lastManualTipo = isAccesorio ? "" : tipoInput.value.trim();
-    badgeInput.value = badgeNormalized;
     stockInicialInput.value = "0";
     stockInicialInput.disabled = false;
     estadoInput.value = button.dataset.estado || "borrador";
@@ -2916,59 +2689,13 @@ function getInitials(name: string): string {
     resetImageInput();
     setProductImageVisible(false);
     syncTipoFromAccesorioToggle();
-    syncPricingModeFromBadge();
+    syncPricingModeFromPricingInputs();
+    syncNewBadgeToggleState();
 
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Añadir stock";
     }
   }
-
-  productRows.forEach((row) => {
-    row.addEventListener("click", (event) => {
-      if (isInteractiveTarget(event.target)) return;
-
-      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
-      if (!checkbox) return;
-
-      setRowSelected(row, !checkbox.checked);
-      updateBulkToolbar();
-    });
-
-    row.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      if (isInteractiveTarget(event.target)) return;
-
-      event.preventDefault();
-
-      const checkbox = row.querySelector<HTMLInputElement>(".product-select");
-      if (!checkbox) return;
-
-      setRowSelected(row, !checkbox.checked);
-      updateBulkToolbar();
-    });
-  });
-
-  selectAllProducts?.addEventListener("change", () => {
-    if (!(selectAllProducts instanceof HTMLInputElement)) return;
-
-    getVisibleProductRows().forEach((row) => {
-      setRowSelected(row, selectAllProducts.checked);
-    });
-
-    updateBulkToolbar();
-  });
-
-  clearProductSelectionBtn?.addEventListener("click", () => {
-    productRows.forEach((row) => {
-      setRowSelected(row, false);
-    });
-
-    if (bulkBadgeSelect instanceof HTMLSelectElement) {
-      bulkBadgeSelect.value = "";
-    }
-
-    updateBulkToolbar();
-  });
 
   productSearchInput?.addEventListener("input", applyProductSearchFilter);
 
@@ -2978,30 +2705,6 @@ function getInitials(name: string): string {
     productSearchInput.value = "";
     applyProductSearchFilter();
     productSearchInput.focus();
-  });
-
-  bulkBadgeBtn?.addEventListener("click", async () => {
-    const selectedIds = getSelectedProductIds();
-
-    if (selectedIds.length === 0) {
-      if (bulkBadgeMessage instanceof HTMLElement) {
-        bulkBadgeMessage.textContent = "Selecciona al menos un producto";
-      }
-      return;
-    }
-
-    const badge =
-      bulkBadgeSelect instanceof HTMLSelectElement ? bulkBadgeSelect.value : "";
-
-    try {
-      await updateAdminProductosBadge(selectedIds, badge);
-      window.location.reload();
-    } catch (error) {
-      if (bulkBadgeMessage instanceof HTMLElement) {
-        bulkBadgeMessage.textContent =
-          error instanceof Error ? error.message : "Error al actualizar badges";
-      }
-    }
   });
 
   function syncSlugFromName() {
@@ -3031,25 +2734,29 @@ function getInitials(name: string): string {
   }
 
   if (productPrecioBase instanceof HTMLInputElement) {
+    productPrecioBase.addEventListener("input", () => {
+      syncPricingModeFromPricingInputs();
+      syncNewBadgeToggleState();
+    });
+
     productPrecioBase.addEventListener("blur", () => {
       formatMoneyInput(productPrecioBase, false);
+      syncPricingModeFromPricingInputs();
+      syncNewBadgeToggleState();
     });
   }
 
   if (productPrecioOriginal instanceof HTMLInputElement) {
     productPrecioOriginal.addEventListener("blur", () => {
       formatMoneyInput(productPrecioOriginal, true);
-    });
-  }
-
-  if (productBadge instanceof HTMLSelectElement) {
-    productBadge.addEventListener("change", () => {
-      syncPricingModeFromBadge();
+      syncPricingModeFromPricingInputs();
+      syncNewBadgeToggleState();
     });
   }
 
   syncTipoFromAccesorioToggle();
-  syncPricingModeFromBadge();
+  syncPricingModeFromPricingInputs();
+  syncNewBadgeToggleState();
 
   productImageSlotInputs.forEach((input, slotIndex) => {
     input.addEventListener("change", () => {
@@ -3252,12 +2959,15 @@ function getInitials(name: string): string {
     });
   });
 
-  document.querySelectorAll<HTMLButtonElement>(".btn-delete").forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>(".btn-toggle-status").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
       if (!id) return;
 
-      openDeleteConfirmModal(id);
+      const currentEstado = (btn.dataset.currentEstado || "").trim().toLowerCase();
+      const action =
+        currentEstado === "archivado" ? "publicar" : "archivar";
+      openDeleteConfirmModal(id, action);
     });
   });
 
@@ -3347,7 +3057,6 @@ function getInitials(name: string): string {
       !(productPrecioOriginal instanceof HTMLInputElement) ||
       !(productTallaje instanceof HTMLSelectElement) ||
       !(productTipo instanceof HTMLInputElement) ||
-      !(productBadge instanceof HTMLSelectElement) ||
       !(productEstado instanceof HTMLSelectElement) ||
       !(productStockInicial instanceof HTMLInputElement)
     ) {
@@ -3374,7 +3083,6 @@ function getInitials(name: string): string {
         precioOriginalRaw: productPrecioOriginal.value,
         tallaje: productTallaje.value,
         tipo: productTipo.value.trim(),
-        badge: productBadge.value,
         estado: productEstado.value,
         stockRaw: productStockInicial.value,
         hasImageSelected: hasSelectedImages,
@@ -3392,8 +3100,16 @@ function getInitials(name: string): string {
       const pricing = validateAndNormalizePricing(
         productPrecioBase.value,
         productPrecioOriginal.value,
-        productBadge.value,
       );
+
+      const keepNewBadge =
+        productIsNewBadge instanceof HTMLInputElement
+          ? productIsNewBadge.checked
+          : true;
+      const resolvedBadge =
+        pricing.badge === "NEW" && isEditing && !keepNewBadge
+          ? ""
+          : pricing.badge;
 
       productPrecioBase.value = pricing.precioOferta.toFixed(2);
       if (pricing.precioOriginal) {
@@ -3410,7 +3126,7 @@ function getInitials(name: string): string {
         precio_original: pricing.precioOriginal,
         tallaje: resolvedTallaje,
         tipo: productTipo.value.trim(),
-        badge: pricing.badge,
+        badge: resolvedBadge,
         estado: productEstado.value,
         stock_inicial: stockValue,
       };
