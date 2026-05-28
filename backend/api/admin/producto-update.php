@@ -23,6 +23,23 @@ if (!isset($_SESSION["usuario_id"]) || ($_SESSION["usuario_rol"] ?? "") !== "adm
 
 require_once __DIR__ . "/../../conexion.php";
 
+function dmh_ensure_tallaje_column(PDO $conexion): void
+{
+    $stmt = $conexion->query(
+        "SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tallaje'"
+    );
+
+    if ((int)$stmt->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE productos ADD COLUMN tallaje ENUM('clasico','pantalon','unica') NOT NULL DEFAULT 'clasico' AFTER precio_original");
+    }
+}
+
+dmh_ensure_tallaje_column($conexion);
+
 function dmh_slugify(string $value): string {
     $value = strtolower(trim($value));
     $value = preg_replace('/[^a-z0-9]+/i', '-', $value) ?? '';
@@ -44,6 +61,24 @@ function dmh_build_variant_sku(string $slug, string $talla): string {
     return substr($base . '-' . $size, 0, 32);
 }
 
+function dmh_has_money_format(string $value): bool {
+    return (bool)preg_match('/^\d+(?:[\.,]\d{1,2})?$/', trim($value));
+}
+
+function dmh_parse_money(string $value): float {
+    return (float)str_replace(',', '.', trim($value));
+}
+
+function dmh_normalize_badge(string $value): ?string {
+    $normalized = strtolower(trim($value));
+
+    if ($normalized === '') return null;
+    if ($normalized === 'new') return 'NEW';
+    if ($normalized === 'oferta') return 'Oferta';
+
+    return null;
+}
+
 try {
     $input = json_decode(file_get_contents("php://input"), true);
 
@@ -51,12 +86,15 @@ try {
     $nombre = trim((string)($input["nombre"] ?? ""));
     $slug = trim((string)($input["slug"] ?? ""));
     $descripcion = trim((string)($input["descripcion"] ?? ""));
-    $precioBase = (float)($input["precio_base"] ?? 0);
-    $precioOriginal = isset($input["precio_original"]) && $input["precio_original"] !== ""
-        ? (float)$input["precio_original"]
-        : null;
+    $precioBaseRaw = trim((string)($input["precio_base"] ?? ""));
+    $precioOriginalRaw = trim((string)($input["precio_original"] ?? ""));
+    $precioOriginalInformado = $precioOriginalRaw !== "";
+    $precioBase = 0.0;
+    $precioOriginal = null;
+    $tallaje = strtolower(trim((string)($input["tallaje"] ?? "clasico")));
     $tipo = trim((string)($input["tipo"] ?? ""));
-    $badge = trim((string)($input["badge"] ?? ""));
+    $badgeRaw = trim((string)($input["badge"] ?? ""));
+    $badge = dmh_normalize_badge($badgeRaw);
     $estado = trim((string)($input["estado"] ?? "borrador"));
     $stockInicial = max(0, (int)($input["stock_inicial"] ?? 0));
     $variantes = is_array($input["variantes"] ?? null) ? $input["variantes"] : [];
@@ -77,10 +115,92 @@ try {
         exit;
     }
 
+    if ($descripcion === "") {
+        echo json_encode([
+            "ok" => false,
+            "error" => "La descripción es obligatoria"
+        ]);
+        exit;
+    }
+
+    if (!dmh_has_money_format($precioBaseRaw)) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "El precio oferta debe tener 2 decimales (ej: 100,00)"
+        ]);
+        exit;
+    }
+
+    $precioBase = dmh_parse_money($precioBaseRaw);
+
     if ($precioBase <= 0) {
         echo json_encode([
             "ok" => false,
-            "error" => "El precio base debe ser mayor que 0"
+            "error" => "El precio actual debe ser mayor que 0"
+        ]);
+        exit;
+    }
+
+    if ($tipo === "") {
+        echo json_encode([
+            "ok" => false,
+            "error" => "El tipo es obligatorio"
+        ]);
+        exit;
+    }
+
+    if ($badgeRaw !== '' && $badge === null) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "La badge seleccionada no es válida"
+        ]);
+        exit;
+    }
+
+    if (!in_array($tallaje, ["clasico", "pantalon", "unica"], true)) {
+        $tallaje = "clasico";
+    }
+
+    if ($precioOriginalInformado) {
+        if (!dmh_has_money_format($precioOriginalRaw)) {
+            echo json_encode([
+                "ok" => false,
+                "error" => "El precio original debe tener 2 decimales (ej: 100,00)"
+            ]);
+            exit;
+        }
+
+        $precioOriginal = dmh_parse_money($precioOriginalRaw);
+
+        if ($precioOriginal <= 0) {
+            echo json_encode([
+                "ok" => false,
+                "error" => "El precio original debe ser mayor que 0"
+            ]);
+            exit;
+        }
+
+        if ($precioBase >= $precioOriginal) {
+            echo json_encode([
+                "ok" => false,
+                "error" => "El precio actual debe ser inferior al precio original"
+            ]);
+            exit;
+        }
+    }
+
+    if ($badge === 'Oferta' && !$precioOriginalInformado) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "Con badge Oferta debes completar el precio original"
+        ]);
+        exit;
+    }
+
+    if ($badge !== 'Oferta' && $precioOriginalInformado) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "El precio original solo se permite cuando la badge es Oferta"
         ]);
         exit;
     }
@@ -113,6 +233,7 @@ try {
             descripcion = :descripcion,
             precio_base = :precio_base,
             precio_original = :precio_original,
+            tallaje = :tallaje,
             tipo = :tipo,
             color = NULL,
             badge = :badge,
@@ -127,8 +248,9 @@ try {
         "descripcion" => $descripcion !== "" ? $descripcion : null,
         "precio_base" => $precioBase,
         "precio_original" => $precioOriginal,
+        "tallaje" => $tallaje,
         "tipo" => $tipo !== "" ? $tipo : null,
-        "badge" => $badge !== "" ? $badge : null,
+        "badge" => $badge,
         "estado" => in_array($estado, ["borrador", "publicado", "archivado"], true) ? $estado : "borrador",
     ]);
 

@@ -26,6 +26,23 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 
 require_once __DIR__ . "/../conexion.php";
 
+function dmh_ensure_tallaje_column(PDO $conexion): void
+{
+    $stmt = $conexion->query(
+        "SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tallaje'"
+    );
+
+    if ((int)$stmt->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE productos ADD COLUMN tallaje ENUM('clasico','pantalon','unica') NOT NULL DEFAULT 'clasico' AFTER precio_original");
+    }
+}
+
+dmh_ensure_tallaje_column($conexion);
+
 try {
     $stmtHasOpinionStatus = $conexion->prepare(
         "SELECT COUNT(*)
@@ -47,6 +64,7 @@ try {
             p.descripcion,
             p.precio_base,
             p.precio_original,
+            p.tallaje,
             p.tipo,
             p.color,
             p.badge,
@@ -73,6 +91,7 @@ try {
             p.descripcion,
             p.precio_base,
             p.precio_original,
+            p.tallaje,
             p.tipo,
             p.color,
             p.badge,
@@ -157,10 +176,15 @@ try {
         $size = (string)$variant["talla"];
         $stock = (int)$variant["stock"];
         $stockByProductId[$pid]["totalStock"] += $stock;
-        $stockByProductId[$pid]["bySize"][$size] = [
-            "stock" => $stock,
-            "sku" => (string)$variant["sku"],
-        ];
+
+        if (!isset($stockByProductId[$pid]["bySize"][$size])) {
+            $stockByProductId[$pid]["bySize"][$size] = [
+                "stock" => 0,
+                "sku" => (string)$variant["sku"],
+            ];
+        }
+
+        $stockByProductId[$pid]["bySize"][$size]["stock"] += $stock;
     }
 
     $reviewsByProductId = [];
@@ -204,6 +228,7 @@ try {
             "category" => (string)$row["categoria"],
             "price" => (float)$row["precio_base"],
             "originalPrice" => $row["precio_original"] !== null ? (float)$row["precio_original"] : null,
+            "tallaje" => (string)($row["tallaje"] ?? "clasico"),
             "type" => (string)($row["tipo"] ?? ""),
             "color" => (string)($row["color"] ?? ""),
             "badge" => (string)($row["badge"] ?? ""),

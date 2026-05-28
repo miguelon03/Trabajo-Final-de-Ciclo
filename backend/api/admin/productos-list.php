@@ -23,6 +23,23 @@ if (!isset($_SESSION["usuario_id"]) || ($_SESSION["usuario_rol"] ?? "") !== "adm
 
 require_once __DIR__ . "/../../conexion.php";
 
+function dmh_ensure_tallaje_column(PDO $conexion): void
+{
+    $stmt = $conexion->query(
+        "SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tallaje'"
+    );
+
+    if ((int)$stmt->fetchColumn() === 0) {
+        $conexion->exec("ALTER TABLE productos ADD COLUMN tallaje ENUM('clasico','pantalon','unica') NOT NULL DEFAULT 'clasico' AFTER precio_original");
+    }
+}
+
+dmh_ensure_tallaje_column($conexion);
+
 try {
     $buscar = trim((string)($_GET["buscar"] ?? ""));
     $estado = trim((string)($_GET["estado"] ?? ""));
@@ -36,6 +53,7 @@ try {
             p.descripcion,
             p.precio_base,
             p.precio_original,
+            p.tallaje,
             p.tipo,
             p.color,
             p.badge,
@@ -87,6 +105,7 @@ try {
             p.descripcion,
             p.precio_base,
             p.precio_original,
+            p.tallaje,
             p.tipo,
             p.color,
             p.badge,

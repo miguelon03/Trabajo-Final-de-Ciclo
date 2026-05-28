@@ -328,6 +328,7 @@ try {
             descripcion TEXT NULL,
             precio_base DECIMAL(10,2) NOT NULL,
             precio_original DECIMAL(10,2) NULL,
+            tallaje ENUM('clasico','pantalon','unica') NOT NULL DEFAULT 'clasico',
             tipo VARCHAR(40) NULL,
             color VARCHAR(40) NULL,
             badge VARCHAR(40) NULL,
@@ -341,7 +342,8 @@ try {
 
     $camposProductos = [
         "precio_original" => "ALTER TABLE productos ADD COLUMN precio_original DECIMAL(10,2) NULL AFTER precio_base",
-        "tipo" => "ALTER TABLE productos ADD COLUMN tipo VARCHAR(40) NULL AFTER precio_original",
+        "tallaje" => "ALTER TABLE productos ADD COLUMN tallaje ENUM('clasico','pantalon','unica') NOT NULL DEFAULT 'clasico' AFTER precio_original",
+        "tipo" => "ALTER TABLE productos ADD COLUMN tipo VARCHAR(40) NULL AFTER tallaje",
         "color" => "ALTER TABLE productos ADD COLUMN color VARCHAR(40) NULL AFTER tipo",
         "badge" => "ALTER TABLE productos ADD COLUMN badge VARCHAR(40) NULL AFTER color",
         "fecha_catalogo" => "ALTER TABLE productos ADD COLUMN fecha_catalogo DATE NULL AFTER badge",
@@ -708,6 +710,29 @@ try {
     ");
     $pasos[] = "Tabla vistas_producto creada";
 
+    $conexion->exec(" 
+        CREATE TABLE IF NOT EXISTS home_hero_config (
+            id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+            eyebrow VARCHAR(80) NOT NULL,
+            title VARCHAR(120) NOT NULL,
+            description VARCHAR(320) NOT NULL,
+            primary_label VARCHAR(40) NOT NULL,
+            primary_href VARCHAR(255) NOT NULL,
+            secondary_label VARCHAR(40) NOT NULL,
+            secondary_href VARCHAR(255) NOT NULL,
+            product_image VARCHAR(255) NOT NULL DEFAULT '',
+            product_image_scale DECIMAL(6,2) NOT NULL DEFAULT 100,
+            product_image_pos_x DECIMAL(6,2) NOT NULL DEFAULT 0,
+            product_image_pos_y DECIMAL(6,2) NOT NULL DEFAULT 0,
+            background_image VARCHAR(255) NOT NULL DEFAULT '',
+            background_image_scale DECIMAL(6,2) NOT NULL DEFAULT 100,
+            background_image_pos_x DECIMAL(6,2) NOT NULL DEFAULT 0,
+            background_image_pos_y DECIMAL(6,2) NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+    $pasos[] = "Tabla home_hero_config creada";
+
     /*
      * No reseteamos admin ni clientes si ya existen.
      * Antes el instalador podía sobrescribir contraseña, rol y estado.
@@ -754,8 +779,7 @@ try {
         INSERT INTO usuarios (nombre, email, contrasena_hash, rol, telefono, ciudad, estado)
         VALUES (:nombre, :email, :hash, 'cliente', :telefono, :ciudad, 'activo')
         ON DUPLICATE KEY UPDATE
-            telefono = COALESCE(NULLIF(telefono, ''), VALUES(telefono)),
-            ciudad = COALESCE(NULLIF(ciudad, ''), VALUES(ciudad))
+                id = id
     ");
 
     foreach ($usuariosPrueba as $u) {
@@ -769,6 +793,7 @@ try {
     }
 
     $pasos[] = "Usuarios de prueba creados o ya existentes sin resetear contraseña/rol";
+        $pasos[] = "Usuarios de prueba creados o ya existentes sin modificar datos";
 
     /*
      * Seed del catálogo:

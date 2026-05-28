@@ -26,7 +26,7 @@ require_once __DIR__ . "/../../conexion.php";
 $body = json_decode(file_get_contents("php://input"), true) ?? [];
 $pedidoId = (int)($body["id"] ?? 0);
 $estado = trim((string)($body["estado"] ?? ""));
-$estadosPermitidos = ["pendiente", "pagado", "enviado", "entregado", "cancelado", "devuelto"];
+$estadosPermitidos = ["pendiente", "pagado", "enviado", "entregado", "devuelto"];
 
 if ($pedidoId <= 0) {
     http_response_code(400);

@@ -35,7 +35,6 @@ try {
         exit;
     }
 
-    // Endpoint legado: por seguridad archivamos en lugar de borrar físicamente.
     $stmt = $conexion->prepare(
         "UPDATE productos SET estado = 'archivado' WHERE id = :id LIMIT 1"
     );

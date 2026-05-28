@@ -35,29 +35,28 @@ try {
         exit;
     }
 
-    // Endpoint legado: por seguridad archivamos en lugar de borrar físicamente.
     $stmt = $conexion->prepare(
-        "UPDATE productos SET estado = 'archivado' WHERE id = :id LIMIT 1"
+        "UPDATE productos SET estado = 'publicado' WHERE id = :id LIMIT 1"
     );
     $stmt->execute(["id" => $id]);
 
     if ($stmt->rowCount() <= 0) {
         echo json_encode([
             "ok" => false,
-            "error" => "Producto no encontrado o ya archivado"
+            "error" => "Producto no encontrado o ya publicado"
         ]);
         exit;
     }
 
     echo json_encode([
         "ok" => true,
-        "mensaje" => "Producto archivado correctamente"
+        "mensaje" => "Producto publicado correctamente"
     ]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         "ok" => false,
-        "error" => "Error al archivar producto",
+        "error" => "Error al publicar producto",
         "detalle" => $e->getMessage()
     ]);
 }

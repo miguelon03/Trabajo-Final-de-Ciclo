@@ -1,0 +1,127 @@
+PRUEBAS - 2026-05-28
+
+Objetivo
+- Ejecutar pruebas manuales en navegador integrado cubriendo flujos principales de la plataforma.
+- Reportar errores, dudas y comportamientos sospechosos.
+
+Entorno de prueba
+- Frontend: Astro dev en http://localhost:4321
+- Navegador: Integrado de VS Code
+- Estado de sesión: invitado (sin credenciales de admin disponibles)
+
+Cobertura ejecutada
+- Home
+- Header (navegación, buscador, cuenta, badge de carrito)
+- Catálogo (filtros, limpiar, quick add)
+- Búsqueda (/buscar)
+- Ficha de producto
+- Wishlist invitado
+- Carrito (sumar/restar, modal checkout, vaciar carrito)
+- Rutas de usuario sin sesión
+- Rutas de admin sin sesión
+- Verificación rápida de rutas clave por status HTTP
+
+Resumen ejecutivo
+- Flujo público principal: mayormente funcional.
+- Hay incidencias importantes en acceso admin y varios comportamientos dudosos.
+
+Hallazgos (errores y dudas)
+
+[ALTA] Redirección de admin apunta a /login (404)
+- Evidencia:
+  - Al navegar a /admin o /admin/productos sin sesión, termina en /login.
+  - /login devuelve 404 en esta app (autenticación migrada a modal /?auth=login).
+- Impacto:
+  - Bloquea acceso correcto y muestra página de error en lugar de flujo de login esperado.
+- Reproducción:
+  1) Abrir /admin o /admin/productos sin sesión.
+  2) Observar redirección final a /login.
+  3) Ver 404 Not Found.
+
+[MEDIA] Error 401 en consola al añadir al carrito (catálogo y ficha)
+- Evidencia:
+  - Al usar quick add o añadir desde ficha, aparece en consola: 401 Unauthorized.
+- Impacto:
+  - El usuario sí puede añadir al carrito, pero hay ruido de error y posible llamada innecesaria fallando.
+- Duda:
+  - Probablemente relacionado con endpoint de favoritos/sesión en invitado.
+
+[MEDIA] Posible bloqueo inicial por modal auth/backdrop en Home
+- Evidencia:
+  - En una interacción inicial, un click de navegación quedó interceptado por authModalBackdrop.
+- Impacto:
+  - Puede impedir clics de navegación si backdrop/modal queda activo sin intención del usuario.
+- Duda:
+  - No fue 100% consistente durante toda la sesión; conviene reproducir en limpio (hard reload).
+
+[MEDIA] Inconsistencia de stock en carrito
+- Evidencia:
+  - En carrito, producto mostraba 28 uds., cantidad actual 2.
+  - Al pulsar +, aparece toast: "No puedes superar el stock disponible para esta talla".
+- Impacto:
+  - Mensaje contradictorio con stock visible; puede ser cálculo de stock por variante distinto al stock mostrado.
+
+[BAJA] Recursos externos abortados en checkout (hCaptcha logo)
+- Evidencia:
+  - requestFailed de logo de hcaptcha durante modal de pago.
+- Impacto:
+  - No bloqueó el flujo principal en esta prueba.
+- Duda:
+  - Podría ser red/bloqueo externo puntual.
+
+Resultados por área
+
+Home
+- OK: carga de hero, navegación principal visible, footer visible.
+- DUDA: posible interceptación inicial por backdrop auth (ver hallazgo MEDIA).
+
+Header y buscador
+- OK: autocompletado de búsqueda (ej. "cap").
+- OK: sugerencia abre ficha de producto.
+
+Catálogo
+- OK: filtros por tipo funcionan.
+- OK: limpiar filtros restaura listado.
+- OK: quick add en accesorio incrementa badge de carrito y muestra toast.
+- DUDA/ERROR: aparece 401 en consola en algunas acciones de add-to-cart.
+
+Ficha de producto
+- OK: carga galería, precio, stock, CTA añadir carrito.
+- OK: añadir a carrito incrementa badge.
+- OK: wishlist en invitado abre modal explicativo.
+
+Carrito
+- OK: render de líneas, subtotal, envío, total.
+- OK: reducir cantidad funciona.
+- OK: vaciar carrito abre confirmación y cancelar funciona.
+- DUDA: aumentar cantidad bloqueado pese a stock visible alto.
+
+Checkout (modal)
+- OK: se abre modal de checkout.
+- OK: al enviar vacío, muestra mensaje de campos obligatorios.
+- DUDA: warning de Stripe en HTTP (esperable en dev) + request abortado de recurso externo.
+
+Usuario (sin sesión)
+- OK: /usuario muestra estado "Sesión no iniciada" con enlace a /?auth=login.
+- OK: comportamiento coherente para invitado.
+
+Admin (sin sesión)
+- ERROR ALTO: redirección a /login (404) en vez de /?auth=login.
+
+Barrido de rutas (fetch)
+- 200: /, /catalogo, /novedades, /accesorios, /ofertas, /carrito, /buscar?q=cap, /usuario, /usuario/favoritos, /usuario/pedidos, /admin, /admin/productos, /admin/pedidos, /admin/usuarios
+- 404: /login, /registro
+- Nota:
+  - Aunque /admin* responden 200 a nivel de documento, la lógica cliente sin sesión redirige después a /login (404).
+
+Bloqueos de cobertura
+- No se pudo validar funcionalidad interna de panel admin (crear/editar producto, pedidos admin, usuarios admin, etc.) por falta de sesión admin utilizable en esta ejecución.
+- No se completó pago real de Stripe (solo validación de apertura/errores de formulario).
+
+Recomendaciones inmediatas
+1. Corregir redirecciones en layouts/guards de admin para usar /?auth=login y no /login.
+2. Revisar llamada que dispara 401 al añadir carrito en invitado para silenciar/evitar error no crítico.
+3. Revisar lógica de límite de cantidad en carrito vs stock mostrado por talla.
+4. Reproducir y corregir posible estado del backdrop auth interceptando clics en home.
+
+Fin del reporte.
