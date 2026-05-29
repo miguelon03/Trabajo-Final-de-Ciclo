@@ -105,6 +105,20 @@ try {
     // Obtenemos el ID del usuario recién creado
     $idUsuario = $conexion->lastInsertId();
 
+    // Vinculamos a la nueva cuenta los pedidos que hizo como INVITADO con este
+    // mismo email. Así aparecerán en "Mis pedidos" y podrá gestionar devoluciones.
+    $stmtVincular = $conexion->prepare("
+        UPDATE pedidos
+        SET usuario_id = :uid
+        WHERE usuario_id IS NULL
+          AND email_invitado = :email
+    ");
+    $stmtVincular->execute([
+        "uid" => $idUsuario,
+        "email" => $email,
+    ]);
+    $pedidosVinculados = $stmtVincular->rowCount();
+
     // Guardamos sus datos en sesión para dejarlo logueado automáticamente
     $_SESSION["usuario_id"] = $idUsuario;
     $_SESSION["usuario_nombre"] = $nombre;
@@ -115,6 +129,7 @@ try {
     echo json_encode([
         "ok" => true,
         "mensaje" => "Cuenta creada correctamente",
+        "pedidos_vinculados" => $pedidosVinculados,
         "redirect" => "/"
     ]);
 

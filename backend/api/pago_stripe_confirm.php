@@ -21,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 require_once __DIR__ . "/../vendor/autoload.php";
 require_once __DIR__ . "/../conexion.php";
+require_once __DIR__ . "/../email_pedidos.php";
 session_start();
 
 $envFile = __DIR__ . '/../.env';
@@ -320,7 +321,20 @@ try {
         }
     }
 
-    echo json_encode(["ok" => true, "pedido_id" => $pedidoId]);
+    // Si la compra es de un invitado (sin cuenta), le enviamos por correo la
+    // confirmación con el nº de pedido, los artículos y las instrucciones de
+    // devolución (30 días + registrarse con el mismo email). Un fallo de correo
+    // no debe romper la confirmación del pago.
+    $emailEnviado = false;
+    if ($pedidoUsuarioId <= 0) {
+        $resultadoEmail = dmh_enviar_email_pedido_invitado($conexion, $pedidoId);
+        $emailEnviado = (bool)($resultadoEmail["ok"] ?? false);
+        if (!$emailEnviado && empty($resultadoEmail["skipped"])) {
+            error_log("[DMH] No se pudo enviar el email del pedido {$pedidoId}: " . (string)($resultadoEmail["error"] ?? ""));
+        }
+    }
+
+    echo json_encode(["ok" => true, "pedido_id" => $pedidoId, "email_enviado" => $emailEnviado]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(["ok" => false, "error" => "Error al confirmar pago", "detalle" => $e->getMessage()]);

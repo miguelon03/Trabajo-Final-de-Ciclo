@@ -889,14 +889,21 @@ function isValidPhone(value) {
       showMissingFieldsHint();
     }
 
+    // Guarda el pedido creado en pedidos.php mientras el checkout sigue abierto.
+    // Si un intento de pago falla a mitad (p. ej. timeout con Stripe), al
+    // reintentar reutilizamos este pedido pendiente en lugar de crear otro nuevo.
+    let checkoutOrder = null;
+
     function openCheckout() {
       if (!overlay) return;
+      checkoutOrder = null;
       overlay.hidden = false;
       document.body.style.overflow = 'hidden';
     }
 
     function closeCheckout() {
       if (!overlay) return;
+      checkoutOrder = null;
       overlay.hidden = true;
       document.body.style.overflow = '';
     }
@@ -1153,38 +1160,47 @@ let stripeCard = null;
       }
 
       try {
-        const result = await window.dmhFetchJson('pedidos.php', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        // Reutilizamos el pedido pendiente creado en un intento anterior (si lo
+        // hubo) para no generar pedidos duplicados al reintentar el pago.
+        if (!checkoutOrder) {
+          const result = await window.dmhFetchJson('pedidos.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
 
-        if (!result.ok) {
-          const orderError = result.error || 'No se pudo realizar el pedido';
-          showCheckoutError(orderError);
+          if (!result.ok) {
+            const orderError = result.error || 'No se pudo realizar el pedido';
+            showCheckoutError(orderError);
 
-          if (!isLoggedIn && (result.status === 409 || result.data?.code === 'EMAIL_ALREADY_REGISTERED')) {
-            window.showToast?.('Ese email ya tiene cuenta. Inicia sesión para terminar la compra.', 'info');
-            setTimeout(() => {
-              if (typeof window.dmhOpenAuth === 'function') {
-                window.dmhOpenAuth('login', false);
-              } else {
-                window.location.href = '/?auth=login';
-              }
-            }, 900);
+            if (!isLoggedIn && (result.status === 409 || result.data?.code === 'EMAIL_ALREADY_REGISTERED')) {
+              window.showToast?.('Ese email ya tiene cuenta. Inicia sesión para terminar la compra.', 'info');
+              setTimeout(() => {
+                if (typeof window.dmhOpenAuth === 'function') {
+                  window.dmhOpenAuth('login', false);
+                } else {
+                  window.location.href = '/?auth=login';
+                }
+              }, 900);
+            }
+
+            return;
           }
 
-          return;
+          checkoutOrder = result.data;
         }
+
+        const order = checkoutOrder;
 
       // Creamos PaymentIntent en el servidor
       const intentResult = await window.dmhFetchJson('pago_stripe.php', {
         method: 'POST',
         credentials: 'include',
+        timeoutMs: 45000,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pedido_id: result.data.pedido_id,
+          pedido_id: order.pedido_id,
           save_card: saveCard,
           selected_payment_method_id: selectedSavedPaymentMethodId || null,
         }),
@@ -1231,19 +1247,23 @@ let stripeCard = null;
       const confirmResult = await window.dmhFetchJson('pago_stripe_confirm.php', {
         method: 'POST',
         credentials: 'include',
+        timeoutMs: 45000,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pedido_id: result.data.pedido_id,
+          pedido_id: order.pedido_id,
           payment_intent_id: paymentIntent.id,
           save_card: saveCard,
           }),
         });
-        
+
         if (!confirmResult.ok) {
           showCheckoutError(confirmResult.error || 'No se pudo confirmar el pago');
           return;
         }
-        
+
+        // Pago completado: limpiamos el pedido en curso para no reutilizarlo.
+        checkoutOrder = null;
+
         const paymentResult = { data: { tarjeta_mascara: selectedSavedPaymentMethodId ? 'Tarjeta guardada' : '•••• •••• •••• ••••' } };
 
         saveCart([]);
@@ -1252,12 +1272,12 @@ let stripeCard = null;
 
         // Guardamos los datos del pedido para mostrarlos en la confirmación.
         const orderData = {
-          pedido_id:       result.data.pedido_id,
-          total:           result.data.total,
-          envio:           result.data.envio,
-          importe_total:   result.data.total,
-          puntos_ganados:  Number(result.data.puntos_ganados || 0),
-          puntos_usados:   Number(result.data.puntos_usados || 0),
+          pedido_id:       order.pedido_id,
+          total:           order.total,
+          envio:           order.envio,
+          importe_total:   order.total,
+          puntos_ganados:  Number(order.puntos_ganados || 0),
+          puntos_usados:   Number(order.puntos_usados || 0),
           tarjeta_mascara: paymentResult.data?.tarjeta_mascara || '•••• •••• •••• ••••',
           direccion_envio: `${inputVal(direccionEl)}, ${inputVal(cpEl)} ${inputVal(ciudadEl)}`,
           fecha:           new Date().toISOString(),

@@ -18,6 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 }
 
 require_once __DIR__ . "/../conexion.php";
+require_once __DIR__ . "/../email_pedidos.php";
 session_start();
 
 function dmh_json_body(): array {
@@ -127,11 +128,23 @@ try {
 
     $conexion->commit();
 
+    // Si es una compra de invitado, le enviamos el correo de confirmación con
+    // las instrucciones de devolución (30 días + registrarse con el mismo email).
+    $emailEnviado = false;
+    if ($pedidoUsuarioId === null) {
+        $resultadoEmail = dmh_enviar_email_pedido_invitado($conexion, $pedidoId);
+        $emailEnviado = (bool)($resultadoEmail["ok"] ?? false);
+        if (!$emailEnviado && empty($resultadoEmail["skipped"])) {
+            error_log("[DMH] No se pudo enviar el email del pedido {$pedidoId}: " . (string)($resultadoEmail["error"] ?? ""));
+        }
+    }
+
     echo json_encode([
         "ok" => true,
         "pedido_id" => $pedidoId,
         "tarjeta_mascara" => $tarjetaMascara !== "" ? $tarjetaMascara : ("**** **** **** " . $tarjetaUltimos4),
         "mensaje" => "Pago simulado completado",
+        "email_enviado" => $emailEnviado,
     ]);
 } catch (Throwable $e) {
     if ($conexion->inTransaction()) {

@@ -143,6 +143,11 @@ function dmh_update_return_status(PDO $conexion, int $devolucionId, string $esta
         throw new InvalidArgumentException("Estado de devolución inválido");
     }
 
+    // Al rechazar una devolución es obligatorio indicar un motivo del rechazo.
+    if ($estado === "rechazada" && trim($feedback) === "") {
+        throw new InvalidArgumentException("Debes indicar un motivo para rechazar la devolución");
+    }
+
     $conexion->beginTransaction();
 
     $stmtLock = $conexion->prepare(
@@ -359,6 +364,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         $cantidadComprada = (int)($item["cantidad"] ?? 0);
+
+        // Si ya existe una devolución rechazada para este artículo, no se puede
+        // volver a solicitar.
+        $stmtRechazada = $conexion->prepare(
+            "SELECT COUNT(*)
+             FROM devoluciones
+             WHERE item_pedido_id = :item_id
+               AND usuario_id = :uid
+               AND estado = 'rechazada'"
+        );
+        $stmtRechazada->execute([
+            "item_id" => $itemPedidoId,
+            "uid" => $usuarioId,
+        ]);
+
+        if ((int)$stmtRechazada->fetchColumn() > 0) {
+            http_response_code(409);
+            echo json_encode([
+                "ok" => false,
+                "error" => "La devolución de este artículo fue rechazada y no se puede volver a solicitar",
+            ]);
+            exit;
+        }
 
         $stmtReturned = $conexion->prepare(
             "SELECT COALESCE(SUM(cantidad_devuelta), 0)

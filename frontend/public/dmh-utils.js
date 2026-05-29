@@ -121,7 +121,16 @@ window.dmhApiUrl = function (endpoint) {
 };
 
 window.dmhFetchJson = async function (endpoint, options) {
-  var timeoutMs = 12000;
+  var requestOptions = Object.assign({}, options || {});
+
+  // Permite indicar un timeout distinto por llamada (options.timeoutMs).
+  // Las pasarelas de pago (Stripe) pueden tardar bastante en la primera
+  // llamada "en frío", por eso el valor por defecto es generoso.
+  var timeoutMs = typeof requestOptions.timeoutMs === 'number'
+    ? requestOptions.timeoutMs
+    : 30000;
+  delete requestOptions.timeoutMs;
+
   var controller = null;
   var timeoutId = null;
 
@@ -133,7 +142,6 @@ window.dmhFetchJson = async function (endpoint, options) {
       }, timeoutMs);
     }
 
-    var requestOptions = Object.assign({}, options || {});
     if (controller && !requestOptions.signal) {
       requestOptions.signal = controller.signal;
     }
