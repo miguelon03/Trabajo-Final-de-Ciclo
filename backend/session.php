@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
     exit();
 }
 
-// Iniciamos la sesión para poder leer los datos guardados del usuario
+// Iniciamos la sesión para poder leer los datos guardados del usuario               
 session_start();
 
 require_once __DIR__ . "/conexion.php";
