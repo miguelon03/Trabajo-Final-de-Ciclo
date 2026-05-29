@@ -195,6 +195,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             // Canjear puntos si el usuario lo solicita
             $canjearPuntos = (bool)($body["canjear_puntos"] ?? false);
+            $canjearPuntosCantidadSolicitada = (int)($body["canjear_puntos_cantidad"] ?? 0);
 
             if ($canjearPuntos) {
                 if ($puntosDisponibles > 0) {
@@ -203,7 +204,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     // Además, el canje no puede superar el total del pedido.
                     $puntosCanjeablesPorSaldo = (int)(floor($puntosDisponibles / 100) * 100);
                     $puntosCanjeablesPorTotal = (int)(floor($importeTotal / 10) * 100);
-                    $puntosUsados = min($puntosCanjeablesPorSaldo, $puntosCanjeablesPorTotal);
+                    $puntosCanjeablesMaximos = min($puntosCanjeablesPorSaldo, $puntosCanjeablesPorTotal);
+
+                    if ($canjearPuntosCantidadSolicitada > 0) {
+                        $puntosSolicitadosNormalizados = (int)(floor($canjearPuntosCantidadSolicitada / 100) * 100);
+                        $puntosUsados = min($puntosCanjeablesMaximos, max(0, $puntosSolicitadosNormalizados));
+                    } else {
+                        $puntosUsados = $puntosCanjeablesMaximos;
+                    }
+
                     $descuentoPuntos = round($puntosUsados / 10, 2);
                     $importeTotal = round($importeTotal - $descuentoPuntos, 2);
                 }

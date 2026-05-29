@@ -107,7 +107,7 @@ function getInitials(name: string): string {
                         ]}
                       >
                         {String(p.badge).toLowerCase() === "oferta"
-                          ? "oferta"
+                          ? "Oferta"
                           : p.badge}
                       </span>
                     ) : (
@@ -293,6 +293,7 @@ function getInitials(name: string): string {
             <option value="pantalon">Pantalón (28, 36, 40, 42, 44)</option>
             <option value="unica">Talla única</option>
           </select>
+          <input id="productTallajeDisplay" type="text" readonly hidden tabindex="-1" />
         </div>
 
         <div class="field">
@@ -320,14 +321,20 @@ function getInitials(name: string): string {
 
         <div class="field field--accent">
           <label id="productStockLabel" for="productStockInicial">Stock</label>
-          <input
-            id="productStockInicial"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="Introduce stock (puede ser 0)"
-            required
-          />
+          <div class="stock-stepper" data-stepper="product-stock">
+            <button type="button" class="stock-stepper__btn" data-stepper-change="-1" aria-label="Restar una unidad">−</button>
+            <input
+              id="productStockInicial"
+              class="stock-stepper__input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              value="0"
+              placeholder="Introduce stock (puede ser 0)"
+              required
+            />
+            <button type="button" class="stock-stepper__btn" data-stepper-change="1" aria-label="Sumar una unidad">+</button>
+          </div>
         </div>
 
         <div class="field field-full" id="productImageField">
@@ -520,9 +527,9 @@ function getInitials(name: string): string {
   }
 
   .admin-section h1 {
-    font-size: clamp(2.15rem, 5vw, 3.7rem);
+    font-size: var(--page-title-size);
     font-weight: 950;
-    letter-spacing: 0.07em;
+    letter-spacing: var(--page-title-letter-spacing);
     color: #f4f4f4;
     line-height: 0.95;
     margin: 0;
@@ -1126,6 +1133,117 @@ function getInitials(name: string): string {
     font-weight: 700;
   }
 
+  .stock-stepper,
+  .stock-split__stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: min(100%, 240px);
+    padding: 0.2rem;
+    background: linear-gradient(180deg, rgba(18, 18, 18, 0.98), rgba(10, 10, 10, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 14px 30px rgba(0, 0, 0, 0.22);
+  }
+
+  .stock-stepper[data-stepper="product-stock"] {
+    width: 100%;
+    max-width: none;
+  }
+
+  .stock-stepper[data-stepper="product-stock"] .stock-stepper__input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stock-stepper__btn,
+  .stock-split__stepper-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e8e8e8;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .stock-stepper__btn:active:not(:disabled),
+  .stock-split__stepper-btn:active:not(:disabled) {
+    background: rgba(200, 255, 0, 0.2);
+    color: #c8ff00;
+    transform: translateY(0);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .stock-stepper:hover .stock-stepper__btn:not(.is-hovered):not(:disabled),
+    .stock-split__stepper:hover .stock-split__stepper-btn:not(.is-hovered):not(:disabled) {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e8e8e8;
+      transform: none;
+    }
+
+    .stock-stepper__btn.is-hovered:not(:disabled),
+    .stock-split__stepper-btn.is-hovered:not(:disabled) {
+      background: rgba(200, 255, 0, 0.18);
+      color: #c8ff00;
+      transform: translateY(-1px);
+    }
+  }
+
+  .stock-stepper__btn:disabled,
+  .stock-split__stepper-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .stock-stepper__input,
+  .stock-split__input {
+    width: 100%;
+    min-width: 84px;
+    min-height: 30px;
+    background: #171717;
+    border: none;
+    border-radius: 999px;
+    color: #f5f5f5;
+    padding: 0 14px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    outline: none;
+    text-align: center;
+    box-shadow: none;
+    font-family: inherit;
+    appearance: textfield;
+    -moz-appearance: textfield;
+    box-sizing: border-box;
+  }
+
+  .stock-stepper__input::-webkit-outer-spin-button,
+  .stock-stepper__input::-webkit-inner-spin-button,
+  .stock-split__input::-webkit-outer-spin-button,
+  .stock-split__input::-webkit-inner-spin-button {
+    margin: 0;
+    display: none;
+  }
+
+  .stock-stepper__input:focus,
+  .stock-split__input:focus {
+    box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.1);
+  }
+
+  .field input#productTallajeDisplay {
+    cursor: default;
+  }
+
   .field input,
   .field select,
   .field textarea {
@@ -1612,6 +1730,11 @@ function getInitials(name: string): string {
       grid-template-columns: 1fr;
     }
 
+    .stock-stepper,
+    .stock-split__stepper {
+      width: 100%;
+    }
+
     .stock-split__summary {
       padding: 16px;
       gap: 14px;
@@ -1624,6 +1747,7 @@ function getInitials(name: string): string {
       border-radius: 16px;
     }
 
+    .stock-stepper__input,
     .stock-split__input {
       min-height: 44px;
       padding: 0 14px;
@@ -1761,15 +1885,17 @@ function getInitials(name: string): string {
     background:
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.028),
+        rgba(255, 255, 255, 0.035),
         rgba(255, 255, 255, 0.012)
       );
-    border: 1px solid #2b2b2b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     align-content: start;
     justify-items: center;
     text-align: center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 10px 30px rgba(0, 0, 0, 0.18);
   }
 
   .stock-split__field label {
@@ -1797,33 +1923,13 @@ function getInitials(name: string): string {
     text-align: center;
   }
 
-  .stock-split__input {
-    width: 100%;
-    min-height: 56px;
-    background: #101010;
-    border: 1px solid #363636;
-    border-radius: 14px;
-    color: #f5f5f5;
-    padding: 0 16px;
-    font-size: 1.2rem;
-    font-weight: 900;
-    outline: none;
-    text-align: center;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-  }
-
-  .stock-split__input::-webkit-outer-spin-button,
-  .stock-split__input::-webkit-inner-spin-button {
-    margin: 0;
-  }
-
   .field input:focus,
   .field select:focus,
   .field textarea:focus,
   .bulk-toolbar__input:focus,
   .stock-split__input:focus {
     border-color: rgba(200, 255, 0, 0.5);
-    box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.1);
+    box-shadow: none;
   }
 
   .field--accent {
@@ -1907,6 +2013,7 @@ function getInitials(name: string): string {
     "productPrecioOriginal",
   );
   const productTallaje = document.getElementById("productTallaje");
+  const productTallajeDisplay = document.getElementById("productTallajeDisplay");
   const productTipo = document.getElementById("productTipo");
   const productIsAccesorio = document.getElementById("productIsAccesorio");
   const productIsNewBadge = document.getElementById("productIsNewBadge");
@@ -1926,6 +2033,14 @@ function getInitials(name: string): string {
   const productImageSlotClearButtons = Array.from(
     document.querySelectorAll<HTMLButtonElement>(".image-slot-clear"),
   );
+
+  if (productStockInicial instanceof HTMLInputElement) {
+    const productStockStepper = productStockInicial.closest<HTMLElement>(".stock-stepper");
+    if (productStockStepper) {
+      wireCorporateStepper(productStockStepper, productStockInicial);
+    }
+  }
+
   const productImageUploadText = document.getElementById(
     "productImageUploadText",
   );
@@ -1981,6 +2096,8 @@ function getInitials(name: string): string {
   let pendingDeleteAction: "archivar" | "publicar" = "archivar";
   let stockSplitSizes: string[] = [];
   let lastManualTipo = "";
+  let lastManualTallaje: "clasico" | "pantalon" | "unica" = "clasico";
+  let lockedEditTallaje: "clasico" | "pantalon" | "unica" = "clasico";
   let selectedImageFiles: (File | null)[] = [null, null, null];
   let selectedImagePreviewUrls: string[] = ["", "", ""];
 
@@ -2017,14 +2134,29 @@ function getInitials(name: string): string {
     return "clasico";
   }
 
-  function resolveTallajeFromForm(tipo: string, currentTallaje: string): "clasico" | "pantalon" | "unica" {
-    const explicit = normalizeTallajeValue(currentTallaje);
-    if (explicit) return explicit;
+  function getTallajeLabel(value: string): string {
+    const normalized = normalizeTallajeValue(value);
 
+    if (normalized === "pantalon") return "Pantalón (28, 36, 40, 42, 44)";
+    if (normalized === "unica") return "Talla única";
+    return "Clásico (XS, S, M, L, XL)";
+  }
+
+  function syncTallajeFieldMode(isEditing: boolean) {
+    if (!(productTallaje instanceof HTMLSelectElement)) return;
+    if (!(productTallajeDisplay instanceof HTMLInputElement)) return;
+
+    productTallaje.hidden = isEditing;
+    productTallajeDisplay.hidden = !isEditing;
+    productTallajeDisplay.value = getTallajeLabel(productTallaje.value);
+    productTallajeDisplay.setAttribute("aria-hidden", String(!isEditing));
+  }
+
+  function resolveTallajeFromForm(tipo: string, currentTallaje: string): "clasico" | "pantalon" | "unica" {
     const normalizedType = normalizeType(tipo);
     if (normalizedType.includes("accesorio")) return "unica";
     if (normalizedType.includes("pantalon")) return "pantalon";
-    return "clasico";
+    return normalizeTallajeValue(currentTallaje);
   }
 
   function validateAndNormalizePricing(
@@ -2310,6 +2442,7 @@ function getInitials(name: string): string {
   function syncTipoFromAccesorioToggle() {
     if (!(productTipo instanceof HTMLInputElement)) return;
     if (!(productIsAccesorio instanceof HTMLInputElement)) return;
+    if (!(productTallaje instanceof HTMLSelectElement)) return;
 
     const isAccesorio = productIsAccesorio.checked;
 
@@ -2322,15 +2455,30 @@ function getInitials(name: string): string {
       productTipo.value = "accesorio";
       productTipo.readOnly = true;
       productTipo.placeholder = "accesorio";
+
+      const currentTallaje = normalizeTallajeValue(productTallaje.value);
+      if (currentTallaje !== "unica") {
+        lastManualTallaje = currentTallaje;
+      }
+      productTallaje.value = "unica";
+      productTallaje.disabled = true;
+      syncTallajeFieldMode(false);
       return;
     }
 
     productTipo.readOnly = false;
     productTipo.placeholder = "Ej: camiseta";
+    productTallaje.disabled = false;
 
     if (normalizeType(productTipo.value) === "accesorio") {
       productTipo.value = lastManualTipo;
     }
+
+    if (normalizeTallajeValue(productTallaje.value) === "unica") {
+      productTallaje.value = lastManualTallaje;
+    }
+
+    syncTallajeFieldMode(Boolean(productId instanceof HTMLInputElement && productId.value));
   }
 
   function syncPricingModeFromPricingInputs() {
@@ -2611,7 +2759,10 @@ function getInitials(name: string): string {
       productIsNewBadge.disabled = false;
     }
     lastManualTipo = "";
+    lastManualTallaje = "clasico";
+    lockedEditTallaje = "clasico";
     tallajeInput.value = "clasico";
+    tallajeInput.disabled = false;
     stockInicialInput.value = "";
     stockInicialInput.disabled = false;
     estadoInput.value = "borrador";
@@ -2627,6 +2778,8 @@ function getInitials(name: string): string {
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Stock";
     }
+
+    syncTallajeFieldMode(false);
   }
 
   function fillEditForm(button: HTMLButtonElement) {
@@ -2672,6 +2825,7 @@ function getInitials(name: string): string {
       precioOriginalInput.value = precioBaseData;
     }
     tallajeInput.value = normalizeTallajeValue(button.dataset.tallaje || "clasico");
+    lastManualTallaje = normalizeTallajeValue(tallajeInput.value);
     tipoInput.value = button.dataset.tipo || "";
     const isAccesorio = normalizeType(tipoInput.value) === "accesorio";
     if (productIsAccesorio instanceof HTMLInputElement) {
@@ -2682,6 +2836,8 @@ function getInitials(name: string): string {
       productIsNewBadge.checked = currentBadge === "new";
     }
     lastManualTipo = isAccesorio ? "" : tipoInput.value.trim();
+    lockedEditTallaje = normalizeTallajeValue(button.dataset.tallaje || "clasico");
+    tallajeInput.disabled = true;
     stockInicialInput.value = "0";
     stockInicialInput.disabled = false;
     estadoInput.value = button.dataset.estado || "borrador";
@@ -2695,6 +2851,8 @@ function getInitials(name: string): string {
     if (productStockLabel instanceof HTMLElement) {
       productStockLabel.textContent = "Añadir stock";
     }
+
+    syncTallajeFieldMode(true);
   }
 
   productSearchInput?.addEventListener("input", applyProductSearchFilter);
@@ -2834,6 +2992,55 @@ function getInitials(name: string): string {
     return ["XS", "S", "M", "L", "XL"];
   }
 
+  function wireCorporateStepper(
+    stepperElement: HTMLElement,
+    inputElement: HTMLInputElement,
+    onChange?: () => void,
+  ) {
+    const buttons = Array.from(
+      stepperElement.querySelectorAll<HTMLButtonElement>("[data-stepper-change]"),
+    );
+
+    buttons.forEach((button) => {
+      button.addEventListener("pointerenter", () => {
+        buttons.forEach((btn) => btn.classList.remove("is-hovered"));
+        button.classList.add("is-hovered");
+      });
+
+      button.addEventListener("pointerleave", () => {
+        button.classList.remove("is-hovered");
+      });
+
+      button.addEventListener("click", () => {
+        const change = Number(button.dataset.stepperChange || "0");
+        if (!Number.isFinite(change) || change === 0) return;
+
+        const current = Math.max(0, Number(inputElement.value || 0));
+        inputElement.value = String(Math.max(0, current + change));
+        inputElement.dispatchEvent(new Event("input", { bubbles: true }));
+        inputElement.dispatchEvent(new Event("change", { bubbles: true }));
+        onChange?.();
+      });
+    });
+
+    inputElement.addEventListener("input", () => {
+      const cleaned = inputElement.value.replace(/\D+/g, "");
+      if (inputElement.value !== cleaned) {
+        inputElement.value = cleaned;
+      }
+      onChange?.();
+    });
+
+    inputElement.addEventListener("change", () => {
+      inputElement.value = String(Math.max(0, Number(inputElement.value || 0)));
+      onChange?.();
+    });
+
+    stepperElement.addEventListener("pointerleave", () => {
+      buttons.forEach((btn) => btn.classList.remove("is-hovered"));
+    });
+  }
+
   function renderStockSplitGrid(totalStock: number, sizes: string[]) {
     if (!(stockSplitGrid instanceof HTMLElement)) return;
 
@@ -2842,15 +3049,19 @@ function getInitials(name: string): string {
         (size) => `
         <div class="stock-split__field">
           <label for="stock-size-${size}">Talla ${size}</label>
-          <input
-            id="stock-size-${size}"
-            class="stock-split__input stock-size-input"
-            type="number"
-            min="0"
-            step="1"
-            value="0"
-            data-size="${size}"
-          />
+          <div class="stock-split__stepper" role="group" aria-label="Ajustar stock de talla ${size}">
+            <button type="button" class="stock-split__stepper-btn" data-stepper-change="-1" data-size="${size}" aria-label="Restar una unidad">−</button>
+            <input
+              id="stock-size-${size}"
+              class="stock-split__input stock-size-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              value="0"
+              data-size="${size}"
+            />
+            <button type="button" class="stock-split__stepper-btn" data-stepper-change="1" data-size="${size}" aria-label="Sumar una unidad">+</button>
+          </div>
         </div>
       `,
       )
@@ -2858,6 +3069,13 @@ function getInitials(name: string): string {
 
     stockSplitGrid.querySelectorAll(".stock-size-input").forEach((input) => {
       input.addEventListener("input", updateStockSplitSummary);
+      input.addEventListener("change", updateStockSplitSummary);
+    });
+
+    stockSplitGrid.querySelectorAll<HTMLElement>(".stock-split__stepper").forEach((stepper) => {
+      const input = stepper.querySelector<HTMLInputElement>(".stock-split__input");
+      if (!(input instanceof HTMLInputElement)) return;
+      wireCorporateStepper(stepper, input, updateStockSplitSummary);
     });
 
     if (stockSplitExpected instanceof HTMLElement) {
@@ -3093,6 +3311,15 @@ function getInitials(name: string): string {
         productTipo.value,
         productTallaje.value,
       );
+
+      if (isEditing && resolvedTallaje !== lockedEditTallaje) {
+        const message =
+          "El tallaje no se puede modificar al editar. Archiva el producto y crea uno nuevo si necesitas otro tallaje.";
+        showToastMessage(message, "error");
+        setProductFormFeedback(message, "error");
+        return;
+      }
+
       const unicaAutoVariants =
         resolvedTallaje === "unica" && stockValue > 0
           ? [{ talla: "Única", stock: stockValue }]

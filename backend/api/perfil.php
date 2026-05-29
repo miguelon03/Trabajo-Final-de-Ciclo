@@ -100,6 +100,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $ciudad = trim((string)($body["ciudad"] ?? ""));
         $codigoPostal = trim((string)($body["codigo_postal"] ?? $body["codigoPostal"] ?? ""));
 
+        // Normalizamos teléfono y código postal para evitar letras o formatos inválidos.
+        $telefono = preg_replace('/\D+/', '', $telefono);
+        if (strpos($telefono, '0034') === 0 && strlen($telefono) >= 13) {
+            $telefono = substr($telefono, 4);
+        }
+        if (strpos($telefono, '34') === 0 && strlen($telefono) >= 11) {
+            $telefono = substr($telefono, 2);
+        }
+
+        $codigoPostal = preg_replace('/\D+/', '', $codigoPostal);
+
         // Validaciones básicas para proteger consistencia de datos.
         if ($nombre === "") {
             echo json_encode([
@@ -117,7 +128,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         }
 
-        if (mb_strlen($telefono) > 30 || mb_strlen($direccion) > 255 || mb_strlen($ciudad) > 120 || mb_strlen($codigoPostal) > 20) {
+        if ($telefono !== "" && !preg_match('/^\d{9}$/', $telefono)) {
+            echo json_encode([
+                "ok" => false,
+                "error" => "El teléfono debe tener 9 dígitos"
+            ]);
+            exit;
+        }
+
+        if ($codigoPostal !== "" && !preg_match('/^\d{5}$/', $codigoPostal)) {
+            echo json_encode([
+                "ok" => false,
+                "error" => "El código postal debe tener 5 dígitos"
+            ]);
+            exit;
+        }
+
+        if (mb_strlen($direccion) > 255 || mb_strlen($ciudad) > 120) {
             echo json_encode([
                 "ok" => false,
                 "error" => "Alguno de los campos supera la longitud permitida"

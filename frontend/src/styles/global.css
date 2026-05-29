@@ -20,6 +20,9 @@
   --interactive-hover-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
   --primary-hover-bg: var(--color-primary-dark);
   --primary-hover-shadow: 0 8px 22px rgba(200, 255, 0, 0.26);
+  --font-sans: 'Poppins', sans-serif;
+  --page-title-size: clamp(1.95rem, 3.2vw, 2.6rem);
+  --page-title-letter-spacing: 0.06em;
 }
 
 * {
@@ -38,7 +41,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--color-bg);
   color: var(--color-text);
 }

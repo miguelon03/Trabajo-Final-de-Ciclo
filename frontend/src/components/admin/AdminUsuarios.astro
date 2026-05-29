@@ -376,9 +376,9 @@
   }
 
   .users-admin__head h1 {
-    font-size: 2rem;
+    font-size: var(--page-title-size);
     font-weight: 900;
-    letter-spacing: 0.06em;
+    letter-spacing: var(--page-title-letter-spacing);
     color: #f4f4f4;
   }
 
@@ -435,10 +435,12 @@
   .users-table thead th {
     background: #101010;
     color: #59606a;
-    font-size: 0.44rem;
+    font-size: 0.74rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     text-align: left;
-    padding: 7px 10px;
+    padding: 12px 12px;
     border-bottom: 1px solid #171717;
   }
 
@@ -776,6 +778,8 @@
 
   .user-detail__block h3 {
     font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .user-detail__meta p {

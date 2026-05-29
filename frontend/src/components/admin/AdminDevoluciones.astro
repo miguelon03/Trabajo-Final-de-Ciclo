@@ -226,7 +226,7 @@
           aria-label="Aceptar devolución"
           title="Aceptar devolución"
         >
-          S&
+          Aceptar
         </button>
 
         <button
@@ -237,7 +237,7 @@
           aria-label="Rechazar devolución"
           title="Rechazar devolución"
         >
-          R
+          Rechazar
         </button>
       </div>
     `;
@@ -382,6 +382,20 @@
         const estado = btn.getAttribute("data-state") || "";
         if (!devolucionId || !estado) return;
 
+        let feedback = "";
+        if (estado === "rechazada") {
+          const promptText = window.prompt(
+            "Indica el motivo del rechazo para dejarlo registrado:",
+            "",
+          );
+          if (promptText === null) return;
+          feedback = String(promptText).trim();
+          if (!feedback) {
+            showMessage("Debes indicar un motivo para rechazar la devolución", "error");
+            return;
+          }
+        }
+
         try {
           const result = await requestApi("devoluciones.php", {
             method: "POST",
@@ -390,6 +404,7 @@
             body: JSON.stringify({
               devolucion_id: devolucionId,
               estado,
+              feedback,
             }),
           });
 
@@ -485,9 +500,9 @@
   }
 
   .returns-admin__head h1 {
-    font-size: 2rem;
+    font-size: var(--page-title-size);
     font-weight: 900;
-    letter-spacing: 0.06em;
+    letter-spacing: var(--page-title-letter-spacing);
     color: #f4f4f4;
   }
 
@@ -505,7 +520,7 @@
     border: 1px solid #272727;
     background: #1a1a1a;
     color: #707070;
-    font-size: 0.5rem;
+    font-size: 0.76rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -574,10 +589,10 @@
   .returns-table thead th {
     background: #101010;
     color: #59606a;
-    font-size: 0.44rem;
+    font-size: 0.74rem;
     font-weight: 700;
     text-align: left;
-    padding: 7px 10px;
+    padding: 12px 12px;
     border-bottom: 1px solid #171717;
   }
 
@@ -593,10 +608,10 @@
   opacity: 1;
 }
   .returns-table td {
-    padding: 9px 10px;
+    padding: 12px 12px;
     border-bottom: 1px solid #141414;
     vertical-align: middle;
-    font-size: 0.58rem;
+    font-size: 0.88rem;
   }
 
   .returns-table tbody tr:last-child td {
@@ -620,6 +635,7 @@
     color: #d7d7d7;
     font-weight: 700;
     line-height: 1.28;
+    font-size: 0.92rem;
   }
 
   .cell-reason {
@@ -632,7 +648,7 @@
     display: block;
     margin-top: 3px;
     color: #4b4b4b;
-    font-size: 0.42rem;
+    font-size: 0.74rem;
     line-height: 1.25;
   }
 
@@ -640,11 +656,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 52px;
-    min-height: 17px;
+    min-width: 92px;
+    min-height: 28px;
     padding: 0 8px;
     border-radius: 999px;
-    font-size: 0.42rem;
+    font-size: 0.74rem;
     font-weight: 700;
     border: 1px solid transparent;
   }
@@ -767,19 +783,20 @@
 }
 
 .btn-action {
-  width: 34px;
+  min-width: 98px;
   height: 34px;
   min-height: 34px;
-  padding: 0;
+  padding: 0 10px;
   border-radius: 10px;
-  font-size: 0.95rem;
+  font-size: 0.74rem;
+  font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .return-action-text {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
 }
 
 .return-detail-shell {

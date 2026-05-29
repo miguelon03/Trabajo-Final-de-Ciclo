@@ -209,6 +209,28 @@ try {
         $slug = dmh_slugify($nombre);
     }
 
+    $stmtProductoActual = $conexion->prepare("SELECT tallaje FROM productos WHERE id = :id LIMIT 1");
+    $stmtProductoActual->execute(["id" => $id]);
+    $productoActual = $stmtProductoActual->fetch(PDO::FETCH_ASSOC);
+
+    if (!$productoActual) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "El producto no existe"
+        ]);
+        exit;
+    }
+
+    $tallajeActual = strtolower(trim((string)($productoActual["tallaje"] ?? "clasico")));
+
+    if ($tallaje !== $tallajeActual) {
+        echo json_encode([
+            "ok" => false,
+            "error" => "El tallaje no se puede modificar al editar. Archiva el producto y crea uno nuevo si necesitas otro tallaje."
+        ]);
+        exit;
+    }
+
     $stmtExiste = $conexion->prepare("SELECT id FROM productos WHERE slug = :slug AND id <> :id LIMIT 1");
     $stmtExiste->execute([
         "slug" => $slug,

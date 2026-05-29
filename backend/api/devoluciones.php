@@ -134,7 +134,7 @@ function dmh_update_pedido_estado_si_todo_devuelto(PDO $conexion, int $pedidoId)
     }
 }
 
-function dmh_update_return_status(PDO $conexion, int $devolucionId, string $estado): array {
+function dmh_update_return_status(PDO $conexion, int $devolucionId, string $estado, string $feedback = ""): array {
     if ($devolucionId <= 0) {
         throw new InvalidArgumentException("ID de devolución inválido");
     }
@@ -164,15 +164,32 @@ function dmh_update_return_status(PDO $conexion, int $devolucionId, string $esta
 
     $estadoAnterior = mb_strtolower(trim((string)($row["estado"] ?? "")));
 
-    $stmtUpdate = $conexion->prepare(
-        "UPDATE devoluciones
-         SET estado = :estado
-         WHERE id = :id"
-    );
-    $stmtUpdate->execute([
-        "estado" => $estado,
-        "id" => $devolucionId,
-    ]);
+    if ($estado === "rechazada" && $feedback !== "") {
+        $feedbackLimpio = mb_substr(trim($feedback), 0, 400);
+        $notaAdmin = "[Admin rechazo] " . $feedbackLimpio;
+
+        $stmtUpdate = $conexion->prepare(
+            "UPDATE devoluciones
+             SET estado = :estado,
+                 motivo = TRIM(CONCAT(COALESCE(motivo, ''), '\n\n', :nota_admin))
+             WHERE id = :id"
+        );
+        $stmtUpdate->execute([
+            "estado" => $estado,
+            "nota_admin" => $notaAdmin,
+            "id" => $devolucionId,
+        ]);
+    } else {
+        $stmtUpdate = $conexion->prepare(
+            "UPDATE devoluciones
+             SET estado = :estado
+             WHERE id = :id"
+        );
+        $stmtUpdate->execute([
+            "estado" => $estado,
+            "id" => $devolucionId,
+        ]);
+    }
 
     if ($estadoAnterior !== "aceptada" && $estado === "aceptada") {
         dmh_try_restore_stock($conexion, $row);
@@ -268,8 +285,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (dmh_is_admin($usuarioRol) && isset($body["devolucion_id"], $body["estado"])) {
             $devolucionId = (int)($body["devolucion_id"] ?? 0);
             $estado = mb_strtolower(trim((string)($body["estado"] ?? "")));
+            $feedback = trim((string)($body["feedback"] ?? ""));
 
-            $resultado = dmh_update_return_status($conexion, $devolucionId, $estado);
+            $resultado = dmh_update_return_status($conexion, $devolucionId, $estado, $feedback);
             echo json_encode($resultado);
             exit;
         }
@@ -444,8 +462,9 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
         $body = dmh_json_body();
         $devolucionId = (int)($body["devolucion_id"] ?? 0);
         $estado = mb_strtolower(trim((string)($body["estado"] ?? "")));
+        $feedback = trim((string)($body["feedback"] ?? ""));
 
-        $resultado = dmh_update_return_status($conexion, $devolucionId, $estado);
+        $resultado = dmh_update_return_status($conexion, $devolucionId, $estado, $feedback);
         echo json_encode($resultado);
         exit;
     } catch (InvalidArgumentException $e) {

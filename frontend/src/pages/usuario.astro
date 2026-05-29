@@ -61,7 +61,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
             <label>
               <span>Teléfono</span>
-              <input type="text" id="telefono" name="telefono" />
+              <input type="tel" id="telefono" name="telefono" inputmode="numeric" maxlength="9" pattern="\d{9}" placeholder="600123123" />
             </label>
 
             <label>
@@ -76,7 +76,7 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
             <label>
               <span>Código postal</span>
-              <input type="text" id="codigoPostal" name="codigoPostal" />
+              <input type="text" id="codigoPostal" name="codigoPostal" inputmode="numeric" maxlength="5" pattern="\d{5}" placeholder="28001" />
             </label>
 
             <button class="btn-primary" type="submit">Guardar cambios</button>
@@ -145,6 +145,29 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
     }
 
+    function digitsOnly(value) {
+      return String(value || "").replace(/\D+/g, "");
+    }
+
+    function normalizePhone(value) {
+      const digits = digitsOnly(value);
+      if (digits.startsWith("0034") && digits.length >= 13) {
+        return digits.slice(4);
+      }
+      if (digits.startsWith("34") && digits.length >= 11) {
+        return digits.slice(2);
+      }
+      return digits;
+    }
+
+    function isValidPhone(value) {
+      return /^\d{9}$/.test(normalizePhone(value));
+    }
+
+    function isValidPostalCode(value) {
+      return /^\d{5}$/.test(digitsOnly(value));
+    }
+
     function fillForm(usuario) {
       if (!(nombreInput instanceof HTMLInputElement) ||
           !(emailInput instanceof HTMLInputElement) ||
@@ -157,10 +180,10 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
       nombreInput.value = usuario.nombre || "";
       emailInput.value = usuario.email || "";
-      telefonoInput.value = usuario.telefono || "";
+      telefonoInput.value = normalizePhone(usuario.telefono || "").slice(0, 9);
       direccionInput.value = usuario.direccion || "";
       ciudadInput.value = usuario.ciudad || "";
-      codigoPostalInput.value = usuario.codigo_postal || "";
+      codigoPostalInput.value = digitsOnly(usuario.codigo_postal || "").slice(0, 5);
 
       const nombreUsuario = String(usuario.nombre || "").trim();
       if (profileTitle) {
@@ -258,12 +281,33 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
       setProfileLoading(true, "Guardando...");
 
+      const telefono = normalizePhone(telefonoInput?.value || "").slice(0, 9);
+      const codigoPostal = digitsOnly(codigoPostalInput?.value || "").slice(0, 5);
+
+      if (telefono && !isValidPhone(telefono)) {
+        if (profileMessage) {
+          profileMessage.textContent = "El teléfono debe tener 9 dígitos";
+          profileMessage.className = "profile-message is-error";
+        }
+        setProfileLoading(false);
+        return;
+      }
+
+      if (codigoPostal && !isValidPostalCode(codigoPostal)) {
+        if (profileMessage) {
+          profileMessage.textContent = "El código postal debe tener 5 dígitos";
+          profileMessage.className = "profile-message is-error";
+        }
+        setProfileLoading(false);
+        return;
+      }
+
       const payload = {
         nombre: nombreInput?.value,
-        telefono: telefonoInput?.value,
+        telefono,
         direccion: direccionInput?.value,
         ciudad: ciudadInput?.value,
-        codigoPostal: codigoPostalInput?.value,
+        codigoPostal,
       };
 
       try {
@@ -311,6 +355,16 @@ import HomeLayout from "../layouts/HomeLayout.astro";
       }
     });
 
+    telefonoInput?.addEventListener("input", () => {
+      if (!(telefonoInput instanceof HTMLInputElement)) return;
+      telefonoInput.value = normalizePhone(telefonoInput.value).slice(0, 9);
+    });
+
+    codigoPostalInput?.addEventListener("input", () => {
+      if (!(codigoPostalInput instanceof HTMLInputElement)) return;
+      codigoPostalInput.value = digitsOnly(codigoPostalInput.value).slice(0, 5);
+    });
+
     loadProfile();
   </script>
 
@@ -346,7 +400,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
 
     .profile-header h1 {
       margin: 0;
-      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      font-size: var(--page-title-size);
+      letter-spacing: var(--page-title-letter-spacing);
     }
 
     .profile-header p {
