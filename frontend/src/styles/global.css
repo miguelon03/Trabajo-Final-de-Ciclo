@@ -44,6 +44,22 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-bg);
   color: var(--color-text);
+  /* Red de seguridad: evita scroll horizontal por desbordes puntuales.
+     Usamos clip (no hidden/auto) para no romper position: sticky. */
+  overflow-x: clip;
+}
+
+/* Evita que palabras/URLs/emails muy largos sin espacios desborden en móvil. */
+p,
+h1,
+h2,
+h3,
+h4,
+li,
+span,
+a,
+td {
+  overflow-wrap: break-word;
 }
 
 /* Evita caret parpadeante en texto no editable (p.ej. navegación por cursor). */

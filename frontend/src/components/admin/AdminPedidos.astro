@@ -78,11 +78,11 @@ try {
                       data-fecha={pedido.fecha}
                       data-search={`${pedido.referencia} ${pedido.cliente_nombre} ${pedido.cliente_email}`}
                     >
-                      <td class="ref">{pedido.referencia}</td>
-                      <td>{pedido.cliente_nombre}</td>
-                      <td>{pedido.articulos}</td>
-                      <td>{Number(pedido.total).toFixed(2)}€</td>
-                      <td>
+                      <td class="ref" data-label="Referencia">{pedido.referencia}</td>
+                      <td data-label="Cliente">{pedido.cliente_nombre}</td>
+                      <td data-label="Articulos">{pedido.articulos}</td>
+                      <td data-label="Total">{Number(pedido.total).toFixed(2)}€</td>
+                      <td data-label="Estado">
                         <span
                           class:list={[
                             "badge",
@@ -103,10 +103,10 @@ try {
                           {pedido.estado === "devuelto" && "Devuelto"}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Fecha">
                         {new Date(pedido.fecha).toLocaleDateString("es-ES")}
                       </td>
-                      <td>
+                      <td data-label="Acciones">
                         <button
                           class="btn-view btn-eye"
                           type="button"
@@ -490,6 +490,13 @@ try {
       width: 100%;
     }
 
+    /* En columna, flex-basis 280px se aplicaría como ALTURA; lo reseteamos
+       para que el buscador tenga su altura natural. */
+    .filters input {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+
     th,
     td {
       padding: 14px 10px;
@@ -552,6 +559,83 @@ try {
   color: #C8FF00 !important;
   font-size: 0.78rem !important;
   margin-top: 5px !important;
+}
+
+/* En móvil, la tabla de pedidos se transforma en tarjetas apiladas en lugar
+   de aplastar las 7 columnas en pantallas estrechas. */
+@media (max-width: 760px) {
+  .table-wrap {
+    overflow: visible;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  table thead {
+    display: none;
+  }
+
+  table,
+  table tbody,
+  table tr,
+  table td {
+    display: block;
+    width: 100%;
+  }
+
+  table tbody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  table tbody tr {
+    background: #0f0f0f;
+    border: 1px solid #232323;
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px 24px;
+  }
+
+  table td {
+    border-bottom: none !important;
+    padding: 0 !important;
+    margin: 0;
+    text-align: left;
+  }
+
+  /* Cada campo fluye como "chip" ajustado a su contenido. */
+  table td:not(:last-child) {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Acciones: siempre última fila completa, a la izquierda. */
+  table td:last-child {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  /* Anula el centrado de la columna "Articulos" (3ª) de la tabla de escritorio. */
+  table td:nth-child(3) {
+    text-align: left;
+  }
+
+  table td::before {
+    content: attr(data-label);
+    display: block;
+    color: #676767;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
 }
 </style>
 
