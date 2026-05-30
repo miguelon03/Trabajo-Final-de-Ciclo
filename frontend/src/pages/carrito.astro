@@ -1347,6 +1347,22 @@ let stripeCard = null;
       flex-direction: column;
       gap: 1rem;
       box-shadow: 0 28px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(200,255,0,.08);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(200, 255, 0, 0.45) rgba(255, 255, 255, 0.06);
+    }
+
+    .checkout-modal::-webkit-scrollbar {
+      width: 9px;
+    }
+
+    .checkout-modal::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 999px;
+    }
+
+    .checkout-modal::-webkit-scrollbar-thumb {
+      background: rgba(200, 255, 0, 0.38);
+      border-radius: 999px;
     }
 
     .checkout-modal h2 {
@@ -1588,11 +1604,11 @@ let stripeCard = null;
 
     #saveCardRow {
       align-items: center;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
     }
 
     #saveCardRow span {
-      white-space: nowrap;
+      white-space: normal;
     }
 
     .checkout-modal__error {
@@ -2066,14 +2082,16 @@ let stripeCard = null;
       }
     }
 
+    @media (max-width: 700px) {
+      .checkout-modal__grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 580px) {
       .checkout-modal {
         padding: 1.35rem;
         border-radius: 14px;
-      }
-
-      .checkout-modal__grid-2 {
-        grid-template-columns: 1fr;
       }
 
       .cart-page {
