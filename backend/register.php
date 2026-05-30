@@ -130,7 +130,7 @@ try {
         "ok" => true,
         "mensaje" => "Cuenta creada correctamente",
         "pedidos_vinculados" => $pedidosVinculados,
-        "redirect" => "/"
+        "redirect" => "/usuario"
     ]);
 
 } catch (Throwable $e) {

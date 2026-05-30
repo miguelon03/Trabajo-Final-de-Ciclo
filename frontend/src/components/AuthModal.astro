@@ -628,7 +628,7 @@
         if (registerMsg) { registerMsg.textContent = "Cuenta creada correctamente"; registerMsg.className = "auth-msg success"; }
         window.showToast?.("Cuenta creada correctamente", "success");
         closeModal();
-        setTimeout(() => window.location.href = "/", 600);
+        setTimeout(() => window.location.href = data.redirect || "/usuario", 600);
       } else {
         if (registerMsg) { registerMsg.textContent = data.error || "Error al crear la cuenta"; registerMsg.className = "auth-msg error"; }
       }
