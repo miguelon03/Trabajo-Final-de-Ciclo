@@ -17,6 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 
 session_start();
 require_once __DIR__ . "/../conexion.php";
+require_once __DIR__ . "/../puntos_satisfaccion.php";
 
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : 0;
 $usuarioRol = isset($_SESSION["usuario_rol"]) ? (string)$_SESSION["usuario_rol"] : "";
@@ -287,6 +288,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {
         $body = dmh_json_body();
 
+        // Confirmar la satisfacción de un producto -> otorga sus puntos.
+        if (($body["accion"] ?? "") === "confirmar") {
+            $itemPedidoId = (int)($body["item_pedido_id"] ?? 0);
+            if ($itemPedidoId <= 0) {
+                http_response_code(400);
+                echo json_encode(["ok" => false, "error" => "Artículo inválido"]);
+                exit;
+            }
+
+            $resultado = dmh_confirmar_item_satisfaccion($conexion, $itemPedidoId, $usuarioId, false);
+            if (!($resultado["ok"] ?? false)) {
+                http_response_code(400);
+            }
+            echo json_encode($resultado);
+            exit;
+        }
+
         if (dmh_is_admin($usuarioRol) && isset($body["devolucion_id"], $body["estado"])) {
             $devolucionId = (int)($body["devolucion_id"] ?? 0);
             $estado = mb_strtolower(trim((string)($body["estado"] ?? "")));
@@ -330,6 +348,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 i.color,
                 i.sku,
                 i.cantidad,
+                i.puntos_estado,
                 p.usuario_id,
                 p.estado AS pedido_estado
              FROM items_pedido i
@@ -360,6 +379,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($pedidoEstado !== "entregado" && $pedidoEstado !== "devuelto") {
             http_response_code(400);
             echo json_encode(["ok" => false, "error" => "Solo puedes devolver artículos de pedidos entregados"]);
+            exit;
+        }
+
+        // Si ya confirmaste la recepción (y ganaste los puntos), no se puede devolver.
+        if (mb_strtolower(trim((string)($item["puntos_estado"] ?? ""))) === "confirmado") {
+            http_response_code(400);
+            echo json_encode([
+                "ok" => false,
+                "error" => "Ya confirmaste la recepción de este producto; no se puede devolver.",
+            ]);
             exit;
         }
 

@@ -17,6 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 
 session_start();
 require_once __DIR__ . "/../conexion.php";
+require_once __DIR__ . "/../puntos_satisfaccion.php";
 
 $usuarioId = isset($_SESSION["usuario_id"]) ? (int)$_SESSION["usuario_id"] : null;
 
@@ -29,13 +30,18 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 
     try {
-        $stmtPedidos = $conexion->prepare(" 
+        // Confirmación automática de los productos entregados hace +30 días
+        // (otorga sus puntos antes de listar, para que el saldo esté al día).
+        dmh_sweep_confirmaciones_vencidas($conexion, $usuarioId);
+
+        $stmtPedidos = $conexion->prepare("
             SELECT
                 p.id,
                 p.estado,
                 p.importe_total,
                 p.direccion_envio,
                 p.creado_en,
+                p.entregado_en,
                 COALESCE(NULLIF(u.nombre, ''), NULLIF(p.nombre_invitado, ''), 'Cliente') AS cliente_nombre,
                 COALESCE(NULLIF(u.email, ''), NULLIF(p.email_invitado, ''), 'Sin email') AS cliente_email,
                 COALESCE(NULLIF(u.telefono, ''), '') AS cliente_telefono
@@ -49,7 +55,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
         foreach ($pedidos as &$pedido) {
             $stmtItems = $conexion->prepare("
-                SELECT id AS item_pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal
+                SELECT id AS item_pedido_id, slug, nombre_producto, talla, color, sku, cantidad,
+                       precio_unitario, subtotal, puntos_potenciales, puntos_estado, confirmado_en
                 FROM items_pedido
                 WHERE pedido_id = :pid
             ");
@@ -170,6 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "cantidad"        => $cantidad,
                 "precio_unitario" => $precio,
                 "subtotal"        => $subtotal,
+                "puntos_potenciales" => 0, // se calcula más abajo (tras aplicar el descuento por canje)
             ];
         }
 
@@ -219,8 +227,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
-        // Puntos ganados: 1€ = 1 punto (solo usuarios registrados)
-        $puntosGanados = $usuarioId ? (int)floor($importeTotal) : 0;
+        // Puntos potenciales por producto = 1 punto por € realmente PAGADO del producto.
+        // Repartimos el descuento por puntos canjeados de forma proporcional al subtotal
+        // de cada producto, para que no se cuenten los € pagados con puntos.
+        // (Solo usuarios registrados; las compras de invitado no generan puntos.)
+        $baseConDescuento = max(0.0, $totalCalculado - $descuentoPuntos);
+        $factorPuntos = ($usuarioId && $totalCalculado > 0) ? ($baseConDescuento / $totalCalculado) : 0.0;
+
+        foreach ($itemsLimpios as &$itemPuntos) {
+            $itemPuntos["puntos_potenciales"] = (int)floor((float)$itemPuntos["subtotal"] * $factorPuntos);
+        }
+        unset($itemPuntos);
+
+        // Puntos que GANARÁ el usuario tras confirmar la recepción de cada producto.
+        // YA NO se otorgan al pagar: se confirman por producto al recibir el pedido
+        // (o automáticamente a los 30 días).
+        $puntosGanados = 0;
+        foreach ($itemsLimpios as $itemPuntos) {
+            $puntosGanados += (int)($itemPuntos["puntos_potenciales"] ?? 0);
+        }
 
         // Insertar pedido
         $stmtPedido = $conexion->prepare("
@@ -241,9 +266,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $stmtItem = $conexion->prepare("
     INSERT INTO items_pedido
-        (pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal)
+        (pedido_id, slug, nombre_producto, talla, color, sku, cantidad, precio_unitario, subtotal, puntos_potenciales, puntos_estado)
     VALUES
-        (:pedido_id, :slug, :nombre, :talla, :color, :sku, :cantidad, :precio, :subtotal)
+        (:pedido_id, :slug, :nombre, :talla, :color, :sku, :cantidad, :precio, :subtotal, :puntos_potenciales, 'pendiente')
 ");
 
         foreach ($itemsLimpios as $item) {
@@ -257,6 +282,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "cantidad"  => $item["cantidad"],
                 "precio"    => $item["precio_unitario"],
                 "subtotal"  => $item["subtotal"],
+                "puntos_potenciales" => $item["puntos_potenciales"],
             ]);
         }
 

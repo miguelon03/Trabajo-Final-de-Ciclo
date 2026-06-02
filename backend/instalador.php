@@ -530,6 +530,7 @@ try {
     $camposPedidos = [
         "nombre_invitado" => "ALTER TABLE pedidos ADD COLUMN nombre_invitado VARCHAR(100) NULL AFTER usuario_id",
         "email_invitado" => "ALTER TABLE pedidos ADD COLUMN email_invitado VARCHAR(150) NULL AFTER nombre_invitado",
+        "entregado_en" => "ALTER TABLE pedidos ADD COLUMN entregado_en TIMESTAMP NULL DEFAULT NULL",
     ];
 
     foreach ($camposPedidos as $columna => $sql) {
@@ -551,10 +552,27 @@ try {
             cantidad INT NOT NULL,
             precio_unitario DECIMAL(10,2) NOT NULL,
             subtotal DECIMAL(10,2) NOT NULL,
+            puntos_potenciales INT NOT NULL DEFAULT 0,
+            puntos_estado ENUM('pendiente','confirmado','devuelto') NOT NULL DEFAULT 'pendiente',
+            confirmado_en TIMESTAMP NULL DEFAULT NULL,
             FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
         )
     ");
     $pasos[] = "Tabla items_pedido creada";
+
+    // Columnas de puntos diferidos / confirmación de satisfacción por producto.
+    $camposItemsPedido = [
+        "puntos_potenciales" => "ALTER TABLE items_pedido ADD COLUMN puntos_potenciales INT NOT NULL DEFAULT 0",
+        "puntos_estado" => "ALTER TABLE items_pedido ADD COLUMN puntos_estado ENUM('pendiente','confirmado','devuelto') NOT NULL DEFAULT 'pendiente'",
+        "confirmado_en" => "ALTER TABLE items_pedido ADD COLUMN confirmado_en TIMESTAMP NULL DEFAULT NULL",
+    ];
+
+    foreach ($camposItemsPedido as $columna => $sql) {
+        if (!dmh_column_exists($conexion, $basedatos, "items_pedido", $columna)) {
+            $conexion->exec($sql);
+            $pasos[] = "Columna items_pedido.$columna añadida";
+        }
+    }
 
     $conexion->exec("
         CREATE TABLE IF NOT EXISTS devoluciones (

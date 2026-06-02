@@ -318,8 +318,8 @@ import HomeLayout from "../layouts/HomeLayout.astro";
         const pointsUsed = Number(order.puntos_usados || 0);
         if (pointsNote && pointsText) {
           pointsText.textContent = pointsEarned > 0
-            ? `Has ganado ${pointsEarned} punto${pointsEarned === 1 ? '' : 's'} con esta compra.${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`
-            : `En esta compra no has generado puntos.${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`;
+            ? `Ganarás ${pointsEarned} punto${pointsEarned === 1 ? '' : 's'} cuando confirmes la recepción de tu pedido (o automáticamente a los 30 días).${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`
+            : `En esta compra no generarás puntos.${pointsUsed > 0 ? ` Has canjeado ${pointsUsed} punto${pointsUsed === 1 ? '' : 's'}.` : ''}`;
           pointsNote.hidden = false;
         }
 

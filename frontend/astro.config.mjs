@@ -7,7 +7,7 @@ export default defineConfig({
 		server: {
 			proxy: {
 				'/backend': {
-					target: 'http://tfc.local',
+					target: 'http://127.0.0.1',
 					changeOrigin: true,
 					secure: false,
 				},

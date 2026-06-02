@@ -312,13 +312,27 @@ const catalogProducts = products as Array<{
           const itemReturns = devolucionesPorItem.get(itemPedidoId) || [];
           const pendingQty = sumReturnQty(itemReturns, ["pendiente"]);
           const reservedQty = sumReturnQty(itemReturns, ["pendiente", "aceptada"]);
+          const acceptedQty = sumReturnQty(itemReturns, ["aceptada"]);
           const rejectedQty = sumReturnQty(itemReturns, ["rechazada"]);
           const hasRejected = rejectedQty > 0;
           const qtyBought = Number(item.cantidad || 0);
           const availableQty = Math.max(0, qtyBought - reservedQty);
-          // Si una devolucion de este articulo fue rechazada, no se permite
-          // volver a solicitarla.
-          const canReturn = pedidoEstado === "entregado" && itemPedidoId > 0 && availableQty > 0 && pendingQty === 0 && !hasRejected;
+
+          // Puntos diferidos: estado de confirmacion de satisfaccion del producto.
+          const puntosEstado = String(item.puntos_estado || "pendiente").toLowerCase();
+          const isConfirmed = puntosEstado === "confirmado";
+          const confirmableQty = Math.max(0, qtyBought - acceptedQty);
+          // puntos_potenciales = potencial (pendiente) u otorgado (confirmado).
+          // Ya incluye el descuento por puntos canjeados. Es 0 en compras de invitado.
+          const itemPts = Number(item.puntos_potenciales || 0);
+          // Parte proporcional según las unidades no devueltas.
+          const potentialPts = qtyBought > 0 ? Math.floor(itemPts * confirmableQty / qtyBought) : 0;
+
+          // Confirmar o devolver: solo si el pedido esta entregado, el producto no
+          // esta ya confirmado y no hay una devolucion pendiente del mismo.
+          // Solo se ofrece confirmar si el producto genera puntos.
+          const canConfirm = pedidoEstado === "entregado" && itemPedidoId > 0 && !isConfirmed && pendingQty === 0 && potentialPts > 0;
+          const canReturn = pedidoEstado === "entregado" && itemPedidoId > 0 && !isConfirmed && availableQty > 0 && pendingQty === 0 && !hasRejected;
 
           const returnBadges = itemReturns.length
             ? itemReturns.map((entry) => {
@@ -326,7 +340,7 @@ const catalogProducts = products as Array<{
                 const statusLabel = getReturnStatusLabel(entry.estado);
                 return `<span class="return-chip ${statusClass}">Devolucion ${escapeHtml(entry.slug || "")} · ${Number(entry.cantidad_devuelta || 0)} ud · ${statusLabel}</span>`;
               }).join("")
-            : `<span class="return-chip">Sin devoluciones</span>`;
+            : "";
 
           // Si alguna devolucion fue rechazada y el admin dejo un motivo, lo mostramos.
           const rejectionReasons = itemReturns
@@ -338,18 +352,34 @@ const catalogProducts = products as Array<{
             })
             .join("");
 
+          // Chip verde si ya confirmo la recepcion (y gano los puntos).
+          const confirmedChip = isConfirmed && itemPts > 0
+            ? `<span class="confirm-chip">✓ Recepcion confirmada · +${itemPts} pts</span>`
+            : (isConfirmed ? `<span class="confirm-chip">✓ Recepcion confirmada</span>` : "");
+
+          const confirmAction = canConfirm
+            ? `<button class="order-confirm-btn" type="button" data-confirm-item="${itemPedidoId}">Confirmar satisfaccion</button>`
+            : "";
+
           const returnAction = canReturn
             ? `<button class="order-return-btn" type="button" data-order-id="${Number(pedido.id)}" data-item-id="${itemPedidoId}" data-max-qty="${availableQty}" data-product-name="${escapeAttr(product.title)}">Solicitar devolucion</button>`
             : "";
 
-          const returnHint = pedidoEstado !== "entregado"
-            ? "Disponible cuando el pedido este entregado"
+          // Aviso de puntos a ganar (mientras no este confirmado ni en devolucion).
+          const pointsHint = (!isConfirmed && potentialPts > 0 && pendingQty === 0)
+            ? (pedidoEstado === "entregado"
+                ? `Confirma la recepcion para ganar ${potentialPts} puntos`
+                : `Ganaras ${potentialPts} puntos cuando confirmes la recepcion`)
+            : "";
+
+          const returnHint = (pedidoEstado !== "entregado" || isConfirmed)
+            ? ""
             : hasRejected
               ? "La devolucion fue rechazada y no se puede volver a solicitar"
-              : availableQty <= 0
-                ? "No quedan unidades disponibles para devolver"
+              : availableQty <= 0 && confirmableQty <= 0
+                ? "No quedan unidades disponibles"
                 : pendingQty > 0
-                  ? "Ya tienes una devolucion pendiente para este articulo"
+                  ? "Tienes una devolucion pendiente de este producto"
                   : "";
 
           return `
@@ -374,10 +404,11 @@ const catalogProducts = products as Array<{
                 </div>
 
                 <div class="order-product-card__returns">
-                  <div class="order-product-card__returns-list">${returnBadges}</div>
+                  <div class="order-product-card__returns-list">${returnBadges}${confirmedChip}</div>
                   ${rejectionReasons}
+                  ${pointsHint ? `<p class="order-points-hint">${escapeHtml(pointsHint)}</p>` : ""}
                   ${returnHint ? `<p class="order-product-card__returns-hint">${escapeHtml(returnHint)}</p>` : ""}
-                  ${returnAction}
+                  ${(confirmAction || returnAction) ? `<div class="order-card-actions">${confirmAction}${returnAction}</div>` : ""}
                 </div>
               </div>
             </article>
@@ -443,6 +474,49 @@ const catalogProducts = products as Array<{
           const productName = btn.getAttribute("data-product-name") || "Producto";
 
           openReturnModal({ pedidoId, itemPedidoId, maxQty, productName });
+        });
+      });
+
+      listBox.querySelectorAll(".order-confirm-btn").forEach((btn) => {
+        btn.addEventListener("click", async (event) => {
+          event.stopPropagation();
+
+          const itemPedidoId = Number(btn.getAttribute("data-confirm-item") || 0);
+          if (!itemPedidoId) return;
+
+          if (btn instanceof HTMLButtonElement) {
+            btn.disabled = true;
+            btn.textContent = "Confirmando...";
+          }
+
+          try {
+            const result = await window.dmhFetchJson("devoluciones.php", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ accion: "confirmar", item_pedido_id: itemPedidoId }),
+            });
+
+            if (!result.ok) {
+              throw new Error(result.error || "No se pudo confirmar la recepcion");
+            }
+
+            const pts = Number(result.data?.puntos_otorgados || 0);
+            window.showToast?.(
+              `¡Enhorabuena! Has ganado ${pts} ${pts === 1 ? "punto" : "puntos"} 🎉`,
+              "success",
+            );
+            await loadOrders();
+          } catch (error) {
+            window.showToast?.(
+              error instanceof Error ? error.message : "No se pudo confirmar la recepcion",
+              "error",
+            );
+            if (btn instanceof HTMLButtonElement) {
+              btn.disabled = false;
+              btn.textContent = "Confirmar satisfaccion";
+            }
+          }
         });
       });
 
@@ -964,6 +1038,56 @@ const catalogProducts = products as Array<{
       background: rgba(200, 255, 0, 0.2);
       border-color: rgba(200, 255, 0, 0.55);
       transform: translateY(-1px);
+    }
+
+    .order-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .order-confirm-btn {
+      width: fit-content;
+      border: 1px solid rgba(139, 255, 151, 0.4);
+      background: rgba(139, 255, 151, 0.14);
+      color: #8bff97;
+      border-radius: 10px;
+      padding: 0.46rem 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .order-confirm-btn:hover:not(:disabled) {
+      background: rgba(139, 255, 151, 0.24);
+      border-color: rgba(139, 255, 151, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .order-confirm-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .confirm-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(139, 255, 151, 0.42);
+      background: rgba(139, 255, 151, 0.12);
+      color: #8bff97;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .order-points-hint {
+      margin: 0;
+      color: #d6ff59;
+      font-size: 0.78rem;
+      font-weight: 600;
     }
 
     .order-product-card__prices {

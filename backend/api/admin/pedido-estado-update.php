@@ -64,11 +64,22 @@ try {
         exit;
     }
 
-    $stmt = $conexion->prepare("
-        UPDATE pedidos
-        SET estado = :estado
-        WHERE id = :id
-    ");
+    // Al marcar "entregado" guardamos la fecha de entrega (arranca el contador de
+    // 30 días para la confirmación automática de satisfacción / puntos).
+    if ($estado === "entregado") {
+        $stmt = $conexion->prepare("
+            UPDATE pedidos
+            SET estado = :estado,
+                entregado_en = COALESCE(entregado_en, NOW())
+            WHERE id = :id
+        ");
+    } else {
+        $stmt = $conexion->prepare("
+            UPDATE pedidos
+            SET estado = :estado
+            WHERE id = :id
+        ");
+    }
     $stmt->execute([
         "estado" => $estado,
         "id" => $pedidoId,

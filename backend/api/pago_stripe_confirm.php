@@ -156,39 +156,32 @@ function dmh_apply_order_side_effects(PDO $conexion, array $pedido, array $items
     }
 
     $puntosUsados = isset($pedido["puntos_usados"]) ? (int)$pedido["puntos_usados"] : 0;
-    $puntosGanados = isset($pedido["puntos_ganados"]) ? (int)$pedido["puntos_ganados"] : 0;
 
-    $stmtPuntos = $conexion->prepare("SELECT COALESCE(SUM(puntos), 0) FROM puntos_usuarios WHERE usuario_id = :uid");
-    $stmtPuntos->execute(["uid" => $pedidoUsuarioId]);
-    $puntosDisponibles = (int)($stmtPuntos->fetchColumn() ?: 0);
-    $saldoPuntosFinal = max(0, $puntosDisponibles - $puntosUsados + $puntosGanados);
-
-    $conexion->prepare("DELETE FROM puntos_usuarios WHERE usuario_id = :uid")
-        ->execute(["uid" => $pedidoUsuarioId]);
-
-    $conexion->prepare("INSERT INTO puntos_usuarios (usuario_id, puntos) VALUES (:uid, :puntos)")
-        ->execute([
-            "uid" => $pedidoUsuarioId,
-            "puntos" => $saldoPuntosFinal,
-        ]);
-
+    // IMPORTANTE: los puntos GANADOS ya NO se otorgan al pagar. Se conceden al
+    // confirmar la satisfacción de cada producto (o automáticamente a los 30 días
+    // de la entrega). Esto evita el fraude de ganar puntos, gastarlos y devolver.
+    // Aquí solo descontamos los puntos que el usuario haya CANJEADO en este pedido.
     if ($puntosUsados > 0) {
+        $stmtPuntos = $conexion->prepare("SELECT COALESCE(SUM(puntos), 0) FROM puntos_usuarios WHERE usuario_id = :uid");
+        $stmtPuntos->execute(["uid" => $pedidoUsuarioId]);
+        $puntosDisponibles = (int)($stmtPuntos->fetchColumn() ?: 0);
+        $saldoPuntosFinal = max(0, $puntosDisponibles - $puntosUsados);
+
+        $conexion->prepare("DELETE FROM puntos_usuarios WHERE usuario_id = :uid")
+            ->execute(["uid" => $pedidoUsuarioId]);
+
+        $conexion->prepare("INSERT INTO puntos_usuarios (usuario_id, puntos) VALUES (:uid, :puntos)")
+            ->execute([
+                "uid" => $pedidoUsuarioId,
+                "puntos" => $saldoPuntosFinal,
+            ]);
+
         $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
             ->execute([
                 "uid" => $pedidoUsuarioId,
                 "pid" => (int)$pedido["id"],
                 "cambio" => -$puntosUsados,
                 "motivo" => "Canje de puntos en pedido #" . (int)$pedido["id"],
-            ]);
-    }
-
-    if ($puntosGanados > 0) {
-        $conexion->prepare("INSERT INTO historial_puntos (usuario_id, pedido_id, cambio, motivo) VALUES (:uid, :pid, :cambio, :motivo)")
-            ->execute([
-                "uid" => $pedidoUsuarioId,
-                "pid" => (int)$pedido["id"],
-                "cambio" => $puntosGanados,
-                "motivo" => "Puntos ganados por pedido #" . (int)$pedido["id"],
             ]);
     }
 
